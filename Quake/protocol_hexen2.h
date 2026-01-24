@@ -305,6 +305,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define H2_THINGTYPE_MUSHROOM	23
 
 //==================
+// Hexen II drawflags (special rendering modes)
+//==================
+#define H2_DRF_TRANSLUCENT		128		// Entity is translucent
+#define H2_DRF_ANIMATEONCE		256		// Animate once then freeze
+
+//==================
 // Global flag to indicate Hexen II mode is active
 //==================
 extern qboolean hexen2_mode;

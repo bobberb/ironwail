@@ -267,6 +267,8 @@ typedef struct
 	unsigned char 	skin;		//johnfitz -- was int
 	unsigned char	alpha;		//johnfitz -- added
 	unsigned char	scale;		//Quakespasm: for model scale support.
+	unsigned char	drawflags;	//H2: special rendering flags
+	unsigned char	abslight;	//H2: absolute lighting override
 	int		effects;
 } entity_state_t;
 

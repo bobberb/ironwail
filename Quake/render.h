@@ -66,6 +66,8 @@ typedef struct entity_s
 	byte					*colormap;
 	int						effects;		// light, particles, etc
 	int						skinnum;		// for Alias models
+	byte					drawflags;		//H2: special rendering flags
+	byte					abslight;		//H2: absolute lighting override
 
 	int						firstleaf;		// for sorting static entities
 

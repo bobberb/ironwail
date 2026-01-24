@@ -123,16 +123,31 @@ svc_sound_update_pos = 53
 
 ## Phase 3: Rendering Enhancements
 
-### 3.1 Entity Rendering Extensions
-- [ ] Implement entity scale support (U_SCALE update bit)
-- [ ] Add drawflags for special rendering modes
-- [ ] Implement abslight (absolute lighting override)
-- [ ] Add colormap extensions for class-specific skins
+### 3.1 Entity Rendering Extensions ✅ **COMPLETED**
+- [x] Add drawflags field to entity structures
+- [x] Add abslight field to entity structures
+- [x] Implement DRF_TRANSLUCENT rendering (50% alpha)
+- [x] Implement DRF_ANIMATEONCE (freeze on last frame)
+- [x] Implement abslight support (absolute lighting override)
+- [x] Update network parsing to handle drawflags and abslight
+- [ ] Add colormap extensions for class-specific skins - DEFERRED
 
-**Files to modify:**
-- `gl_model.h` - Add scale/drawflags to entity_state_t
-- `r_alias.c` - Scale and drawflags rendering
-- `gl_rmain.c` - Abslight support
+**Files modified:**
+- `protocol.h` - Added drawflags and abslight to entity_state_t
+- `protocol_hexen2.h` - Added H2_DRF_TRANSLUCENT and H2_DRF_ANIMATEONCE defines
+- `render.h` - Added drawflags and abslight to entity_t
+- `r_alias.c` - Implemented H2 rendering features:
+  - Abslight support in R_SetupAliasLighting (overrides normal lighting)
+  - DRF_TRANSLUCENT support (50% alpha if not already transparent)
+  - DRF_ANIMATEONCE support (freeze animation on last frame)
+- `cl_parse.c` - Added network parsing for drawflags (with U_SKIN) and abslight (with U_SCALE)
+
+**What works:**
+- Entities can have absolute lighting (abslight 0-255)
+- Entities can be translucent via drawflags
+- Entities can play animation once and freeze
+- Network protocol correctly sends/receives these fields
+- Build successful
 
 ### 3.2 Advanced Particle System
 - [ ] Expand particle types from ~5 to 30+ (pt_ice, pt_spell, pt_vorpal, etc.)

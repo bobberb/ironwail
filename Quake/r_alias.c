@@ -98,7 +98,20 @@ void R_SetupAliasFrame (entity_t *e, aliashdr_t *paliashdr, lerpdata_t *lerpdata
 	if (numposes > 1)
 	{
 		e->lerptime = paliashdr->frames[frame].interval;
-		posenum += (int)(cl.time / e->lerptime) % numposes;
+
+		// H2: DRF_ANIMATEONCE prevents animation looping
+		if (hexen2_mode && (e->drawflags & H2_DRF_ANIMATEONCE))
+		{
+			// Play animation once, then freeze on last frame
+			int animframe = (int)(cl.time / e->lerptime);
+			if (animframe >= numposes)
+				animframe = numposes - 1;
+			posenum += animframe;
+		}
+		else
+		{
+			posenum += (int)(cl.time / e->lerptime) % numposes;
+		}
 	}
 	else
 		e->lerptime = 0.1;
@@ -225,6 +238,15 @@ void R_SetupAliasLighting (entity_t	*e)
 	vec3_t		dist;
 	float		add;
 	int			i;
+
+	// H2: abslight overrides normal lighting calculation
+	if (hexen2_mode && e->abslight)
+	{
+		// abslight is a 0-255 value that sets absolute lighting
+		float abslight_value = e->abslight / 255.0f * 256.0f;
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = abslight_value;
+		return;
+	}
 
 	// if the initial trace is completely black, try again from above
 	// this helps with models whose origin is slightly below ground level
@@ -566,7 +588,18 @@ static void R_DrawAliasModel_Real (entity_t *e, qboolean showtris)
 	if (r_lightmap_cheatsafe) //no alpha in drawflat or lightmap mode
 		entalpha = 1;
 	else
+	{
 		entalpha = ENTALPHA_DECODE(e->alpha);
+
+		// H2: drawflags translucency support
+		if (hexen2_mode && (e->drawflags & H2_DRF_TRANSLUCENT))
+		{
+			// Translucent flag makes entity semi-transparent
+			// Use 50% alpha if no alpha is already set
+			if (entalpha >= 1.0f)
+				entalpha = 0.5f;
+		}
+	}
 
 	if (entalpha == 0)
 		return;

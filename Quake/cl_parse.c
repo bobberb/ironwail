@@ -532,9 +532,18 @@ void CL_ParseUpdate (int bits)
 		ent->colormap = cl.scores[i-1].translations;
 	}
 	if (bits & U_SKIN)
+	{
 		skin = MSG_ReadByte();
+		// H2: drawflags byte follows skin byte
+		if (hexen2_mode)
+			ent->drawflags = MSG_ReadByte();
+	}
 	else
+	{
 		skin = ent->baseline.skin;
+		if (hexen2_mode)
+			ent->drawflags = ent->baseline.drawflags;
+	}
 	if (skin != ent->skinnum)
 	{
 		ent->skinnum = skin;
@@ -595,9 +604,18 @@ void CL_ParseUpdate (int bits)
 		else
 			ent->alpha = ent->baseline.alpha;
 		if (bits & U_SCALE)
+		{
 			ent->scale = MSG_ReadByte();
+			// H2: abslight byte follows scale byte
+			if (hexen2_mode)
+				ent->abslight = MSG_ReadByte();
+		}
 		else
+		{
 			ent->scale = ent->baseline.scale;
+			if (hexen2_mode)
+				ent->abslight = ent->baseline.abslight;
+		}
 		if (bits & U_FRAME2)
 			ent->frame = (ent->frame & 0x00FF) | (MSG_ReadByte() << 8);
 		if (bits & U_MODEL2)
