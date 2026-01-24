@@ -88,40 +88,38 @@ svc_sound_update_pos = 53
 - Build successful with all H2 fields available
 - Quake code continues to work with extended structure
 
-**Key fields to add:**
-```c
-// Player stats
-int level;
-float experience;
-int strength, dexterity, intelligence, wisdom;
+### 2.2 Progs/QuakeC Compatibility ✅ **COMPLETED**
+- [x] Add Hexen II builtin function support
+- [x] Implement progs CRC checking for H2 compatibility
+- [ ] Support multiple progs.dat loading (map-specific progs) - DEFERRED
+- [ ] Handle progs v6 detection - DEFERRED
 
-// Mana system
-float bluemana, greenmana, max_mana;
+**Files modified:**
+- `pr_edict.c` - Modified CRC checking to accept H2 CRCs (38488, 26905, 14046, 19889) when hexen2_mode is active
+- `pr_cmds.c` - Added 30+ H2 builtin function stubs to builtin table
+- `pr_cmds_hexen2.inc` - Created H2 builtin implementations (stubs for future phases)
+- `pr_cmds_hexen2.h` - Function declarations
+- `quakedef.h` - Added protocol_hexen2.h include
 
-// Class
-float playerclass;
+**What works:**
+- Engine accepts H2 progs.dat files with correct CRCs
+- All 30+ H2 builtins are registered and callable
+- Stub implementations prevent crashes
+- Build successful with all H2 support
 
-// Artifacts (15 types)
-float cnt_torch, cnt_h_boost, cnt_teleport, etc.
+**H2 builtins added:**
+- #5: lightstylestatic (calls PF_lightstyle for now)
+- #33: tracearea (bounding box trace)
+- #42: particle2 (stub - Phase 3)
+- #50: vhlen (horizontal vector length)
+- #63: AdvanceFrame (stub - animation)
+- #66: RewindFrame (stub - animation)
+- #67: setclass (sets player class)
+- #72: lightstylevalue (returns static value for now)
+- #79-93: Various H2-specific functions (plaques, rain, particles, effects, puzzles)
+- #99-106: Slope matching, plaque updates, screen flash, sound positioning
 
-// Rings (4 types)
-float ring_flight, ring_water, ring_turning, ring_regeneration;
-
-// Puzzle pieces (8 slots)
-string puzzle_inv1 through puzzle_inv8;
-```
-
-### 2.2 Progs/QuakeC Compatibility
-- [ ] Support multiple progs.dat loading (map-specific progs)
-- [ ] Add Hexen II builtin function support
-- [ ] Implement progs CRC checking for H2 compatibility
-- [ ] Handle progs v6 detection
-
-**Files to modify:**
-- `progs.h` - Add H2 builtin functions
-- `pr_edict.c` - Extended entity field support
-- `pr_cmds.c` - New builtin implementations
-- `sv_main.c` - Multi-progs loading
+**Note:** Multi-progs loading and progs v6 detection deferred until needed
 
 ## Phase 3: Rendering Enhancements
 

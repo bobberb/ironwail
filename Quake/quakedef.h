@@ -248,6 +248,7 @@ typedef struct
 #include "cvar.h"
 
 #include "protocol.h"
+#include "protocol_hexen2.h"
 #include "net.h"
 
 #include "cmd.h"

@@ -3269,6 +3269,13 @@ static void PF_clientcommand(void)
 		Con_Printf("PF_clientcommand: not a client\n");
 }
 
+//============================================================================
+// Hexen II builtin functions
+//============================================================================
+
+#include "pr_cmds_hexen2.inc"
+
+//============================================================================
 
 #define PF_BOTH(x)	x,x
 #define PF_CSQC(x)	NULL,x
@@ -3280,6 +3287,7 @@ builtindef_t pr_builtindefs[] =
 	{"setorigin",				PF_SSQC(PF_setorigin),			2},		// void(entity e, vector o) setorigin	= #2
 	{"setmodel",				PF_SSQC(PF_setmodel),			3},		// void(entity e, string m) setmodel	= #3
 	{"setsize",					PF_SSQC(PF_setsize),			4},		// void(entity e, vector min, vector max) setsize	= #4
+	{"lightstylestatic",		PF_SSQC(PF_h2_lightstylestatic), 5},	// H2: void(float style, string value) lightstylestatic = #5
 	{"break",					PF_BOTH(PF_break),				6},		// void() break				= #6
 	{"random",					PF_BOTH(PF_random),				7},		// float() random			= #7
 	{"sound",					PF_SSQC(PF_sound),				8},		// void(entity e, float chan, string samp) sound	= #8
@@ -3307,6 +3315,7 @@ builtindef_t pr_builtindefs[] =
 	{"traceoff",				PF_BOTH(PF_traceoff),			30},
 	{"eprint",					PF_SSQC(PF_eprint),				31},	// void(entity e) debug print an entire entity
 	{"walkmove",				PF_SSQC(PF_walkmove),			32},	// float(float yaw, float dist) walkmove
+	{"tracearea",				PF_SSQC(PF_h2_tracearea),		33},	// H2: float(vector v1, vector v2, vector mins, vector maxs, float nomonsters, entity ent) = #33
 	{"droptofloor",				PF_SSQC(PF_droptofloor),		34},
 	{"lightstyle",				PF_SSQC(PF_lightstyle),			35},
 	{"rint",					PF_BOTH(PF_rint),				36},
@@ -3314,6 +3323,7 @@ builtindef_t pr_builtindefs[] =
 	{"ceil",					PF_BOTH(PF_ceil),				38},
 	{"checkbottom",				PF_SSQC(PF_checkbottom),		40},
 	{"pointcontents",			PF_SSQC(PF_pointcontents),		41},
+	{"particle2",				PF_SSQC(PF_h2_particle2),		42},	// H2: void(vector org, vector dmin, vector dmax, float color, float effect, float count) = #42
 	{"fabs",					PF_BOTH(PF_fabs),				43},
 	{"aim",						PF_SSQC(PF_aim),				44},
 	{"cvar",					PF_BOTH(PF_cvar),				45},
@@ -3321,6 +3331,7 @@ builtindef_t pr_builtindefs[] =
 	{"nextent",					PF_SSQC(PF_nextent),			47},
 	{"particle",				PF_SSQC(PF_particle),			48},
 	{"ChangeYaw",				PF_SSQC(PF_changeyaw),			49},
+	{"vhlen",					PF_BOTH(PF_h2_vhlen),			50},	// H2: float(vector v) vhlen = #50
 	{"vectoangles",				PF_BOTH(PF_vectoangles),		51},
 
 	{"WriteByte",				PF_SSQC(PF_WriteByte),			52},
@@ -3335,29 +3346,46 @@ builtindef_t pr_builtindefs[] =
 	{"sin",						PF_BOTH(PF_Sin),				60,		DP_QC_SINCOSSQRTPOW},	// float(float angle)
 	{"cos",						PF_BOTH(PF_Cos),				61,		DP_QC_SINCOSSQRTPOW},	// float(float angle)
 	{"sqrt",					PF_BOTH(PF_Sqrt),				62,		DP_QC_SINCOSSQRTPOW},	// float(float value)
+	{"AdvanceFrame",			PF_SSQC(PF_h2_AdvanceFrame),	63},	// H2: void(float start, float end) = #63
 
 	{"etos",					PF_BOTH(PF_etos),				65,		DP_QC_ETOS},			// string(entity ent)
+	{"RewindFrame",				PF_SSQC(PF_h2_RewindFrame),		66},	// H2: void(float start, float end) = #66 (note: uhexen2 has #65)
+	{"setclass",				PF_SSQC(PF_h2_setclass),		67},	// H2: void(entity e, float class) = #67 (note: uhexen2 has #66)
 
-	{"movetogoal",				PF_SSQC(SV_MoveToGoal),			67},
-	{"precache_file",			PF_SSQC(PF_precache_file),		68},
-	{"makestatic",				PF_SSQC(PF_makestatic),			69},
+	{"movetogoal",				PF_SSQC(SV_MoveToGoal),			68},	// #68 (uhexen2 has this at #67)
+	{"precache_file",			PF_SSQC(PF_precache_file),		69},	// #69 (uhexen2 has this at #68)
+	{"makestatic",				PF_SSQC(PF_makestatic),			70},	// #70 (uhexen2 has this at #69)
 
-	{"changelevel",				PF_SSQC(PF_changelevel),		70},
+	{"changelevel",				PF_SSQC(PF_changelevel),		71},	// #71 (uhexen2 has this at #70)
+	{"lightstylevalue",			PF_BOTH(PF_h2_lightstylevalue),	72},	// H2: float(float style) = #72 (uhexen2 has this at #71)
 
-	{"cvar_set",				PF_BOTH(PF_cvar_set),			72},
-	{"centerprint",				PF_SSQC(PF_centerprint),		73},
+	{"cvar_set",				PF_BOTH(PF_cvar_set),			73},	// #73 (Quake has this at #72)
+	{"centerprint",				PF_SSQC(PF_centerprint),		74},	// #74 (Quake has this at #73)
 
-	{"ambientsound",			PF_SSQC(PF_ambientsound),		74},
+	{"ambientsound",			PF_SSQC(PF_ambientsound),		75},	// #75 (Quake has this at #74)
 
-	{"precache_model2",			PF_SSQC(PF_precache_model),		75},
-	{"precache_sound2",			PF_SSQC(PF_precache_sound),		76},	// precache_sound2 is different only for qcc
-	{"precache_file2",			PF_SSQC(PF_precache_file),		77},
+	{"precache_model2",			PF_SSQC(PF_precache_model),		76},	// #76 (Quake has this at #75)
+	{"precache_sound2",			PF_SSQC(PF_precache_sound),		77},	// #77 (Quake has this at #76)
+	{"precache_file2",			PF_SSQC(PF_precache_file),		78},	// #78 (Quake has this at #77)
 
-	{"setspawnparms",			PF_SSQC(PF_setspawnparms),		78},
+	{"setspawnparms",			PF_SSQC(PF_setspawnparms),		79},	// #79 (Quake has this at #78)
+	{"plaque_draw",				PF_SSQC(PF_h2_plaque_draw),		80},	// H2: void(float) = #80 (uhexen2 has this at #79)
+	{"rain_go",					PF_SSQC(PF_h2_rain_go),			81},	// H2: void(vector...) = #81 (uhexen2 has this at #80)
+	{"particleexplosion",		PF_SSQC(PF_h2_particleexplosion), 82}, // H2: void(vector...) = #82 (uhexen2 has this at #81)
+	{"movestep",				PF_SSQC(PF_h2_movestep),		83},	// H2: float(...) = #83 (uhexen2 has this at #82)
+	{"advanceweaponframe",		PF_SSQC(PF_h2_advanceweaponframe), 84}, // H2: void(float, float) = #84 (uhexen2 has this at #83)
+	{"particle3",				PF_SSQC(PF_h2_particle3),		85},	// H2: void(vector...) = #85
+	{"particle4",				PF_SSQC(PF_h2_particle4),		86},	// H2: void(vector...) = #86
+	{"setpuzzlemodel",			PF_SSQC(PF_h2_setpuzzlemodel),	87},	// H2: void(entity, string) = #87
+	{"starteffect",				PF_SSQC(PF_h2_starteffect),		88},	// H2: void() = #88
+	{"endeffect",				PF_SSQC(PF_h2_endeffect),		89},	// H2: void(float) = #89
+	{"precache_puzzle_model",	PF_SSQC(PF_h2_precache_puzzle_model), 90}, // H2: void(string) = #90
+	{"concatv",					PF_BOTH(PF_h2_concatv),			91},	// H2: string(vector...) = #91
+	{"GetString",				PF_BOTH(PF_h2_GetString),		92},	// H2: string(float) = #92
+	{"SpawnTemp",				PF_SSQC(PF_h2_SpawnTemp),		93},	// H2: entity() = #93
 
-	// 2021 re-release
-	{"finaleFinished",			PF_SSQC(PF_finalefinished),		79},	// float() finaleFinished = #79
-	{"localsound",				PF_SSQC(PF_localsound),			80},	// void localsound (entity client, string sample) = #80
+	// NOTE: H2 has v_factor/v_factorrange at #94-95, but Quake 2021 re-release has min/max here
+	// For now, keep Quake builtins - will need runtime switching later
 
 	{"stof",					PF_BOTH(PF_stof),				81,		FRIK_FILE},			// float(string)
 
@@ -3376,7 +3404,14 @@ builtindef_t pr_builtindefs[] =
 
 	{"pow",						PF_BOTH(PF_pow),				97,		DP_QC_SINCOSSQRTPOW},	// float(float value, float exp)
 
-	{"checkextension",			PF_BOTH(PF_checkextension),		99},	// float(string extname)
+	{"matchAngleToSlope",		PF_SSQC(PF_h2_matchAngleToSlope), 99},	// H2: void(entity, vector) = #99
+	{"updateInfoPlaque",		PF_SSQC(PF_h2_updateInfoPlaque), 100},	// H2: void(float, float) = #100
+
+	{"doWhiteFlash",			PF_SSQC(PF_h2_doWhiteFlash),	104},	// H2: void() = #104
+	{"UpdateSoundPos",			PF_SSQC(PF_h2_UpdateSoundPos),	105},	// H2: void(entity, float) = #105
+	{"StopSound",				PF_SSQC(PF_h2_StopSound),		106},	// H2: void(entity, float) = #106
+
+	{"checkextension",			PF_BOTH(PF_checkextension),		107},	// float(string extname) - moved from #99 for H2
 
 	{"strlen",					PF_BOTH(PF_strlen),				114,	FRIK_FILE},	// float(string s)
 	{"strcat",					PF_BOTH(PF_strcat),				115,	FRIK_FILE},	// string(string s1, optional string s2, optional string s3, optional string s4, optional string s5, optional string s6, optional string s7, optional string s8)

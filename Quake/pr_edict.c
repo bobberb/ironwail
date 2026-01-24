@@ -2126,8 +2126,27 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 
 	if (qcvm->progs->crc != PROGHEADER_CRC)
 	{
-		if (fatal)
+		// Check if this is a known Hexen II CRC and we're in hexen2_mode
+		qboolean is_h2_crc = false;
+		switch(qcvm->progs->crc)
+		{
+		case PROGHEADER_CRC_H2_V112:	// 38488 - hexen2 mission pack (Portal of Praevus)
+		case PROGHEADER_CRC_H2_V111:	// 26905 - hexen2 1.11
+		case PROGHEADER_CRC_H2_V103:	// 14046 - hexen2 demo/1.03
+		case PROGHEADER_CRC_H2_UQE:		// 19889 - UQE patch
+			is_h2_crc = true;
+			break;
+		}
+
+		if (is_h2_crc && hexen2_mode)
+		{
+			// H2 progs detected and we're in H2 mode - this is OK
+			Con_Printf("Hexen II progs detected (CRC %i)\n", qcvm->progs->crc);
+		}
+		else if (fatal)
+		{
 			Host_Error ("%s system vars have been modified, progdefs.h is out of date", filename);
+		}
 		else
 		{
 			switch(qcvm->progs->crc)
@@ -2147,10 +2166,11 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 			case 32401:	//tenebrae
 				Con_Printf("%s - tenebrae gamecode is not supported\n", filename);
 				break;
-			case 38488:	//hexen2 release
-			case 26905:	//hexen2 mission pack
-			case 14046: //hexen2 demo
-				Con_Printf("%s - hexen2 gamecode is not supported\n", filename);
+			case PROGHEADER_CRC_H2_V112:	// 38488
+			case PROGHEADER_CRC_H2_V111:	// 26905
+			case PROGHEADER_CRC_H2_V103:	// 14046
+			case PROGHEADER_CRC_H2_UQE:		// 19889
+				Con_Printf("%s - hexen2 gamecode requires hexen2_mode\n", filename);
 				break;
 			//case 5927: //nq PROGHEADER_CRC as above. shouldn't happen, obviously.
 			default:
