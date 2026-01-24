@@ -733,6 +733,81 @@ void Sbar_H2_InvOff(void)
 
 /*
 ===============
+Sbar_H2_InvChanged
+
+Called when artifact counts change. Rebuilds the inventory order list.
+===============
+*/
+void Sbar_H2_InvChanged(void)
+{
+	int i, position;
+	qboolean examined[H2_INV_MAX];
+	qboolean force_update = false;
+
+	memset(examined, 0, sizeof(examined));
+
+	// Check if currently selected item was depleted
+	if (cl.inv_selected >= 0 && cl.inv_selected < cl.inv_count)
+	{
+		if (cl.inv_cnt[cl.inv_order[cl.inv_selected]] == 0)
+			force_update = true;
+	}
+
+	// Remove items we no longer have from the order
+	for (i = position = 0; i < cl.inv_count; i++)
+	{
+		if (cl.inv_cnt[cl.inv_order[i]] > 0)
+		{
+			cl.inv_order[position] = cl.inv_order[i];
+			examined[cl.inv_order[position]] = true;
+			position++;
+		}
+	}
+
+	// Add in new items that we have but aren't in the order yet
+	for (i = 0; i < H2_INV_MAX; i++)
+	{
+		if (!examined[i] && cl.inv_cnt[i] > 0)
+		{
+			cl.inv_order[position] = i;
+			position++;
+		}
+	}
+
+	cl.inv_count = position;
+
+	// Fix selection if out of bounds
+	if (cl.inv_selected >= cl.inv_count)
+	{
+		cl.inv_selected = cl.inv_count - 1;
+		force_update = true;
+	}
+	if (cl.inv_count > 0 && cl.inv_selected < 0)
+	{
+		cl.inv_selected = 0;
+		force_update = true;
+	}
+
+	// Fix startpos if out of bounds
+	if (cl.inv_count <= 1)
+		cl.inv_startpos = 0;
+	else if (cl.inv_startpos >= cl.inv_count)
+		cl.inv_startpos = cl.inv_selected;
+	else
+	{
+		// Make sure selected item is visible
+		int vis_pos = cl.inv_selected - cl.inv_startpos;
+		if (vis_pos < 0)
+			vis_pos += cl.inv_count;
+		if (vis_pos >= H2_INV_MAX_ICON)
+			cl.inv_startpos = cl.inv_selected;
+	}
+
+	(void)force_update;  // Suppress unused warning for now
+}
+
+/*
+===============
 Info display toggles
 ===============
 */

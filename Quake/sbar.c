@@ -251,6 +251,31 @@ void Sbar_LoadPics (void)
 	}
 }
 
+// Wrapper functions for H2 inventory commands
+static void Sbar_InvLeft_f(void)
+{
+	if (hexen2_mode)
+		Sbar_H2_InvLeft();
+}
+
+static void Sbar_InvRight_f(void)
+{
+	if (hexen2_mode)
+		Sbar_H2_InvRight();
+}
+
+static void Sbar_InvUse_f(void)
+{
+	if (hexen2_mode)
+		Sbar_H2_InvUse();
+}
+
+static void Sbar_InvOff_f(void)
+{
+	if (hexen2_mode)
+		Sbar_H2_InvOff();
+}
+
 /*
 ===============
 Sbar_Init -- johnfitz -- rewritten
@@ -260,6 +285,14 @@ void Sbar_Init (void)
 {
 	Cmd_AddCommand ("+showscores", Sbar_ShowScores);
 	Cmd_AddCommand ("-showscores", Sbar_DontShowScores);
+
+	// Hexen II inventory commands (active when hexen2_mode is set)
+	Cmd_AddCommand ("invleft", Sbar_InvLeft_f);
+	Cmd_AddCommand ("invright", Sbar_InvRight_f);
+	Cmd_AddCommand ("invuse", Sbar_InvUse_f);
+	Cmd_AddCommand ("invoff", Sbar_InvOff_f);
+	Cmd_AddCommand ("+showinfo", NULL);  // TODO: Implement info overlay
+	Cmd_AddCommand ("-showinfo", NULL);
 
 	Sbar_LoadPics ();
 }

@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "protocol_hexen2.h"
+#include "sbar_hexen2.h"
 
 /*
 ================
@@ -120,21 +121,160 @@ void CL_ParseSetViewTint(void)
 CL_ParseUpdateInventory
 
 Parse svc_h2_update_inv message
-Updates player inventory
+Updates player stats and inventory using SC1/SC2 bitfields
 ================
 */
 void CL_ParseUpdateInventory(void)
 {
-	int slot, amount;
+	int test;
+	unsigned int sc1 = 0, sc2 = 0;
 
-	slot = MSG_ReadByte();
-	amount = MSG_ReadByte();
+	// Read which stat bytes are present
+	test = MSG_ReadByte();
+	if (test & 1)
+		sc1 |= MSG_ReadByte();
+	if (test & 2)
+		sc1 |= MSG_ReadByte() << 8;
+	if (test & 4)
+		sc1 |= MSG_ReadByte() << 16;
+	if (test & 8)
+		sc1 |= MSG_ReadByte() << 24;
+	if (test & 16)
+		sc2 |= MSG_ReadByte();
+	if (test & 32)
+		sc2 |= MSG_ReadByte() << 8;
+	if (test & 64)
+		sc2 |= MSG_ReadByte() << 16;
+	if (test & 128)
+		sc2 |= MSG_ReadByte() << 24;
 
-	if (slot < 0 || slot >= H2_MAX_INVENTORY)
-		Host_Error("CL_ParseUpdateInventory: slot out of range");
+	// Parse SC1 stats
+	if (sc1 & H2_SC1_HEALTH)
+		cl.stats[STAT_HEALTH] = MSG_ReadShort();
+	if (sc1 & H2_SC1_LEVEL)
+		MSG_ReadByte();  // Player level (not used in stats)
+	if (sc1 & H2_SC1_INTELLIGENCE)
+		MSG_ReadByte();  // Intelligence stat
+	if (sc1 & H2_SC1_WISDOM)
+		MSG_ReadByte();  // Wisdom stat
+	if (sc1 & H2_SC1_STRENGTH)
+		MSG_ReadByte();  // Strength stat
+	if (sc1 & H2_SC1_DEXTERITY)
+		MSG_ReadByte();  // Dexterity stat
+	if (sc1 & H2_SC1_WEAPON)
+		cl.stats[STAT_ACTIVEWEAPON] = MSG_ReadByte();
+	if (sc1 & H2_SC1_BLUEMANA)
+		cl.stats[STAT_SHELLS] = MSG_ReadByte();  // Blue mana -> STAT_SHELLS
+	if (sc1 & H2_SC1_GREENMANA)
+		cl.stats[STAT_NAILS] = MSG_ReadByte();   // Green mana -> STAT_NAILS
+	if (sc1 & H2_SC1_EXPERIENCE)
+		MSG_ReadLong();  // Experience points
 
-	// TODO: Implement inventory system when HUD is extended
-	Con_DPrintf("Inventory update: slot %d = %d\n", slot, amount);
+	// Artifact counts
+	if (sc1 & H2_SC1_CNT_TORCH)
+		cl.inv_cnt[H2_INV_TORCH] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_H_BOOST)
+		cl.inv_cnt[H2_INV_HP_BOOST] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_SH_BOOST)
+		cl.inv_cnt[H2_INV_SUPER_HP_BOOST] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_MANA_BOOST)
+		cl.inv_cnt[H2_INV_MANA_BOOST] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_TELEPORT)
+		cl.inv_cnt[H2_INV_TELEPORT] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_TOME)
+		cl.inv_cnt[H2_INV_TOME] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_SUMMON)
+		cl.inv_cnt[H2_INV_SUMMON] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_INVISIBILITY)
+		cl.inv_cnt[H2_INV_INVISIBILITY] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_GLYPH)
+		cl.inv_cnt[H2_INV_GLYPH] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_HASTE)
+		cl.inv_cnt[H2_INV_HASTE] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_BLAST)
+		cl.inv_cnt[H2_INV_BLAST] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_POLYMORPH)
+		cl.inv_cnt[H2_INV_POLYMORPH] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_FLIGHT)
+		cl.inv_cnt[H2_INV_FLIGHT] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_CUBEOFFORCE)
+		cl.inv_cnt[H2_INV_CUBEOFFORCE] = MSG_ReadByte();
+	if (sc1 & H2_SC1_CNT_INVINCIBILITY)
+		cl.inv_cnt[H2_INV_INVINCIBILITY] = MSG_ReadByte();
+
+	if (sc1 & H2_SC1_ARTIFACT_ACTIVE)
+		cl.artifact_active = (int)MSG_ReadFloat();
+	if (sc1 & H2_SC1_ARTIFACT_LOW)
+		MSG_ReadFloat();  // Artifact low warning
+	if (sc1 & H2_SC1_MOVETYPE)
+		MSG_ReadByte();   // Movement type
+	if (sc1 & H2_SC1_CAMERAMODE)
+		MSG_ReadByte();   // Camera mode
+	if (sc1 & H2_SC1_HASTED)
+		MSG_ReadFloat();  // Haste duration
+	if (sc1 & H2_SC1_INVENTORY)
+		MSG_ReadByte();   // Selected inventory
+	if (sc1 & H2_SC1_RINGS_ACTIVE)
+		cl.rings_active = (int)MSG_ReadFloat();
+
+	// Parse SC2 stats
+	if (sc2 & H2_SC2_RINGS_LOW)
+		MSG_ReadFloat();  // Rings low warning
+	if (sc2 & H2_SC2_AMULET)
+		MSG_ReadByte();   // Amulet armor
+	if (sc2 & H2_SC2_BRACER)
+		MSG_ReadByte();   // Bracer armor
+	if (sc2 & H2_SC2_BREASTPLATE)
+		MSG_ReadByte();   // Breastplate armor
+	if (sc2 & H2_SC2_HELMET)
+		MSG_ReadByte();   // Helmet armor
+	if (sc2 & H2_SC2_FLIGHT_T)
+		cl.ring_flight = MSG_ReadByte();
+	if (sc2 & H2_SC2_WATER_T)
+		cl.ring_water = MSG_ReadByte();
+	if (sc2 & H2_SC2_TURNING_T)
+		cl.ring_turning = MSG_ReadByte();
+	if (sc2 & H2_SC2_REGEN_T)
+		cl.ring_regeneration = MSG_ReadByte();
+	if (sc2 & H2_SC2_HASTE_T)
+		MSG_ReadFloat();  // Haste time remaining
+	if (sc2 & H2_SC2_TOME_T)
+		MSG_ReadFloat();  // Tome time remaining
+
+	// Puzzle pieces
+	if (sc2 & H2_SC2_PUZZLE1)
+		MSG_ReadString();  // We'd store this in cl.puzzle_pieces[0]
+	if (sc2 & H2_SC2_PUZZLE2)
+		MSG_ReadString();
+	if (sc2 & H2_SC2_PUZZLE3)
+		MSG_ReadString();
+	if (sc2 & H2_SC2_PUZZLE4)
+		MSG_ReadString();
+	if (sc2 & H2_SC2_PUZZLE5)
+		MSG_ReadString();
+	if (sc2 & H2_SC2_PUZZLE6)
+		MSG_ReadString();
+	if (sc2 & H2_SC2_PUZZLE7)
+		MSG_ReadString();
+	if (sc2 & H2_SC2_PUZZLE8)
+		MSG_ReadString();
+
+	if (sc2 & H2_SC2_MAXHEALTH)
+		MSG_ReadShort();  // Max health
+	if (sc2 & H2_SC2_MAXMANA)
+		MSG_ReadByte();   // Max mana
+	if (sc2 & H2_SC2_FLAGS)
+		MSG_ReadFloat();  // Player flags
+
+	// Rebuild inventory order if any artifact counts changed
+	if (sc1 & (H2_SC1_CNT_TORCH | H2_SC1_CNT_H_BOOST | H2_SC1_CNT_SH_BOOST |
+			   H2_SC1_CNT_MANA_BOOST | H2_SC1_CNT_TELEPORT | H2_SC1_CNT_TOME |
+			   H2_SC1_CNT_SUMMON | H2_SC1_CNT_INVISIBILITY | H2_SC1_CNT_GLYPH |
+			   H2_SC1_CNT_HASTE | H2_SC1_CNT_BLAST | H2_SC1_CNT_POLYMORPH |
+			   H2_SC1_CNT_FLIGHT | H2_SC1_CNT_CUBEOFFORCE | H2_SC1_CNT_INVINCIBILITY))
+	{
+		Sbar_H2_InvChanged();
+	}
 }
 
 /*

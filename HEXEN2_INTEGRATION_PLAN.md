@@ -237,12 +237,25 @@ svc_sound_update_pos = 53
 - Puzzle piece display (8 slots)
 - Inventory navigation commands (+inv_left, +inv_right, +inv_use)
 
-### 4.2 Inventory System
-- [ ] Implement artifact inventory (15 items max)
-- [ ] Add ring equipping/management
-- [ ] Implement puzzle piece collection UI
-- [ ] Add inventory blinking on acquisition
-- [ ] Handle artifact usage/depletion
+### 4.2 Inventory System ✅ **COMPLETED**
+- [x] Implement artifact inventory (15 items max)
+- [x] Add ring equipping/management
+- [x] Implement puzzle piece collection UI
+- [ ] Add inventory blinking on acquisition - DEFERRED (polish)
+- [x] Handle artifact usage/depletion
+
+**Files modified:**
+- `cl_parse_hexen2.c` - Full svc_update_inv parsing with SC1/SC2 bitfields
+- `sbar_hexen2.c` - Added Sbar_H2_InvChanged() to rebuild inventory order
+- `sbar_hexen2.h` - Added Sbar_H2_InvChanged declaration
+- `sbar.c` - Registered inventory commands (invleft, invright, invuse, invoff)
+
+**What works:**
+- Full H2 stats parsing (health, mana, armor, rings, artifacts)
+- Artifact count tracking in cl.inv_cnt[] array
+- Automatic inventory order rebuilding when counts change
+- Inventory commands with wrapping selection
+- Ring power tracking for HUD display
 
 ### 4.3 Menu Extensions
 - [ ] Add class selection menu

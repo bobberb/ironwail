@@ -70,4 +70,7 @@ void Sbar_H2_InvOff(void);
 void Sbar_H2_ShowInfo(qboolean show);
 void Sbar_H2_ShowDM(qboolean show);
 
+// Inventory state management
+void Sbar_H2_InvChanged(void);	// Called when artifact counts change
+
 #endif /* _SBAR_HEXEN2_H */
