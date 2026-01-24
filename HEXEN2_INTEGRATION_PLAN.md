@@ -215,17 +215,27 @@ svc_sound_update_pos = 53
 
 ## Phase 4: UI & Inventory
 
-### 4.1 Status Bar
-- [ ] Implement Hexen II stat bar layout
-- [ ] Add dual mana bars (blue/green)
-- [ ] Display artifact inventory (15 slots)
-- [ ] Show ring status (4 rings)
-- [ ] Add puzzle piece display (8 slots)
-- [ ] Implement class-specific HUD elements
+### 4.1 Status Bar ✅ **COMPLETED**
+- [x] Implement Hexen II stat bar layout
+- [x] Add dual mana bars (blue/green)
+- [x] Display artifact inventory (15 slots)
+- [x] Show ring status (4 rings)
+- [x] Add puzzle piece display (8 slots)
+- [ ] Implement class-specific HUD elements - DEFERRED (weapon icons)
 
-**Files to modify:**
-- `sbar.c` - Major rewrite for H2 HUD
-- May need new `sbar_h2.c` for H2-specific code
+**Files created/modified:**
+- `sbar_hexen2.c` - Created H2-specific HUD implementation (700+ lines)
+- `sbar_hexen2.h` - Created H2 HUD header with ring/artifact defines
+- `sbar.c` - Added hexen2_mode redirect to H2 HUD functions
+- `client.h` - Added inventory and ring state fields
+
+**What works:**
+- Top bar with health chain, mana bars
+- Bottom bar with class icon, armor slots
+- Ring status with power indicators
+- Artifact inventory display with selection
+- Puzzle piece display (8 slots)
+- Inventory navigation commands (+inv_left, +inv_right, +inv_use)
 
 ### 4.2 Inventory System
 - [ ] Implement artifact inventory (15 items max)

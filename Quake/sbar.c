@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sbar.c -- status bar code
 
 #include "quakedef.h"
+#include "protocol_hexen2.h"
+#include "sbar_hexen2.h"
 
 static int		sb_updates;		// if >= vid.numpages, no update needed
 
@@ -1623,6 +1625,13 @@ void Sbar_Draw (void)
 
 	if (scr_con_current == vid.height)
 		return;		// console is full screen
+
+	// Hexen II uses its own HUD
+	if (hexen2_mode)
+	{
+		Sbar_H2_Draw();
+		return;
+	}
 
 	if (cl.qcvm.extfuncs.CSQC_DrawHud && !qcvm)
 	{

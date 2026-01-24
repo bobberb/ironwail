@@ -268,8 +268,17 @@ typedef struct
 	int			playerclass;		// H2: Player class (1-5)
 	float		idealroll;			// H2: Ideal roll for view
 	int			inv_selected;		// H2: Selected inventory item
+	int			inv_count;			// H2: Number of items in inventory
+	int			inv_startpos;		// H2: Starting position for inventory display
+	int			inv_order[15];		// H2: Order of artifacts in inventory
+	int			inv_cnt[15];		// H2: Count of each artifact type
 	char		puzzle_pieces[8][10]; // H2: Puzzle piece names (8 slots)
 	int			artifact_active;	// H2: Active artifact flags (for powerup effects)
+	int			rings_active;		// H2: Active ring flags
+	float		ring_flight;		// H2: Ring of flight power (0-100)
+	float		ring_water;			// H2: Ring of water breathing power
+	float		ring_turning;		// H2: Ring of turning power
+	float		ring_regeneration;	// H2: Ring of regeneration power
 	// Note: Additional H2 stats (mana, artifacts, etc.) stored in stats[] array
 } client_state_t;
 
