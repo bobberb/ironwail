@@ -249,7 +249,9 @@ OBJS = strlcat.o \
 	cl_input.o \
 	cl_main.o \
 	cl_parse.o \
+	cl_parse_hexen2.o \
 	cl_tent.o \
+	protocol_hexen2.o \
 	console.o \
 	keys.o \
 	menu.o \

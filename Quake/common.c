@@ -2662,6 +2662,7 @@ COM_SetBaseDir
 static qboolean COM_SetBaseDir (const char *path)
 {
 	const char pak0[] = "/" GAMENAME "/pak0.pak";
+	const char pak0_h2[] = "/data1/pak0.pak";  // Hexen II
 	char pakpath[countof (com_basedirs[0])];
 	size_t i;
 
@@ -2671,16 +2672,32 @@ static qboolean COM_SetBaseDir (const char *path)
 	if (i + countof (pak0) > countof (pakpath))
 		return false;
 
+	// Try Quake (id1/pak0.pak)
 	memcpy (pakpath, path, i);
 	memcpy (pakpath + i, pak0, sizeof (pak0));
-	if (!Sys_FileExists (pakpath))
-		return false;
+	if (Sys_FileExists (pakpath))
+	{
+		memcpy (com_basedirs[0], path, i);
+		com_basedirs[0][i] = 0;
+		com_numbasedirs = 1;
+		return true;
+	}
 
-	memcpy (com_basedirs[0], path, i);
-	com_basedirs[0][i] = 0;
-	com_numbasedirs = 1;
+	// Try Hexen II (data1/pak0.pak)
+	if (i + countof (pak0_h2) <= countof (pakpath))
+	{
+		memcpy (pakpath, path, i);
+		memcpy (pakpath + i, pak0_h2, sizeof (pak0_h2));
+		if (Sys_FileExists (pakpath))
+		{
+			memcpy (com_basedirs[0], path, i);
+			com_basedirs[0][i] = 0;
+			com_numbasedirs = 1;
+			return true;
+		}
+	}
 
-	return true;
+	return false;
 }
 
 /*
@@ -3314,6 +3331,10 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 	}
 
 	COM_CheckRegistered ();
+
+	// Initialize Hexen II protocol support
+	H2_Protocol_Init();
+	H2_DetectGameType();
 }
 
 

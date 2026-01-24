@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "bgmusic.h"
 #include "steam.h"
+#include "protocol_hexen2.h"
+#include "cl_parse_hexen2.h"
 
 const char *svc_strings[] =
 {
@@ -1123,8 +1125,60 @@ void CL_ParseServerMessage (void)
 		switch (cmd)
 		{
 		default:
-		//	CL_DumpPacket ();
-			Host_Error ("Illegible server message %d (previous was %s)", cmd, svc_strings[lastcmd]); //johnfitz -- added svc_strings[lastcmd]
+			// Check if this is a Hexen II message
+			if (hexen2_mode)
+			{
+				switch (cmd)
+				{
+				case svc_h2_raineffect:
+					CL_ParseRainEffect();
+					break;
+				case svc_h2_particle2:
+					CL_ParseParticle2();
+					break;
+				case svc_h2_midi_name:
+					CL_ParseMidiName();
+					break;
+				case svc_h2_updateclass:
+					CL_ParseUpdateClass();
+					break;
+				case svc_h2_start_effect:
+					CL_ParseStartEffect();
+					break;
+				case svc_h2_end_effect:
+					CL_ParseEndEffect();
+					break;
+				case svc_h2_plaque:
+					CL_ParsePlaque();
+					break;
+				case svc_h2_particle_explosion:
+					CL_ParseParticleExplosion();
+					break;
+				case svc_h2_set_view_tint:
+					CL_ParseSetViewTint();
+					break;
+				case svc_h2_update_inv:
+					CL_ParseUpdateInventory();
+					break;
+				case svc_h2_sound_update_pos:
+					CL_ParseSoundUpdatePos();
+					break;
+				case svc_h2_mod_name:
+					CL_ParseModName();
+					break;
+				case svc_h2_skybox:
+					CL_ParseSkybox();
+					break;
+				default:
+					Host_Error ("Illegible server message %d (previous was %s)", cmd, svc_strings[lastcmd]);
+					break;
+				}
+			}
+			else
+			{
+			//	CL_DumpPacket ();
+				Host_Error ("Illegible server message %d (previous was %s)", cmd, svc_strings[lastcmd]); //johnfitz -- added svc_strings[lastcmd]
+			}
 			break;
 
 		case svc_nop:
@@ -1144,9 +1198,20 @@ void CL_ParseServerMessage (void)
 		case svc_version:
 			i = MSG_ReadLong ();
 			//johnfitz -- support multiple protocols
-			if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE && i != PROTOCOL_RMQ)
+			if (H2_IsHexen2Protocol(i))
+			{
+				// Hexen II protocol detected
+				H2_SetProtocol(i);
+				cl.protocol = i;
+			}
+			else if (i != PROTOCOL_NETQUAKE && i != PROTOCOL_FITZQUAKE && i != PROTOCOL_RMQ)
+			{
 				Host_Error ("Server returned version %i, not %i or %i or %i", i, PROTOCOL_NETQUAKE, PROTOCOL_FITZQUAKE, PROTOCOL_RMQ);
-			cl.protocol = i;
+			}
+			else
+			{
+				cl.protocol = i;
+			}
 			//johnfitz
 			break;
 

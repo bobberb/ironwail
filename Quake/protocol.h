@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PROTOCOL_FITZQUAKE	666 //johnfitz -- added new protocol for fitzquake 0.85
 #define PROTOCOL_RMQ		999
 
+// Include Hexen II protocol definitions
+#include "protocol_hexen2.h"
+
 // PROTOCOL_RMQ protocol flags
 #define PRFL_SHORTANGLE		(1 << 1)
 #define PRFL_FLOATANGLE		(1 << 2)

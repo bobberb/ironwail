@@ -40,6 +40,7 @@ typedef struct
 	int		frags;
 	int		colors;			// two 4 bit fields
 	byte	translations[VID_GRADES*256];
+	int		playerclass;	// Hexen II: player class (1-5)
 } scoreboard_t;
 
 typedef struct
@@ -258,6 +259,13 @@ typedef struct
 	float		zoomdir;
 
 	qboolean	forceunderwater;	// force underwater warping/sound distortion even when camera is not submerged (e.g. alk1.2 liquidbrush)
+
+	// Hexen II specific fields
+	int			playerclass;		// H2: Player class (1-5)
+	float		idealroll;			// H2: Ideal roll for view
+	int			inv_selected;		// H2: Selected inventory item
+	char		puzzle_pieces[8][10]; // H2: Puzzle piece names (8 slots)
+	// Note: Additional H2 stats (mana, artifacts, etc.) stored in stats[] array
 } client_state_t;
 
 
