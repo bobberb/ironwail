@@ -229,6 +229,45 @@ string puzzle_inv1 through puzzle_inv8;
 - [ ] Document new cvars and commands
 - [ ] Create compatibility notes
 
+## Side Mission: Headless Mode Support
+
+**Purpose**: Enable testing and CI/CD without video/audio devices. Useful for automated testing, dedicated servers, and development in restricted environments.
+
+### Tasks:
+- [ ] Add `-headless` command-line flag
+- [ ] Implement dummy video backend (no SDL window/OpenGL)
+  - Skip VID_Init() and renderer initialization
+  - Provide stub functions for screen updates
+  - Allow console-only operation
+- [ ] Implement dummy audio backend (no SDL audio)
+  - Skip sound initialization
+  - Provide stub functions for sound playback
+  - Allow silent operation
+- [ ] Ensure game logic still runs without rendering
+  - Server tick updates
+  - Physics simulation
+  - Network message processing
+- [ ] Add headless test suite
+  - Load maps headlessly
+  - Validate game state
+  - Test protocol handling
+  - Automated regression testing
+
+**Files to modify:**
+- `vid_sdl.c` - Add headless video mode
+- `snd_sdl.c` - Add headless audio mode
+- `host.c` - Skip unnecessary init in headless mode
+- `main_sdl.c` - Parse -headless flag
+
+**Benefits:**
+- ✅ Enables CI/CD testing without X11/display
+- ✅ Faster automated testing (no rendering overhead)
+- ✅ Dedicated server support
+- ✅ Better development workflow in headless environments
+- ✅ Validates that H2 detection and initialization work correctly
+
+**Priority**: Medium (useful for development, not critical for user features)
+
 ## Implementation Strategy
 
 ### Recommended Order:
