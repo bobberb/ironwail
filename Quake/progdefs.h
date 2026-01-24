@@ -1,6 +1,7 @@
 /*
 Copyright (C) 1996-2001 Id Software, Inc.
 Copyright (C) 2002-2009 John Fitzgibbons and others
+Copyright (C) 2024 Ironwail developers
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,7 +23,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __PROGDEFS_H
 #define __PROGDEFS_H
 
-#include "progdefs.q1"
+/*
+ * Note: We always use the H2 extended progdefs to support both
+ * Quake and Hexen II in a single binary. The H2 entvars_t is
+ * a superset of Quake's entvars_t, so Quake progs work fine.
+ * The extra H2 fields are simply ignored when running Quake.
+ */
+#include "progdefs.h2"
+
+/*
+ * For reference, Quake-only progdefs are in progdefs.q1
+ * We keep it around for documentation but don't use it.
+ */
 
 #endif	/* __PROGDEFS_H */
 
