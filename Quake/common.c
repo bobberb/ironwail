@@ -1485,6 +1485,21 @@ static void COM_CheckRegistered (void)
 	unsigned short	check[128];
 	int		i;
 
+	// Hexen II mode: always treat as registered (no shareware version)
+	if (hexen2_mode)
+	{
+		Cvar_SetROM ("registered", "1");
+		Con_Printf ("Hexen II: Full version detected.\n");
+		for (i = 0; com_cmdline[i]; i++)
+		{
+			if (com_cmdline[i]!= ' ')
+				break;
+		}
+		Cvar_SetROM ("cmdline", &com_cmdline[i]);
+		return;
+	}
+
+	// Quake registration check
 	COM_OpenFile("gfx/pop.lmp", &h, NULL);
 
 	if (h == -1)
@@ -3330,11 +3345,12 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 			COM_AddGameDirectory (p);
 	}
 
-	COM_CheckRegistered ();
-
-	// Initialize Hexen II protocol support
+	// Initialize Hexen II protocol support BEFORE checking registration
+	// so that H2 mode can skip the Quake-specific registration check
 	H2_Protocol_Init();
 	H2_DetectGameType();
+
+	COM_CheckRegistered ();
 }
 
 

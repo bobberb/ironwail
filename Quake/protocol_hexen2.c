@@ -128,6 +128,7 @@ void H2_DetectGameType(void)
 		handle = COM_FOpenFile("data1/pak0.pak", &dummy, &path_id);
 		if (handle >= 0)
 		{
+			fclose(dummy);
 			hexen2_mode = true;
 			Con_Printf("Hexen II mode: DETECTED (data1/pak0.pak found)\n");
 			return;
@@ -137,6 +138,7 @@ void H2_DetectGameType(void)
 		handle = COM_FOpenFile("portals/pak3.pak", &dummy, &path_id);
 		if (handle >= 0)
 		{
+			fclose(dummy);
 			hexen2_mode = true;
 			Con_Printf("Hexen II mode: DETECTED (portals/pak3.pak found)\n");
 			return;
@@ -146,6 +148,7 @@ void H2_DetectGameType(void)
 		handle = COM_FOpenFile("puzzles.txt", &dummy, &path_id);
 		if (handle >= 0)
 		{
+			fclose(dummy);
 			hexen2_mode = true;
 			Con_Printf("Hexen II mode: DETECTED (puzzles.txt found)\n");
 			return;
