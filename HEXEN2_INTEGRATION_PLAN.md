@@ -70,12 +70,23 @@ svc_sound_update_pos = 53
 
 ## Phase 2: Entity & Game Logic
 
-### 2.1 Extended Entity Variables
-- [ ] Add Hexen II-specific entvars_t fields to `progdefs.h`
-- [ ] Implement player class system (4 classes)
-- [ ] Add dual mana system (blue/green mana)
-- [ ] Implement experience/leveling system
-- [ ] Add armor slot system (amulet, bracer, breastplate, helmet)
+### 2.1 Extended Entity Variables ✅ **COMPLETED**
+- [x] Add Hexen II-specific entvars_t fields to `progdefs.h`
+- [x] Implement player class system (4 classes)
+- [x] Add dual mana system (blue/green mana)
+- [x] Implement experience/leveling system
+- [x] Add armor slot system (amulet, bracer, breastplate, helmet)
+
+**Files created/modified:**
+- `progdefs.h2` - Complete H2 entity variable definitions (superset of Quake)
+- `progdefs.h` - Updated to use H2 progdefs for both engines
+- Added all H2 player stats, mana, armor, artifacts, rings, puzzle pieces
+- Maintained Quake compatibility (ammo fields, sounds, aiment, SetNewParms, etc.)
+
+**What works:**
+- Single binary supports both Quake and Hexen II entvars_t
+- Build successful with all H2 fields available
+- Quake code continues to work with extended structure
 
 **Key fields to add:**
 ```c
