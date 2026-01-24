@@ -1161,10 +1161,10 @@ void CL_ParseServerMessage (void)
 					CL_ParseUpdateClass();
 					break;
 				case svc_h2_start_effect:
-					CL_ParseStartEffect();
+					CL_ParseEffect();
 					break;
 				case svc_h2_end_effect:
-					CL_ParseEndEffect();
+					CL_EndEffect();
 					break;
 				case svc_h2_plaque:
 					CL_ParsePlaque();

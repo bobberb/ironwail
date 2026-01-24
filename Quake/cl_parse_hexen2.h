@@ -30,8 +30,6 @@ void CL_ParseMidiName(void);
 void CL_ParseParticleExplosion(void);
 void CL_ParseSetViewTint(void);
 void CL_ParseUpdateInventory(void);
-void CL_ParseStartEffect(void);
-void CL_ParseEndEffect(void);
 void CL_ParsePlaque(void);
 void CL_ParseParticle2(void);
 void CL_ParseRainEffect(void);

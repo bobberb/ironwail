@@ -46,8 +46,60 @@ void R_ReadPointFile_f (void);
 texture_t *R_TextureAnimation (texture_t *base, int frame);
 
 typedef enum {
-	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
+	// Quake particle types (maintained for compatibility)
+	pt_static,
+	pt_grav,
+	pt_slowgrav,
+	pt_fire,
+	pt_explode,
+	pt_explode2,
+	pt_blob,
+	pt_blob2,
+	// Hexen II additional particle types
+	pt_fastgrav,		// H2: Fast falling particles
+	pt_rain,			// H2: Rain particles
+	pt_c_explode,		// H2: Custom explosion 1
+	pt_c_explode2,		// H2: Custom explosion 2
+	pt_spit,			// H2: Spit particles
+	pt_fireball,		// H2: Fireball particles
+	pt_ice,				// H2: Ice particles
+	pt_spell,			// H2: Spell effect particles
+	pt_test,			// H2: Test particles
+	pt_quake,			// H2: Earthquake particles
+	pt_rd,				// H2: Rider's death effect
+	pt_vorpal,			// H2: Vorpal sword effect
+	pt_setstaff,		// H2: Scarab staff effect
+	pt_magicmissile,	// H2: Magic missile particles
+	pt_boneshard,		// H2: Bone shard particles
+	pt_scarab,			// H2: Scarab particles
+	pt_acidball,		// H2: Acid ball particles
+	pt_darken,			// H2: Darkening effect
+	pt_snow,			// H2: Snow particles
+	pt_gravwell,		// H2: Gravity well effect
+	pt_redfire			// H2: Red fire particles
 } ptype_t;
+
+// Hexen II trail types
+typedef enum {
+	rt_rocket_trail = 0,
+	rt_smoke,
+	rt_blood,
+	rt_tracer,
+	rt_slight_blood,
+	rt_tracer2,
+	rt_voor_trail,
+	rt_fireball,
+	rt_ice,
+	rt_spit,
+	rt_spell,
+	rt_vorpal,
+	rt_setstaff,
+	rt_magicmissile,
+	rt_boneshard,
+	rt_scarab,
+	rt_acidball,
+	rt_bloodshot
+} rt_type_t;
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 typedef struct particle_s
@@ -61,6 +113,11 @@ typedef struct particle_s
 	float		die;
 	vec3_t		vel;
 	float		ramp;
+	// H2: Additional fields for advanced particle effects
+	vec3_t		min_org;	// H2: Minimum bounds for particle movement
+	vec3_t		max_org;	// H2: Maximum bounds for particle movement
+	byte		flags;		// H2: Particle flags (SFL_* constants)
+	byte		count;		// H2: Counter for particle behavior
 } particle_t;
 
 
@@ -447,6 +504,16 @@ void R_DrawParticles (qboolean alpha);
 void R_DrawParticles_ShowTris (void);
 void CL_RunParticles (void);
 void R_ClearParticles (void);
+
+// H2: Extended particle functions
+void R_RainEffect (vec3_t org, vec3_t e_size, int x_dir, int y_dir, int color, int count);
+void R_SnowEffect (vec3_t org1, vec3_t org2, int flags, vec3_t alldir, int count);
+void R_ColoredParticleExplosion (vec3_t org, int color, int radius, int counter);
+void R_RunQuakeEffect (vec3_t org, float distance);
+void R_RunParticleEffect2 (vec3_t org, vec3_t dmin, vec3_t dmax, int color, ptype_t effect, int count);
+void R_RunParticleEffect3 (vec3_t org, vec3_t box, int color, ptype_t effect, int count);
+void R_RunParticleEffect4 (vec3_t org, float radius, int color, ptype_t effect, int count);
+void R_SunStaffTrail (vec3_t source, vec3_t dest);
 
 void R_TranslatePlayerSkin (int playernum);
 void R_TranslateNewPlayerSkin (int playernum); //johnfitz -- this handles cases when the actual texture changes

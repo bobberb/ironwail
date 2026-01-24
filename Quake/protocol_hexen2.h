@@ -311,6 +311,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define H2_DRF_ANIMATEONCE		256		// Animate once then freeze
 
 //==================
+// Hexen II particle flags (SFL_* constants for snow/weather effects)
+//==================
+#define H2_SFL_FLUFFY			1		// All largish flakes
+#define H2_SFL_MIXED			2		// Mixed flake sizes
+#define H2_SFL_HALF_BRIGHT		4		// All flakes start darker
+#define H2_SFL_NO_MELT			8		// Flakes don't melt when hitting surface
+#define H2_SFL_IN_BOUNDS		16		// Flakes cannot leave their bounding box
+#define H2_SFL_NO_TRANS			32		// All flakes start non-translucent
+#define H2_SFL_64				64		// Reserved flag
+#define H2_SFL_128				128		// Reserved flag
+
+//==================
 // Global flag to indicate Hexen II mode is active
 //==================
 extern qboolean hexen2_mode;

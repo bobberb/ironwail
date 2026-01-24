@@ -136,53 +136,6 @@ void CL_ParseUpdateInventory(void)
 
 /*
 ================
-CL_ParseStartEffect
-
-Parse svc_h2_start_effect message
-Start a client-side effect
-================
-*/
-void CL_ParseStartEffect(void)
-{
-	vec3_t org;
-	int effect_id, entity_id;
-
-	effect_id = MSG_ReadByte();
-	org[0] = MSG_ReadCoord(cl.protocolflags);
-	org[1] = MSG_ReadCoord(cl.protocolflags);
-	org[2] = MSG_ReadCoord(cl.protocolflags);
-
-	// Some effects have an entity ID
-	if (effect_id >= 0 && effect_id < H2_CE_RAIN)
-		entity_id = MSG_ReadShort();
-	else
-		entity_id = 0;
-
-	// TODO: Implement effect system (cl_effect.c)
-	Con_DPrintf("Start effect %d at (%.1f, %.1f, %.1f)\n",
-				effect_id, org[0], org[1], org[2]);
-}
-
-/*
-================
-CL_ParseEndEffect
-
-Parse svc_h2_end_effect message
-End a client-side effect
-================
-*/
-void CL_ParseEndEffect(void)
-{
-	int effect_index;
-
-	effect_index = MSG_ReadShort();
-
-	// TODO: Implement effect system (cl_effect.c)
-	Con_DPrintf("End effect %d\n", effect_index);
-}
-
-/*
-================
 CL_ParsePlaque
 
 Parse svc_h2_plaque message

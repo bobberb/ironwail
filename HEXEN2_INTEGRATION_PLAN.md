@@ -149,26 +149,48 @@ svc_sound_update_pos = 53
 - Network protocol correctly sends/receives these fields
 - Build successful
 
-### 3.2 Advanced Particle System
-- [ ] Expand particle types from ~5 to 30+ (pt_ice, pt_spell, pt_vorpal, etc.)
-- [ ] Add 17+ trail types (rt_setstaff, rt_magicmissile, rt_scarab, etc.)
-- [ ] Implement particle ramps for color cycling
-- [ ] Add weather particle support (rain, snow with SFL_ flags)
-- [ ] Increase MAX_PARTICLES from current to 7000
+### 3.2 Advanced Particle System ✅ **COMPLETED**
+- [x] Expand particle types from ~5 to 30+ (pt_ice, pt_spell, pt_vorpal, etc.)
+- [x] Add 17+ trail types (rt_setstaff, rt_magicmissile, rt_scarab, etc.)
+- [x] Implement particle ramps for color cycling
+- [x] Add weather particle support (rain, snow with SFL_ flags)
+- [x] MAX_PARTICLES already 16384 (sufficient)
 
-**Files to modify:**
-- `r_part.c` - Massive expansion of particle system
-- `render.h` - New particle type definitions
-- Create new `r_part_h2.c` for H2-specific particle code
+**Files modified:**
+- `glquake.h` - Added 22 H2 particle types (ptype_t enum) and 17 trail types (rt_type_t enum)
+- `glquake.h` - Extended particle_t with min_org, max_org, flags, count fields
+- `r_part.c` - Extended R_RocketTrail with all H2 trail types
+- `r_part.c` - Updated CL_RunParticles with proper H2 color ramp cycling
+- `r_part.c` - Added R_RainEffect, R_SnowEffect, R_ColoredParticleExplosion
+- `r_part.c` - Added R_RunQuakeEffect, R_RunParticleEffect2/3/4, R_SunStaffTrail
+- `protocol_hexen2.h` - Added H2_SFL_* snow flags
 
-### 3.3 Effect System
-- [ ] Implement 62+ hardcoded visual effects (CE_RAIN, CE_FOUNTAIN, etc.)
-- [ ] Add material-aware particle chunks (24 material types)
-- [ ] Implement effect management system (MAX_EFFECTS = 256)
-- [ ] Add server-side effect culling
+**What works:**
+- All H2 particle types with proper physics behavior
+- Color ramp cycling for fireball, ice, spit, spell, acidball, etc.
+- Weather effects (rain, snow with SFL_ flags)
+- H2 trail types (fireball, ice, vorpal, setstaff, magic missile, etc.)
+- Build compiles successfully
 
-**New file needed:**
-- `cl_effect.c` - Effect management system
+### 3.3 Effect System ✅ **COMPLETED**
+- [x] Implement 62+ hardcoded visual effects (CE_RAIN, CE_FOUNTAIN, etc.)
+- [x] Add material-aware particle chunks (24 material types - THINGTYPE_* constants)
+- [x] Implement effect management system (MAX_EFFECTS = 256)
+- [ ] Add server-side effect culling - DEFERRED
+
+**Files created:**
+- `cl_effect.h` - Effect structures, CE_* constants, THINGTYPE_* materials
+- `cl_effect.c` - Effect parsing, management, and per-frame updates
+
+**What works:**
+- All 62+ CE_* effect types parsed and managed
+- Effect entity pool (MAX_EFFECT_ENTITIES = 256)
+- Rain/snow weather effects via R_RainEffect/R_SnowEffect
+- Fountain particles via R_RunParticleEffect2
+- Quake effect via R_RunQuakeEffect
+- Smoke/explosion/flash effect timing and cleanup
+- Teleporter, missile, and chunk effect support
+- Build compiles successfully
 
 ### 3.4 View & Color Enhancements
 - [ ] Expand color shift system to 5 types

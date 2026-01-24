@@ -110,6 +110,7 @@ void CL_ClearState (void)
 	memset (cl_lightstyle, 0, sizeof(cl_lightstyle));
 	memset (cl_temp_entities, 0, sizeof(cl_temp_entities));
 	memset (cl_beams, 0, sizeof(cl_beams));
+	CL_ClearEffects ();
 
 	//johnfitz -- cl_entities is now dynamically allocated
 	cl_max_edicts = CLAMP (MIN_EDICTS,(int)max_edicts.value,MAX_EDICTS);
@@ -744,6 +745,8 @@ int CL_ReadFromServer (void)
 
 	CL_RelinkEntities ();
 	CL_UpdateTEnts ();
+	if (hexen2_mode)
+		CL_UpdateEffects ();
 
 //johnfitz -- devstats
 
@@ -1004,6 +1007,7 @@ void CL_Init (void)
 
 	CL_InitInput ();
 	CL_InitTEnts ();
+	CL_InitEffects ();
 
 	Cvar_RegisterVariable (&cl_name);
 	Cvar_RegisterVariable (&cl_color);
