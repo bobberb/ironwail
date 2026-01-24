@@ -192,11 +192,26 @@ svc_sound_update_pos = 53
 - Teleporter, missile, and chunk effect support
 - Build compiles successfully
 
-### 3.4 View & Color Enhancements
-- [ ] Expand color shift system to 5 types
-- [ ] Add view tint protocol support
-- [ ] Implement ideal roll tracking
-- [ ] Add pitch drift system for immersion
+### 3.4 View & Color Enhancements ✅ **COMPLETED**
+- [x] Expand color shift system to 5 types (CSHIFT_INTERVENTION for H2)
+- [x] Add view tint protocol support (svc_h2_set_view_tint -> colorshade)
+- [x] Implement ideal roll tracking (V_DriftRoll, v_centerrollspeed cvar)
+- [x] Add H2-specific powerup color shifts (frozen, stoned, divine intervention)
+- [x] Add df/wf commands for dark/white flash effects
+
+**Files modified:**
+- `client.h` - Added CSHIFT_INTERVENTION, rollvel, artifact_active fields
+- `render.h` - Added colorshade to entity_t
+- `protocol_hexen2.h` - Added H2_ARTFLAG_* and H2_ART_* defines
+- `view.c` - Added V_DriftRoll(), H2 V_CalcPowerupCshift(), df/wf commands
+- `cl_parse_hexen2.c` - Implemented CL_ParseSetViewTint()
+
+**What works:**
+- 5 cshift slots (contents, damage, bonus, powerup, intervention)
+- Roll drifting towards idealroll for swimming effects
+- H2 artifact effects (frozen=blue, stoned=gray, divine=white)
+- Dark flash (df) and white flash (wf) commands
+- View weapon colorshade tinting via svc_h2_set_view_tint
 
 ## Phase 4: UI & Inventory
 

@@ -51,11 +51,12 @@ typedef struct
 
 extern cshift_t		cshift_empty;
 
-#define	CSHIFT_CONTENTS	0
-#define	CSHIFT_DAMAGE	1
-#define	CSHIFT_BONUS	2
-#define	CSHIFT_POWERUP	3
-#define	NUM_CSHIFTS		4
+#define	CSHIFT_CONTENTS		0
+#define	CSHIFT_DAMAGE		1
+#define	CSHIFT_BONUS		2
+#define	CSHIFT_POWERUP		3
+#define	CSHIFT_INTERVENTION	4	// H2: Divine intervention white-out
+#define	NUM_CSHIFTS			5
 
 #define	NAME_LENGTH	64
 
@@ -198,6 +199,9 @@ typedef struct
 	double		laststop;
 	double		lastcenterstart;	// last time centerview was called
 
+// roll drifting vars (H2)
+	float		rollvel;			// H2: Roll drift velocity
+
 	float		wheel_pitch;	// for looking up/down using the mouse wheel
 
 	float		viewheight;
@@ -265,6 +269,7 @@ typedef struct
 	float		idealroll;			// H2: Ideal roll for view
 	int			inv_selected;		// H2: Selected inventory item
 	char		puzzle_pieces[8][10]; // H2: Puzzle piece names (8 slots)
+	int			artifact_active;	// H2: Active artifact flags (for powerup effects)
 	// Note: Additional H2 stats (mana, artifacts, etc.) stored in stats[] array
 } client_state_t;
 

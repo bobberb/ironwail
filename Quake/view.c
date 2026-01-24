@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // view.c -- player eye positioning
 
 #include "quakedef.h"
+#include "protocol_hexen2.h"
 
 /*
 
@@ -142,6 +143,7 @@ float V_CalcBob (void)
 
 cvar_t	v_centermove = {"v_centermove", "0.15", CVAR_NONE};
 cvar_t	v_centerspeed = {"v_centerspeed","500", CVAR_NONE};
+cvar_t	v_centerrollspeed = {"v_centerrollspeed", "125", CVAR_NONE}; //H2: roll drift speed
 
 
 void V_StartPitchDrift (void)
@@ -239,6 +241,55 @@ void V_DriftPitch (void)
 			move = -delta;
 		}
 		cl.viewangles[PITCH] -= move;
+	}
+}
+
+/*
+===============
+V_DriftRoll
+
+Moves the client roll angle towards cl.idealroll sent by the server.
+This is used in Hexen II for swimming tilt effects.
+===============
+*/
+void V_DriftRoll (void)
+{
+	float		delta, move;
+
+	if (!hexen2_mode)
+		return;
+
+	if (noclip_anglehack || cls.demoplayback)
+		return;
+
+	delta = cl.idealroll - cl.viewangles[ROLL];
+
+	if (!delta)
+	{
+		cl.rollvel = 0;
+		return;
+	}
+
+	move = host_frametime * cl.rollvel;
+	cl.rollvel += host_frametime * v_centerrollspeed.value;
+
+	if (delta > 0)
+	{
+		if (move > delta)
+		{
+			cl.rollvel = 0;
+			move = delta;
+		}
+		cl.viewangles[ROLL] += move;
+	}
+	else if (delta < 0)
+	{
+		if (move > -delta)
+		{
+			cl.rollvel = 0;
+			move = -delta;
+		}
+		cl.viewangles[ROLL] -= move;
 	}
 }
 
@@ -376,6 +427,36 @@ void V_BonusFlash_f (void)
 }
 
 /*
+==================
+V_DarkFlash_f
+
+Hexen II dark flash effect (screen goes black)
+==================
+*/
+void V_DarkFlash_f (void)
+{
+	cl.cshifts[CSHIFT_BONUS].destcolor[0] = 0;
+	cl.cshifts[CSHIFT_BONUS].destcolor[1] = 0;
+	cl.cshifts[CSHIFT_BONUS].destcolor[2] = 0;
+	cl.cshifts[CSHIFT_BONUS].percent = 255;
+}
+
+/*
+==================
+V_WhiteFlash_f
+
+Hexen II white flash effect (screen goes white)
+==================
+*/
+void V_WhiteFlash_f (void)
+{
+	cl.cshifts[CSHIFT_BONUS].destcolor[0] = 255;
+	cl.cshifts[CSHIFT_BONUS].destcolor[1] = 255;
+	cl.cshifts[CSHIFT_BONUS].destcolor[2] = 255;
+	cl.cshifts[CSHIFT_BONUS].percent = 255;
+}
+
+/*
 =============
 V_SetContentsColor
 
@@ -409,6 +490,63 @@ V_CalcPowerupCshift
 */
 void V_CalcPowerupCshift (void)
 {
+	if (hexen2_mode)
+	{
+		// Hexen II powerup effects based on artifact_active flags
+
+		// Divine intervention - full white out (uses CSHIFT_INTERVENTION)
+		if (cl.artifact_active & H2_ARTFLAG_DIVINE_INTERVENTION)
+		{
+			cl.cshifts[CSHIFT_INTERVENTION].destcolor[0] = 255;
+			cl.cshifts[CSHIFT_INTERVENTION].destcolor[1] = 255;
+			cl.cshifts[CSHIFT_INTERVENTION].destcolor[2] = 255;
+			cl.cshifts[CSHIFT_INTERVENTION].percent = 256;
+		}
+		else
+		{
+			cl.cshifts[CSHIFT_INTERVENTION].percent = 0;
+		}
+
+		// Frozen - blue tint
+		if (cl.artifact_active & H2_ARTFLAG_FROZEN)
+		{
+			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 20;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 70;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
+			cl.cshifts[CSHIFT_POWERUP].percent = 65;
+		}
+		// Stoned - grayscale (high percent triggers grayscale in V_CalcBlend)
+		else if (cl.artifact_active & H2_ARTFLAG_STONED)
+		{
+			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 205;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 205;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 205;
+			cl.cshifts[CSHIFT_POWERUP].percent = 80;
+		}
+		// Invisibility artifact
+		else if (cl.artifact_active & H2_ART_INVISIBILITY)
+		{
+			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
+			cl.cshifts[CSHIFT_POWERUP].percent = 100;
+		}
+		// Invincibility artifact
+		else if (cl.artifact_active & H2_ART_INVINCIBILITY)
+		{
+			cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
+			cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
+			cl.cshifts[CSHIFT_POWERUP].percent = 30;
+		}
+		else
+		{
+			cl.cshifts[CSHIFT_POWERUP].percent = 0;
+		}
+		return;
+	}
+
+	// Standard Quake powerup effects
 	if (cl.items & IT_QUAD)
 	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
@@ -448,12 +586,14 @@ V_CalcBlend
 */
 void V_CalcBlend (void)
 {
+	// Per-cshift scaling cvars (CSHIFT_INTERVENTION uses powerup scaling)
 	static const cvar_t	* const cshiftpercent_cvars[NUM_CSHIFTS] =
 	{
 		&gl_cshiftpercent_contents,
 		&gl_cshiftpercent_damage,
 		&gl_cshiftpercent_bonus,
-		&gl_cshiftpercent_powerup
+		&gl_cshiftpercent_powerup,
+		&gl_cshiftpercent_powerup	// CSHIFT_INTERVENTION uses powerup scaling
 	};
 
 	float	r, g, b, a, a2;
@@ -770,6 +910,7 @@ void V_CalcRefdef (void)
 	static float oldz = 0;
 
 	V_DriftPitch ();
+	V_DriftRoll ();		// H2: roll drift for swimming effects
 
 // ent is the player model (visible when out of body)
 	ent = &cl_entities[cl.viewentity];
@@ -977,10 +1118,13 @@ void V_Init (void)
 {
 	Cmd_AddCommand ("v_cshift", V_cshift_f);
 	Cmd_AddCommand ("bf", V_BonusFlash_f);
+	Cmd_AddCommand ("df", V_DarkFlash_f);	// H2: dark flash
+	Cmd_AddCommand ("wf", V_WhiteFlash_f);	// H2: white flash
 	Cmd_AddCommand ("centerview", V_StartPitchDrift);
 
 	Cvar_RegisterVariable (&v_centermove);
 	Cvar_RegisterVariable (&v_centerspeed);
+	Cvar_RegisterVariable (&v_centerrollspeed);	// H2: roll drift speed
 
 	Cvar_RegisterVariable (&v_iyaw_cycle);
 	Cvar_RegisterVariable (&v_iroll_cycle);

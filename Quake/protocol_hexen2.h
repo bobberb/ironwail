@@ -167,6 +167,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define H2_NUM_CLASSES			5
 
 //==================
+// Hexen II artifact flags (artifact_active bits)
+// Used for special powerup visual effects
+//==================
+#define H2_ART_INVISIBILITY			1
+#define H2_ART_INVINCIBILITY		2
+#define H2_ART_SUPER_HP				4
+#define H2_ART_HASTE				8
+#define H2_ART_CUBEOFFORCE			16
+#define H2_ART_TOMEOFPOWER			32
+#define H2_ARTFLAG_FROZEN			(1<<7)	// Player is frozen
+#define H2_ARTFLAG_STONED			(1<<8)	// Player is turned to stone
+#define H2_ARTFLAG_DIVINE_INTERVENTION	(1<<9)	// Divine intervention whiteout
+
+//==================
 // Hexen II inventory defines
 //==================
 #define H2_MAX_INVENTORY		15	// Maximum inventory items

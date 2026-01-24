@@ -68,6 +68,7 @@ typedef struct entity_s
 	int						skinnum;		// for Alias models
 	byte					drawflags;		//H2: special rendering flags
 	byte					abslight;		//H2: absolute lighting override
+	byte					colorshade;		//H2: global color shade for view tint
 
 	int						firstleaf;		// for sorting static entities
 

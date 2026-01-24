@@ -99,7 +99,7 @@ void CL_ParseParticleExplosion(void)
 CL_ParseSetViewTint
 
 Parse svc_h2_set_view_tint message
-Sets view color tint
+Sets view color tint on the view weapon model
 ================
 */
 void CL_ParseSetViewTint(void)
@@ -108,8 +108,11 @@ void CL_ParseSetViewTint(void)
 
 	tint_color = MSG_ReadByte();
 
-	// TODO: Implement view tinting when rendering is extended
-	Con_DPrintf("View tint: %d\n", tint_color);
+	// Set the colorshade on the view entity (weapon model)
+	// This is used for special effects like powerups that tint the weapon
+	cl.viewent.colorshade = tint_color;
+
+	Con_DPrintf("View tint set to: %d\n", tint_color);
 }
 
 /*
