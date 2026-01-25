@@ -2435,6 +2435,14 @@ int NUM_FOR_EDICT(edict_t *e)
 		Con_Printf("OFS_PARM0 entity offset: %d (0x%x)\n",
 			*(int *)&qcvm->globals[OFS_PARM0], *(unsigned int *)&qcvm->globals[OFS_PARM0]);
 		Con_Printf("Raw byte offset from edicts: %ld\n", (long)((byte *)e - (byte *)qcvm->edicts));
+
+		// Print some global variables for debugging
+		Con_Printf("Debug: qcvm->globals=%p, *(int *)&qcvm->globals[0]=%d\n",
+			qcvm->globals, *(int *)&qcvm->globals[0]);
+		Con_Printf("Debug: *(int *)&qcvm->globals[415]=%d (0x%x)\n",
+			*(int *)&qcvm->globals[415], *(unsigned int *)&qcvm->globals[415]);
+		fflush(stdout);
+
 		Host_Error ("NUM_FOR_EDICT: bad pointer");
 	}
 	return b;

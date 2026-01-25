@@ -94,6 +94,18 @@ typedef struct
 
 #define	HEADER_LUMPS	15
 
+// Quake uses 4 hulls
+#define MAX_MAP_HULLS_Q1 4
+typedef struct
+{
+	float		mins[3], maxs[3];
+	float		origin[3];
+	int			headnode[MAX_MAP_HULLS_Q1];
+	int			visleafs;		// not including the solid leaf 0
+	int			firstface, numfaces;
+} dmodelq_t;
+
+// Hexen II uses 8 hulls
 typedef struct
 {
 	float		mins[3], maxs[3];

@@ -267,6 +267,10 @@ extern	client_t	*host_client;
 
 extern	edict_t		*sv_player;
 
+// edicts are now in qcvm, not directly in sv - provide compatibility macros
+#define SV_EDICTS sv.qcvm.edicts
+#define SV_EDICT_SIZE sv.qcvm.edict_size
+
 //===========================================================
 
 void SV_Init (void);
