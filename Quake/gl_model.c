@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // on the same machine.
 
 #include "quakedef.h"
+#include "protocol_hexen2.h"
 static qmodel_t*	loadmodel;
 static char	loadname[32];	// for hunk tags
 
@@ -1957,6 +1958,58 @@ static void Mod_LoadClipnodes (lump_t *l, qboolean bsp2)
 	hull->clip_maxs[0] = 32;
 	hull->clip_maxs[1] = 32;
 	hull->clip_maxs[2] = 64;
+
+	// Hexen II additional hulls (3-5)
+	if (hexen2_mode)
+	{
+		// Hull 2: Scorpion (overrides Q1 large hull)
+		hull = &loadmodel->hulls[2];
+		hull->clip_mins[0] = -24;
+		hull->clip_mins[1] = -24;
+		hull->clip_mins[2] = -20;
+		hull->clip_maxs[0] = 24;
+		hull->clip_maxs[1] = 24;
+		hull->clip_maxs[2] = 20;
+
+		// Hull 3: Crouch
+		hull = &loadmodel->hulls[3];
+		hull->clipnodes = out;
+		hull->firstclipnode = 0;
+		hull->lastclipnode = count-1;
+		hull->planes = loadmodel->planes;
+		hull->clip_mins[0] = -16;
+		hull->clip_mins[1] = -16;
+		hull->clip_mins[2] = -12;
+		hull->clip_maxs[0] = 16;
+		hull->clip_maxs[1] = 16;
+		hull->clip_maxs[2] = 16;
+
+		// Hull 4: Pentacles (small items)
+		hull = &loadmodel->hulls[4];
+		hull->clipnodes = out;
+		hull->firstclipnode = 0;
+		hull->lastclipnode = count-1;
+		hull->planes = loadmodel->planes;
+		hull->clip_mins[0] = -8;
+		hull->clip_mins[1] = -8;
+		hull->clip_mins[2] = -8;
+		hull->clip_maxs[0] = 8;
+		hull->clip_maxs[1] = 8;
+		hull->clip_maxs[2] = 8;
+
+		// Hull 5: Golem (large monsters)
+		hull = &loadmodel->hulls[5];
+		hull->clipnodes = out;
+		hull->firstclipnode = 0;
+		hull->lastclipnode = count-1;
+		hull->planes = loadmodel->planes;
+		hull->clip_mins[0] = -48;
+		hull->clip_mins[1] = -48;
+		hull->clip_mins[2] = -50;
+		hull->clip_maxs[0] = 48;
+		hull->clip_maxs[1] = 48;
+		hull->clip_maxs[2] = 50;
+	}
 
 	if (bsp2)
 	{

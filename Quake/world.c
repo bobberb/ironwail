@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // world.c -- world query functions
 
 #include "quakedef.h"
+#include "protocol_hexen2.h"
 
 /*
 
@@ -150,12 +151,31 @@ hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 				    PR_GetString(ent->v.classname), ent->v.origin[0], ent->v.origin[1], ent->v.origin[2]);
 
 		VectorSubtract (maxs, mins, size);
-		if (size[0] < 3)
-			hull = &model->hulls[0];
-		else if (size[0] <= 32)
-			hull = &model->hulls[1];
+
+		if (hexen2_mode)
+		{
+			// Hexen II hull selection: point, pentacles, crouch, player, golem
+			if (size[0] < 3)
+				hull = &model->hulls[0];		// Point
+			else if (size[0] <= 8 && ((int)(EDICT_NUM(0)->v.spawnflags) & 1))
+				hull = &model->hulls[4];		// Pentacles (small items)
+			else if (size[0] <= 32 && size[2] <= 28)
+				hull = &model->hulls[3];		// Crouch
+			else if (size[0] <= 32)
+				hull = &model->hulls[1];		// Player
+			else
+				hull = &model->hulls[5];		// Golem
+		}
 		else
-			hull = &model->hulls[2];
+		{
+			// Quake hull selection: point, player, large
+			if (size[0] < 3)
+				hull = &model->hulls[0];
+			else if (size[0] <= 32)
+				hull = &model->hulls[1];
+			else
+				hull = &model->hulls[2];
+		}
 
 // calculate an offset value to center the origin
 		VectorSubtract (hull->clip_mins, mins, offset);
