@@ -7,8 +7,15 @@ This document tracks the progress of porting Hexen II functionality from uhexen2
 - [~] Partial/In Progress
 - [ ] Not Started
 
-## Source Reference
-uhexen2 location: `/home/josh/tmp/claudedir/uhexen2/source/engine/`
+## Source References
+
+**uhexen2 engine:** `/home/josh/tmp/claudedir/uhexen2/source/engine/`
+
+**HexenC progs source (hcode_archive):** `/home/josh/tmp/claudedir/uhexen2-hcode_archive/`
+- `portals-1.12a/` - Portal of Praevus (mission pack) - our target version
+- `portals-1.12a/builtin.hc` - **All 106 builtins with exact signatures**
+- `h2-1.11/` - Base Hexen II v1.11 progs source
+- GitHub: https://github.com/sezero/uhexen2-hcode_archive
 
 ---
 
