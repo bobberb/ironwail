@@ -519,14 +519,67 @@ static void PF_h2_particle4 (void)
 =================
 PF_h2_setpuzzlemodel
 
-Set puzzle piece model
+Set puzzle piece model - constructs "models/puzzle/<name>.mdl" and assigns to entity
 void setpuzzlemodel(entity e, string m) = #87
 =================
 */
 static void PF_h2_setpuzzlemodel (void)
 {
-	// Stub: TODO - implement in Phase 4
-	Con_DPrintf("PF_h2_setpuzzlemodel: stub\n");
+	int		i;
+	const char	*m, **check;
+	const char	*fullpath;
+	qmodel_t	*mod;
+	edict_t		*e;
+
+	e = G_EDICT(OFS_PARM0);
+	m = G_STRING(OFS_PARM1);
+
+	// Construct full model path
+	fullpath = va("models/puzzle/%s.mdl", m);
+
+	// Check if model was properly precached
+	for (i = 0, check = sv.model_precache; i < MAX_MODELS && *check; i++, check++)
+	{
+		if (!strcmp(*check, fullpath))
+			break;
+	}
+
+	if (i >= MAX_MODELS)
+	{
+		PR_RunError("PF_h2_setpuzzlemodel: model_precache overflow");
+		return;
+	}
+
+	if (!*check)
+	{
+		// Model wasn't precached - add it now with a warning
+		// (uhexen2 behavior: auto-precache with warning)
+		Con_Warning("NO PRECACHE FOR PUZZLE PIECE: %s\n", fullpath);
+		fullpath = Hunk_Strdup(fullpath, "puzzlemodel");
+		sv.model_precache[i] = fullpath;
+		sv.models[i] = Mod_ForName(fullpath, true);
+		e->v.model = PR_SetEngineString(fullpath);
+	}
+	else
+	{
+		e->v.model = PR_SetEngineString(*check);
+	}
+
+	e->v.modelindex = i;
+
+	// Set bounding box from model
+	mod = sv.models[(int)e->v.modelindex];
+	if (mod)
+	{
+		if (mod->type == mod_brush)
+			SetMinMaxSize(e, mod->clipmins, mod->clipmaxs, true);
+		else
+			SetMinMaxSize(e, mod->mins, mod->maxs, true);
+	}
+	else
+	{
+		SetMinMaxSize(e, vec3_origin, vec3_origin, true);
+	}
 }
 
 /*
@@ -575,15 +628,47 @@ static void PF_h2_endeffect (void)
 =================
 PF_h2_precache_puzzle_model
 
-Precache puzzle piece model
-void precache_puzzle_model(string m) = #90
+Precache puzzle piece model - constructs "models/puzzle/<name>.mdl" and precaches
+string precache_puzzle_model(string s) = #90
 =================
 */
 static void PF_h2_precache_puzzle_model (void)
 {
-	// Stub: For now just precache as regular model
-	// Will implement properly in Phase 4
-	Con_DPrintf("PF_h2_precache_puzzle_model: stub\n");
+	int		i;
+	const char	*s;
+	const char	*fullpath;
+	const char	*stored;
+
+	if (sv.state != ss_loading)
+		PR_RunError("PF_h2_precache_puzzle_model: Precache can only be done in spawn functions");
+
+	s = G_STRING(OFS_PARM0);
+	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);  // Return the original string
+
+	PR_CheckEmptyString(s);
+
+	// Construct full model path
+	fullpath = va("models/puzzle/%s.mdl", s);
+
+	// Check if already precached or find empty slot
+	for (i = 0; i < MAX_MODELS; i++)
+	{
+		if (!sv.model_precache[i])
+		{
+			// Found empty slot - add the model
+			stored = Hunk_Strdup(fullpath, "puzzlemodel");
+			sv.model_precache[i] = stored;
+			sv.models[i] = Mod_ForName(stored, true);
+			return;
+		}
+		if (!strcmp(sv.model_precache[i], fullpath))
+		{
+			// Already precached
+			return;
+		}
+	}
+
+	PR_RunError("PF_h2_precache_puzzle_model: overflow");
 }
 
 /*
