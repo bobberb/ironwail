@@ -239,13 +239,52 @@ void R_SetupAliasLighting (entity_t	*e)
 	float		add;
 	int			i;
 
-	// H2: abslight overrides normal lighting calculation
-	if (hexen2_mode && e->abslight)
+	// H2: Model Light Style (MLS) handling
+	if (hexen2_mode)
 	{
-		// abslight is a 0-255 value that sets absolute lighting
-		float abslight_value = e->abslight / 255.0f * 256.0f;
-		lightcolor[0] = lightcolor[1] = lightcolor[2] = abslight_value;
-		return;
+		int mls = e->drawflags & H2_MLS_MASKIN;
+
+		// Rotating items get special animated lighting
+		if (e->model->flags & EF_ROTATE)
+		{
+			float rotlight = 60.0f + 34.0f + sinf(e->origin[0] + e->origin[1] + (cl.time * 3.8f)) * 34.0f;
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = rotlight;
+			VectorScale (lightcolor, 1.0f / 200.0f, lightcolor);
+			return;
+		}
+
+		// MLS_ABSLIGHT: use entity's abslight value directly
+		if (mls == H2_MLS_ABSLIGHT)
+		{
+			float abslight_value = (float)e->abslight;
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = abslight_value;
+			VectorScale (lightcolor, 1.0f / 200.0f, lightcolor);
+			return;
+		}
+
+		// MLS_TOTALDARK: complete darkness
+		if (mls == H2_MLS_TOTALDARK)
+		{
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = 0.0f;
+			return;
+		}
+
+		// MLS_FULLBRIGHT, MLS_POWERMODE, MLS_TORCH: use special lightstyles
+		// These use lightstyles 25-27 which have special animated values
+		if (mls == H2_MLS_FULLBRIGHT || mls == H2_MLS_POWERMODE || mls == H2_MLS_TORCH)
+		{
+			extern int d_lightstylevalue[MAX_LIGHTSTYLES];
+			int style_idx = 24 + mls;  // MLS 1,2,3 map to styles 25,26,27
+			if (style_idx < MAX_LIGHTSTYLES)
+			{
+				float stylelight = (float)d_lightstylevalue[style_idx];
+				lightcolor[0] = lightcolor[1] = lightcolor[2] = stylelight;
+				VectorScale (lightcolor, 1.0f / 200.0f, lightcolor);
+				return;
+			}
+		}
+
+		// MLS_NONE or unknown: fall through to normal lighting
 	}
 
 	// if the initial trace is completely black, try again from above
@@ -578,9 +617,70 @@ static void R_DrawAliasModel_Real (entity_t *e, qboolean showtris)
 	//
 	// transform it
 	//
-	R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, e->scale);
-	ApplyTranslation (model_matrix, paliashdr->scale_origin[0], paliashdr->scale_origin[1] * fovscale, paliashdr->scale_origin[2] * fovscale);
-	ApplyScale (model_matrix, paliashdr->scale[0], paliashdr->scale[1] * fovscale, paliashdr->scale[2] * fovscale);
+	if (hexen2_mode && e->scale != 0 && e->scale != 100)
+	{
+		// H2: Advanced scale handling with scale type and origin
+		float entScale = (float)e->scale / 100.0f;
+		float xyfact, zfact;
+		float scale_x, scale_y, scale_z;
+		float origin_x, origin_y, origin_z;
+
+		// Determine scale factors based on scale type
+		switch (e->drawflags & H2_SCALE_TYPE_MASKIN)
+		{
+		default:
+		case H2_SCALE_TYPE_UNIFORM:
+			xyfact = entScale;
+			zfact = entScale;
+			break;
+		case H2_SCALE_TYPE_XYONLY:
+			xyfact = entScale;
+			zfact = 1.0f;
+			break;
+		case H2_SCALE_TYPE_ZONLY:
+			xyfact = 1.0f;
+			zfact = entScale;
+			break;
+		}
+
+		// Apply model scale with entity scale modifiers
+		scale_x = paliashdr->scale[0] * xyfact;
+		scale_y = paliashdr->scale[1] * xyfact * fovscale;
+		scale_z = paliashdr->scale[2] * zfact * fovscale;
+
+		// Determine origin offset based on scale origin
+		switch (e->drawflags & H2_SCALE_ORIGIN_MASKIN)
+		{
+		default:
+		case H2_SCALE_ORIGIN_CENTER:
+			origin_x = paliashdr->scale_origin[0] - paliashdr->scale[0] * (xyfact - 1.0f) * 127.95f;
+			origin_y = paliashdr->scale_origin[1] - paliashdr->scale[1] * (xyfact - 1.0f) * 127.95f;
+			origin_z = paliashdr->scale_origin[2] - paliashdr->scale[2] * (zfact - 1.0f) * 127.95f;
+			break;
+		case H2_SCALE_ORIGIN_BOTTOM:
+			origin_x = paliashdr->scale_origin[0];
+			origin_y = paliashdr->scale_origin[1];
+			origin_z = paliashdr->scale_origin[2];
+			break;
+		case H2_SCALE_ORIGIN_TOP:
+			origin_x = paliashdr->scale_origin[0] - paliashdr->scale[0] * (xyfact - 1.0f) * 255.95f;
+			origin_y = paliashdr->scale_origin[1] - paliashdr->scale[1] * (xyfact - 1.0f) * 255.95f;
+			origin_z = paliashdr->scale_origin[2] - paliashdr->scale[2] * (zfact - 1.0f) * 255.95f;
+			break;
+		}
+
+		// Build transform without entity scale (we handle it ourselves)
+		R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, 100);
+		ApplyTranslation (model_matrix, origin_x, origin_y * fovscale, origin_z * fovscale);
+		ApplyScale (model_matrix, scale_x, scale_y, scale_z);
+	}
+	else
+	{
+		// Standard Quake/non-scaled transform
+		R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, e->scale);
+		ApplyTranslation (model_matrix, paliashdr->scale_origin[0], paliashdr->scale_origin[1] * fovscale, paliashdr->scale_origin[2] * fovscale);
+		ApplyScale (model_matrix, paliashdr->scale[0], paliashdr->scale[1] * fovscale, paliashdr->scale[2] * fovscale);
+	}
 
 	//
 	// set up for alpha blending

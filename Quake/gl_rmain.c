@@ -662,7 +662,9 @@ static void R_SortEntities (void)
 	for (i = 0; i < cl_numvisedicts; i++)
 	{
 		entity_t *ent = cl_visedicts[i];
-		qboolean translucent = !ENTALPHA_OPAQUE (ent->alpha);
+		// Check both alpha and H2 translucent drawflag
+		qboolean translucent = !ENTALPHA_OPAQUE (ent->alpha) ||
+			(hexen2_mode && (ent->drawflags & H2_DRF_TRANSLUCENT));
 
 		if (translucent && alphamode == ALPHAMODE_SORTED)
 		{
@@ -742,7 +744,9 @@ static void R_SortEntities (void)
 	for (i = 0; i < cl_numvisedicts; i++)
 	{
 		entity_t *ent = cl_visedicts[visedict_order[0][i]];
-		qboolean translucent = !ENTALPHA_OPAQUE (ent->alpha);
+		// Check both alpha and H2 translucent drawflag
+		qboolean translucent = !ENTALPHA_OPAQUE (ent->alpha) ||
+			(hexen2_mode && (ent->drawflags & H2_DRF_TRANSLUCENT));
 		cl_sorted_visedicts[typebins[ent->model->type * 2 + translucent]++] = ent;
 	}
 }

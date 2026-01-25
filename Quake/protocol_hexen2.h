@@ -320,9 +320,44 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //==================
 // Hexen II drawflags (special rendering modes)
+// The drawflags byte is structured as:
+//   bits 0-2: Model Light Style (MLS)
+//   bits 3-4: Scale Type
+//   bits 5-6: Scale Origin
+//   bit 7:    Translucent flag
 //==================
+
+// Model Light Style (MLS) - bits 0-2
+#define H2_MLS_MASKIN			7		// Mask for MLS bits
+#define H2_MLS_MASKOUT			248		// Inverse mask
+#define H2_MLS_NONE				0		// Normal lighting
+#define H2_MLS_FULLBRIGHT		1		// Fullbright (uses lightstyle 25-30)
+#define H2_MLS_POWERMODE		2		// Power mode pulsing light
+#define H2_MLS_TORCH			3		// Torch flickering light
+#define H2_MLS_TOTALDARK		4		// Total darkness
+#define H2_MLS_ABSLIGHT			7		// Use entity's abslight value
+
+// Scale Type - bits 3-4
+#define H2_SCALE_TYPE_MASKIN	24		// Mask for scale type bits
+#define H2_SCALE_TYPE_MASKOUT	231		// Inverse mask
+#define H2_SCALE_TYPE_UNIFORM	0		// Scale X, Y, and Z equally
+#define H2_SCALE_TYPE_XYONLY	8		// Scale X and Y only
+#define H2_SCALE_TYPE_ZONLY		16		// Scale Z only
+
+// Scale Origin - bits 5-6
+#define H2_SCALE_ORIGIN_MASKIN	96		// Mask for scale origin bits
+#define H2_SCALE_ORIGIN_MASKOUT	159		// Inverse mask
+#define H2_SCALE_ORIGIN_CENTER	0		// Scale from object center
+#define H2_SCALE_ORIGIN_BOTTOM	32		// Scale from object bottom
+#define H2_SCALE_ORIGIN_TOP		64		// Scale from object top
+
+// Translucent flag - bit 7
 #define H2_DRF_TRANSLUCENT		128		// Entity is translucent
-#define H2_DRF_ANIMATEONCE		256		// Animate once then freeze
+
+// DRF_ANIMATEONCE - defined in original H2 but never actually used in game code.
+// Can't fit in byte-sized drawflags over network, but we support it for local use.
+// Could potentially be set via effects field or other means.
+#define H2_DRF_ANIMATEONCE		256		// Animate once then freeze on last frame
 
 //==================
 // Hexen II particle flags (SFL_* constants for snow/weather effects)
