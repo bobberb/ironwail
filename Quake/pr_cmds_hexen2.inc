@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // pr_cmds_hexen2.c -- Hexen II-specific builtin functions
 
 #include "quakedef.h"
+#include "sv_effect_hexen2.h"
 
 /*
 =================
@@ -481,22 +482,21 @@ static void PF_h2_setpuzzlemodel (void)
 =================
 PF_h2_starteffect
 
-Start visual effect. Effect type and parameters are read from QC globals.
-This is a complex function that handles 60+ effect types.
-void starteffect() = #88
+Start visual effect. Effect type and parameters are read from QC parameters.
+This is a complex function that handles 60+ effect types with varying
+numbers of parameters (varargs).
 
-TODO: Full implementation requires sv.Effects array and SV_ParseEffect
+float starteffect(float type, ...) = #88
+
+Returns the effect index for persistent effects, -1 on error.
 =================
 */
 static void PF_h2_starteffect (void)
 {
-	int effect_type;
+	int result;
 
-	effect_type = (int)G_FLOAT(OFS_PARM0);
-
-	// For now, just log the effect type - full implementation requires
-	// the effects management system from sv_effect.c
-	Con_DPrintf("PF_h2_starteffect: effect type %d (not fully implemented)\n", effect_type);
+	result = SV_ParseEffect();
+	G_FLOAT(OFS_RETURN) = (float)result;
 }
 
 /*
@@ -506,7 +506,8 @@ PF_h2_endeffect
 End visual effect by index
 void endeffect(float index1, float index2) = #89
 
-Note: uhexen2 reads both parm0 and parm1 but only uses parm1
+Note: uhexen2 reads both parm0 and parm1 but only uses parm1.
+The first parameter appears to be unused in the original implementation.
 =================
 */
 static void PF_h2_endeffect (void)
@@ -516,14 +517,7 @@ static void PF_h2_endeffect (void)
 	/* uhexen2 reads both but only uses parm1 */
 	idx = (int)G_FLOAT(OFS_PARM1);
 
-	/* Send end effect message to clients */
-	if (sv.datagram.cursize > MAX_DATAGRAM - 2)
-		return;
-
-	MSG_WriteByte(&sv.datagram, svc_h2_end_effect);
-	MSG_WriteByte(&sv.datagram, idx);
-
-	Con_DPrintf("PF_h2_endeffect: ending effect %d\n", idx);
+	SV_EndEffect(idx);
 }
 
 /*

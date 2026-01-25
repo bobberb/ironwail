@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_main.c -- server main program
 
 #include "quakedef.h"
+#include "sv_effect_hexen2.h"
 
 server_t	sv;
 server_static_t	svs;
@@ -1978,6 +1979,7 @@ void SV_SpawnServer (const char *server)
 //
 	//memset (&sv, 0, sizeof(sv));
 	Host_ClearMemory ();
+	SV_ClearEffects ();	// Clear Hexen II effects on level change
 
 	q_strlcpy (sv.name, server, sizeof(sv.name));
 	if (developer.value || map_checks.value)

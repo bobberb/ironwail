@@ -250,8 +250,10 @@ OBJS = strlcat.o \
 	cl_main.o \
 	cl_parse.o \
 	cl_parse_hexen2.o \
+	cl_effect.o \
 	cl_tent.o \
 	protocol_hexen2.o \
+	sv_effect_hexen2.o \
 	console.o \
 	keys.o \
 	menu.o \
