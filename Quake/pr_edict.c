@@ -375,6 +375,9 @@ void H2_SetupGlobals (void)
 	h2_globals.ofs_weaponframe = -1;
 	h2_globals.ofs_nextthink = -1;
 	h2_globals.ofs_think = -1;
+	h2_globals.ofs_playerclass = -1;
+	h2_globals.ofs_hull = -1;
+	h2_globals.ofs_soundtype = -1;
 
 	if (!hexen2_mode)
 		return;
@@ -391,10 +394,15 @@ void H2_SetupGlobals (void)
 	h2_globals.ofs_weaponframe = ED_FindFieldOffset("weaponframe");
 	h2_globals.ofs_nextthink = ED_FindFieldOffset("nextthink");
 	h2_globals.ofs_think = ED_FindFieldOffset("think");
+	h2_globals.ofs_playerclass = ED_FindFieldOffset("playerclass");
+	h2_globals.ofs_hull = ED_FindFieldOffset("hull");
+	h2_globals.ofs_soundtype = ED_FindFieldOffset("soundtype");
 
 	Con_Printf("H2_SetupGlobals: frame=%d weaponframe=%d nextthink=%d think=%d cycle_wrapped=%p\n",
 		h2_globals.ofs_frame, h2_globals.ofs_weaponframe,
 		h2_globals.ofs_nextthink, h2_globals.ofs_think, h2_globals.cycle_wrapped);
+	Con_DPrintf("  playerclass=%d hull=%d soundtype=%d\n",
+		h2_globals.ofs_playerclass, h2_globals.ofs_hull, h2_globals.ofs_soundtype);
 }
 
 /*
@@ -2165,8 +2173,10 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 
 	if (qcvm->progs->crc != PROGHEADER_CRC)
 	{
-		// Check if this is a known Hexen II CRC and we're in hexen2_mode
+		// Check if this is a known progs CRC (Quake or Hexen II)
 		qboolean is_h2_crc = false;
+		qboolean is_quake_crc = (qcvm->progs->crc == 5927);
+
 		switch(qcvm->progs->crc)
 		{
 		case PROGHEADER_CRC_H2_V112:	// 26905 - Portal of Praevus (mission pack)
@@ -2177,8 +2187,15 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 			break;
 		}
 
-		if (is_h2_crc && hexen2_mode)
+		if (is_h2_crc)
 		{
+			// H2 progs detected - verify we're in H2 mode
+			if (!hexen2_mode)
+			{
+				Con_Printf("%s - hexen2 gamecode requires hexen2_mode\n", filename);
+				qcvm->progs = NULL;
+				return false;
+			}
 			// H2 progs detected and we're in H2 mode - this is OK
 			switch(qcvm->progs->crc)
 			{
@@ -2201,12 +2218,18 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 				break;
 			}
 		}
+		else if (is_quake_crc)
+		{
+			// Quake progs detected - works with Quake progdefs
+			Con_Printf("Quake progs.dat detected (CRC %i)\n", qcvm->progs->crc);
+		}
 		else if (fatal)
 		{
 			Host_Error ("%s system vars have been modified, progdefs.h is out of date", filename);
 		}
 		else
 		{
+			// Unknown CRC - list what we know about
 			switch(qcvm->progs->crc)
 			{
 			case 22390:	//full csqc
@@ -2224,17 +2247,8 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 			case 32401:	//tenebrae
 				Con_Printf("%s - tenebrae gamecode is not supported\n", filename);
 				break;
-			case 5927:	// Standard Quake progs.dat - not supported with H2 progdefs
-				Con_Printf("%s - Quake gamecode not supported (using H2 progdefs)\n", filename);
-				break;
-			case PROGHEADER_CRC_H2_V112:	// 26905
-			case PROGHEADER_CRC_H2_V111:	// 38488
-			case PROGHEADER_CRC_H2_V103:	// 14046
-			case PROGHEADER_CRC_H2_UQE:		// 19889
-				Con_Printf("%s - hexen2 gamecode requires hexen2_mode\n", filename);
-				break;
 			default:
-				Con_Printf("%s system vars are not supported\n", filename);
+				Con_Printf("%s system vars are not supported (CRC %i)\n", filename, qcvm->progs->crc);
 				break;
 			}
 			qcvm->progs = NULL;
@@ -2263,6 +2277,8 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 
 	qcvm->globals = (float *)((byte *)qcvm->progs + qcvm->progs->ofs_globals);
 	pr_global_struct = (globalvars_t*)qcvm->globals;
+	Sys_Printf("PR_LoadProgs: globals=%p, pr_global_struct=%p, CRC=%u\n",
+		qcvm->globals, pr_global_struct, qcvm->progs->crc);
 
 	// byte swap the lumps
 	for (i = 0; i < qcvm->progs->numstatements; i++)
@@ -2311,6 +2327,8 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 #undef QCEXTFIELD
 
 	qcvm->edict_size = qcvm->progs->entityfields * 4 + sizeof(edict_t) - sizeof(entvars_t);
+	Sys_Printf("PR_LoadProgs: entityfields=%d, sizeof(edict_t)=%zu, sizeof(entvars_t)=%zu, edict_size=%d\n",
+		qcvm->progs->entityfields, sizeof(edict_t), sizeof(entvars_t), qcvm->edict_size);
 	// round off to next highest whole word address (esp for Alpha)
 	// this ensures that pointers in the engine data area are always
 	// properly aligned

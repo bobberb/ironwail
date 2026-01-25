@@ -316,6 +316,10 @@ typedef struct
 	int		ofs_weaponframe;
 	int		ofs_nextthink;
 	int		ofs_think;
+	/* H2-specific entity fields */
+	int		ofs_playerclass;	/* player class (0-3) */
+	int		ofs_hull;			/* collision hull selection */
+	int		ofs_soundtype;		/* sound type */
 } h2_globals_t;
 
 extern THREAD_LOCAL h2_globals_t	h2_globals;

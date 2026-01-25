@@ -259,7 +259,9 @@ static void PF_h2_setclass (void)
 		return;
 	}
 
-	e->v.playerclass = newclass;
+	// Set playerclass via runtime offset for H2 mode compatibility
+	if (h2_globals.ofs_playerclass >= 0)
+		((float *)&e->v)[h2_globals.ofs_playerclass] = newclass;
 	Con_DPrintf("PF_h2_setclass: entity %d set to class %d\n", entnum, (int)newclass);
 }
 

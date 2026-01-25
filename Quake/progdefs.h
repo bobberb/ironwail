@@ -1,6 +1,7 @@
 /*
 Copyright (C) 1996-2001 Id Software, Inc.
 Copyright (C) 2002-2009 John Fitzgibbons and others
+Copyright (C) 2010-2014 QuakeSpasm developers
 Copyright (C) 2024 Ironwail developers
 
 This program is free software; you can redistribute it and/or
@@ -24,15 +25,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define __PROGDEFS_H
 
 /*
- * IMPORTANT: Runtime structure selection is required for proper Q1/H2 support.
- *
- * Current state: Using H2 progdefs as default. This breaks Quake because
- * the global variable field offsets differ between games.
- *
- * TODO: Implement accessor layer that uses correct offsets based on progs CRC.
- * For now, Quake compatibility is broken - see issue ironwail-hu3.34.
+ * Use Quake's progdefs as base for compatibility.
+ * H2-specific fields are accessed via runtime offset lookup.
  */
-#include "progdefs.h2"
+#include "progdefs.q1"
+
+/* Hexen II progs CRC values for runtime detection */
+#define PROGHEADER_CRC_H2_V103		14046	// Hexen II 1.03/demo
+#define PROGHEADER_CRC_H2_V111		38488	// Hexen II 1.11 (also 1.09)
+#define PROGHEADER_CRC_H2_V112		26905	// Portal of Praevus (Mission Pack)
+#define PROGHEADER_CRC_H2_UQE		19889	// UQE patch
 
 #endif	/* __PROGDEFS_H */
 

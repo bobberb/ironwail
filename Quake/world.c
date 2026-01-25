@@ -155,19 +155,28 @@ hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset,
 		if (hexen2_mode)
 		{
 			// Hexen II: Check if entity explicitly specifies which hull to use
-			if (move_ent && move_ent->v.hull)
+			if (move_ent && h2_globals.ofs_hull >= 0)
 			{
-				int idx = (int)move_ent->v.hull - 1;
-				if (idx >= 0 && idx < MAX_MAP_HULLS)
-					hull = &model->hulls[idx];
+				float hullval = ((float *)&move_ent->v)[h2_globals.ofs_hull];
+				if (hullval)
+				{
+					int idx = (int)hullval - 1;
+					if (idx >= 0 && idx < MAX_MAP_HULLS)
+						hull = &model->hulls[idx];
+					else
+					{
+						Con_Warning ("Invalid hull %d requested\n", idx);
+						hull = &model->hulls[0];
+					}
+				}
 				else
 				{
-					Con_Warning ("Invalid hull %d requested\n", idx);
-					hull = &model->hulls[0];
+					goto hull_not_specified;
 				}
 			}
 			else
 			{
+hull_not_specified:
 				// Size-based hull selection: point, crouch, player, golem
 				if (size[0] < 3)
 					hull = &model->hulls[0];		// Point

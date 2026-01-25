@@ -454,8 +454,10 @@ void SV_SendServerinfo (client_t *client)
 	else
 	{
 		// H2 uses soundtype instead of sounds for CD track
-		MSG_WriteByte (&client->message, qcvm->edicts->v.soundtype);
-		MSG_WriteByte (&client->message, qcvm->edicts->v.soundtype);
+		float soundval = (h2_globals.ofs_soundtype >= 0) ?
+			((float *)&qcvm->edicts->v)[h2_globals.ofs_soundtype] : 0;
+		MSG_WriteByte (&client->message, soundval);
+		MSG_WriteByte (&client->message, soundval);
 	}
 
 // set view
@@ -1880,7 +1882,11 @@ static void SV_PrintMapChecklist (void)
 	if (!hexen2_mode)
 		track = (int)qcvm->edicts->v.sounds;
 	else
-		track = (int)qcvm->edicts->v.soundtype;
+	{
+		// H2 uses soundtype - access via runtime offset
+		track = (h2_globals.ofs_soundtype >= 0) ?
+			(int)((float *)&qcvm->edicts->v)[h2_globals.ofs_soundtype] : 0;
+	}
 	if (track == 0)
 		SV_PrintMapCheck (hexen2_mode ? MAPCHECK_OK : MAPCHECK_FAILED, "music track (worldspawn \"%s\" field)", hexen2_mode ? "soundtype" : "sounds");
 	else if (track < 2 || track > 255) 
