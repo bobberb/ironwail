@@ -702,15 +702,31 @@ void PR_ExecuteProgram (func_t fnum)
 		st += st->a - 1;		/* -1 to offset the st++ */
 		break;
 
-	case OP_CALL0:
-	case OP_CALL1:
-	case OP_CALL2:
-	case OP_CALL3:
-	case OP_CALL4:
-	case OP_CALL5:
-	case OP_CALL6:
-	case OP_CALL7:
 	case OP_CALL8:
+	case OP_CALL7:
+	case OP_CALL6:
+	case OP_CALL5:
+	case OP_CALL4:
+	case OP_CALL3:
+	case OP_CALL2:
+		/* H2: Copy second arg from st->c to OFS_PARM1 */
+		if (hexen2_mode)
+		{
+			qcvm->globals[OFS_PARM1] = OPC->vector[0];
+			qcvm->globals[OFS_PARM1 + 1] = OPC->vector[1];
+			qcvm->globals[OFS_PARM1 + 2] = OPC->vector[2];
+		}
+		/* fall through */
+	case OP_CALL1:
+		/* H2: Copy first arg from st->b to OFS_PARM0 */
+		if (hexen2_mode)
+		{
+			qcvm->globals[OFS_PARM0] = OPB->vector[0];
+			qcvm->globals[OFS_PARM0 + 1] = OPB->vector[1];
+			qcvm->globals[OFS_PARM0 + 2] = OPB->vector[2];
+		}
+		/* fall through */
+	case OP_CALL0:
 		qcvm->xfunction->profile += profile - startprofile;
 		startprofile = profile;
 		qcvm->xstatement = st - qcvm->statements;
