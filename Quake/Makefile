@@ -251,6 +251,7 @@ OBJS = strlcat.o \
 	cl_parse.o \
 	cl_parse_hexen2.o \
 	cl_effect.o \
+	cl_string_hexen2.o \
 	cl_tent.o \
 	protocol_hexen2.o \
 	sv_effect_hexen2.o \

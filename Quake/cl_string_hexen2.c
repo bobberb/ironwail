@@ -20,32 +20,40 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-/*
- * Hexen II puzzle and info string loading
- * Adapted from uhexen2 cl_string.c
- */
+// cl_string_hexen2.c -- Hexen II internationalized strings
+// Puzzle piece names and mission pack objectives
 
 #include "quakedef.h"
 
-/* puzzle piece strings for Sbar_H2_DrawInfoOverlay() */
+// Puzzle piece strings for status bar overlay
 static char	*puzzle_strings = NULL;
 static int	*puzzle_string_index = NULL;
-int		puzzle_string_count = 0;
+static int	puzzle_string_count = 0;
+
+// Mission pack objective/info strings
+static char	*info_strings = NULL;
+static int	*info_string_index = NULL;
+static int	info_string_count = 0;
 
 /*
-================
+===============
 CL_LoadPuzzleStrings
 
 Load puzzle piece names from puzzles.txt
 Format:
-  Line 1: <count>
-  Line 2+: <shortname> <full display name>
-================
+  Line #1: <number of entries>
+  Line #2+: <short_name> <full display name>
+
+Example:
+  10
+  yourkey1 Key to the Tower
+  yourkey2 Key to the Dungeon
+===============
 */
 void CL_LoadPuzzleStrings(void)
 {
 	int		i, j, count = 0;
-	char		*start, *end, *space;
+	char	*start, *end, *space;
 
 	puzzle_string_index = NULL;
 	puzzle_string_count = 0;
@@ -56,75 +64,96 @@ void CL_LoadPuzzleStrings(void)
 		return;
 	}
 
-	/*
-	 * Format of puzzles.txt:
-	 * Line #1 : <number of lines excluding this one>
-	 * Line #2+: <one-word short name><one space><full name in multiple words>
-	 */
-
-	j = atoi(puzzle_strings);	/* the intended number of lines */
+	// Get intended number of lines from first line
+	j = atoi(puzzle_strings);
 	if (j < 1)
 		return;
 	if (j > 256)
 		j = 256;
 
+	// Find and clear first line
 	start = puzzle_strings;
 	while (*start && *start != '\r' && *start != '\n')
-	{	/* find first newline, clear the start */
 		*start++ = 0;
-	}
-	while (*start == '\r' || *start == '\n')
-		*start++ = 0;
+	if (!*start)
+		return;
 
-	/* first pass: count valid entries and null-terminate them */
-	while (*start && count < j)
+	// Skip leading whitespace/newlines
+	while (*start && (*start == '\n' || *start == '\r' || *start == ' ' || *start == '\t'))
+		*start++ = 0;
+	if (!*start)
+		return;
+
+	// Parse each line
+	while (count <= j)
 	{
-		/* skip leading whitespace */
-		while (*start == ' ' || *start == '\t')
-			start++;
-		if (*start == 0)
-			break;
-		if (*start == '\r' || *start == '\n')
-		{
-			*start++ = 0;
-			continue;
-		}
-
-		/* find the end of line */
+		i = 0;
 		end = start;
 		while (*end && *end != '\r' && *end != '\n')
 			end++;
+		if (!*end)
+			end = NULL;
+		else
+			*end = 0;
 
-		/* find the space between shortname and fullname */
+		// Find space between short name and full name
 		space = start;
-		while (*space && *space != ' ' && *space != '\t' && space < end)
+		while (*space && *space != ' ' && *space != '\t')
 			space++;
-		if (space >= end || *space == 0)
+
+		if (*space)
 		{
-			/* malformed line, skip */
-			start = end;
-			while (*start == '\r' || *start == '\n')
-				*start++ = 0;
-			continue;
+			// Clear whitespace between names
+			while (space[i] == ' ' || space[i] == '\t')
+			{
+				space[i] = 0;
+				++i;
+			}
+			if (space[i])
+			{
+				// Valid entry found
+				count++;
+				// Clear trailing whitespace
+				while (space[i])
+					++i;
+				--i;
+				while (space[i] == ' ' || space[i] == '\t')
+				{
+					space[i] = 0;
+					--i;
+				}
+				if (!end)
+					break;
+				goto forward;
+			}
+			else
+			{
+				// No full name
+				if (!end)
+					break;
+				memset(start, 0, end - start);
+				goto forward;
+			}
 		}
-
-		/* null-terminate shortname */
-		*space++ = 0;
-		/* skip extra whitespace */
-		while (*space == ' ' || *space == '\t')
-			*space++ = 0;
-		/* null-terminate fullname at end of line */
-		*end = 0;
-
-		count++;
-		start = end + 1;
-		while (*start == '\r' || *start == '\n')
-			*start++ = 0;
+		else
+		{
+			// No space in line
+			if (!end)
+				break;
+			memset(start, 0, end - start);
+forward:
+			start = ++end;
+			while (*start == '\r' || *start == '\n' || *start == ' ' || *start == '\t')
+				*start++ = 0;
+			if (*start == 0)
+				break;
+		}
 	}
 
 	if (!count)
 		return;
 
+	// Build string index (2 entries per puzzle: short name, full name)
 	puzzle_string_count = count * 2;
 	puzzle_string_index = (int *)Hunk_Alloc(puzzle_string_count * sizeof(int));
 
@@ -140,22 +169,26 @@ void CL_LoadPuzzleStrings(void)
 		while (*start != 0)
 			start++;
 
-		i++;
+		++i;
 	}
 
-	Con_DPrintf("Read in %d puzzle piece names\n", count);
+	Con_DPrintf("Read %d puzzle piece names\n", count);
 }
 
 /*
-================
+===============
 CL_FindPuzzleString
 
-Find the full display name for a puzzle piece short name
-================
+Look up the full display name for a puzzle piece by its short name
+Returns NULL if not found
+===============
 */
 const char *CL_FindPuzzleString(const char *shortname)
 {
-	int		i;
+	int i;
+
+	if (!puzzle_strings || !puzzle_string_index)
+		return NULL;
 
 	for (i = 0; i < puzzle_string_count; i += 2)
 	{
@@ -167,20 +200,13 @@ const char *CL_FindPuzzleString(const char *shortname)
 }
 
 /*
- * Mission pack (Portal of Praevus) objectives strings
- * Loaded from infolist.txt
- */
-static char	*info_strings = NULL;
-static int	*info_string_index = NULL;
-int		info_string_count = 0;
-
-/*
-================
+===============
 CL_LoadInfoStrings
 
-Load mission pack objectives from infolist.txt
-Format: one objective string per line
-================
+Load mission pack objective strings from infolist.txt
+Each line is a separate objective string.
+Used by Portal of Praevus for objective display.
+===============
 */
 void CL_LoadInfoStrings(void)
 {
@@ -192,13 +218,14 @@ void CL_LoadInfoStrings(void)
 	info_strings = (char *)COM_LoadHunkFile("infolist.txt", NULL);
 	if (!info_strings)
 	{
-		Con_DPrintf("infolist.txt not found (mission pack not installed?)\n");
+		// Not an error for base Hexen II (only mission pack uses this)
+		Con_DPrintf("infolist.txt not found\n");
 		return;
 	}
 
 	newline_char = -1;
 
-	/* first pass: count lines */
+	// Count lines
 	for (i = count = 0; info_strings[i] != 0; i++)
 	{
 		if (info_strings[i] == '\r' || info_strings[i] == '\n')
@@ -213,13 +240,13 @@ void CL_LoadInfoStrings(void)
 
 	if (!count)
 	{
-		Con_Warning("infolist.txt: no objective strings found\n");
+		Con_Warning("infolist.txt: no string lines found\n");
 		return;
 	}
 
+	// Build string index
 	info_string_index = (int *)Hunk_Alloc((count + 1) * sizeof(int));
 
-	/* second pass: build index and null-terminate strings */
 	for (i = count = start = 0; info_strings[i] != 0; i++)
 	{
 		if (info_strings[i] == '\r' || info_strings[i] == '\n')
@@ -240,19 +267,52 @@ void CL_LoadInfoStrings(void)
 	}
 
 	info_string_count = count;
-	Con_DPrintf("Read in %d objectives\n", count);
+	Con_DPrintf("Read %d objectives\n", count);
 }
 
 /*
-================
+===============
 CL_GetInfoString
 
-Get objective string by index
-================
+Get an objective string by index
+Returns empty string if index is out of range
+===============
 */
 const char *CL_GetInfoString(int idx)
 {
+	if (!info_strings || !info_string_index)
+		return "";
 	if (idx < 0 || idx >= info_string_count)
 		return "";
 	return &info_strings[info_string_index[idx]];
+}
+
+/*
+===============
+CL_GetInfoStringCount
+
+Get total number of info strings loaded
+===============
+*/
+int CL_GetInfoStringCount(void)
+{
+	return info_string_count;
+}
+
+/*
+===============
+CL_ClearStrings
+
+Clear all loaded strings (called on disconnect)
+===============
+*/
+void CL_ClearStrings(void)
+{
+	// Note: Memory is on hunk, will be freed with hunk reset
+	puzzle_strings = NULL;
+	puzzle_string_index = NULL;
+	puzzle_string_count = 0;
+	info_strings = NULL;
+	info_string_index = NULL;
+	info_string_count = 0;
 }
