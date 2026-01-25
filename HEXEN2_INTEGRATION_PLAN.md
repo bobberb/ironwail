@@ -472,13 +472,24 @@ Create H2-specific files where possible:
 
 ## Dependencies & References
 
-### uhexen2 Source
+### uhexen2 Engine Source
 Location: `/home/josh/tmp/claudedir/uhexen2/source/`
 - Use as reference for protocol, entities, particles, effects
 - Cherry-pick implementations where possible
 - Adapt to Ironwail's modern OpenGL architecture
 
-### Key uhexen2 Files to Study:
+### HexenC Progs Source (hcode_archive) [bead: ironwail-77c]
+Location: `/home/josh/tmp/claudedir/uhexen2-hcode_archive/`
+GitHub: https://github.com/sezero/uhexen2-hcode_archive
+- **portals-1.12a/** - Portal of Praevus progs source (our target version)
+- **portals-1.12a/builtin.hc** - All 106 builtins with exact signatures
+- Use to verify builtin calling conventions and parameter counts
+- Use to understand how progs uses entity fields
+- Use to debug issues by seeing what game logic expects
+
+### Key uhexen2 Files to Port:
+- `engine/hexen2/sv_effect.c` - **Server-side effects (1090 lines) - PORT THIS FOR starteffect**
+- `engine/hexen2/cl_effect.c` - Client-side effect rendering
 - `engine/hexen2/protocol.h` - Protocol definitions
 - `h2shared/progdefs.h` - Entity variables
 - `engine/hexen2/r_part.c` - Particle system
