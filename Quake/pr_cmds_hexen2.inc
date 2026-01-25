@@ -832,14 +832,70 @@ static void PF_h2_v_factorrange (void)
 =================
 PF_h2_matchAngleToSlope
 
-Match entity angle to slope
-void matchAngleToSlope(entity e, vector slope) = #99
+Match entity angle to slope - used for creatures walking on sloped terrain
+void matchAngleToSlope(vector slope, entity who) = #99
 =================
 */
 static void PF_h2_matchAngleToSlope (void)
 {
-	// Stub: TODO - implement slope angle matching
-	Con_DPrintf("PF_h2_matchAngleToSlope: stub\n");
+	edict_t	*actor;
+	vec3_t	slope;
+	vec3_t	old_forward, old_right, old_up;
+	vec3_t	new_forward, new_right, new_up;
+	vec3_t	new_angles2;
+	float	forward_len;
+	float	pitch, yaw;
+	float	mod, dot;
+
+	// Get slope normal from OFS_PARM0
+	VectorCopy(G_VECTOR(OFS_PARM0), slope);
+
+	// Get entity from OFS_PARM1
+	actor = G_EDICT(OFS_PARM1);
+
+	// Get old direction vectors from entity's current angles
+	AngleVectors(actor->v.angles, old_forward, old_right, old_up);
+
+	// Convert slope normal to angles (inline vectoangles)
+	if (slope[1] == 0 && slope[0] == 0)
+	{
+		yaw = 0;
+		if (slope[2] > 0)
+			pitch = 90;
+		else
+			pitch = 270;
+	}
+	else
+	{
+		yaw = atan2(slope[1], slope[0]) * 180 / M_PI;
+		if (yaw < 0)
+			yaw += 360;
+
+		forward_len = sqrt(slope[0]*slope[0] + slope[1]*slope[1]);
+		pitch = atan2(slope[2], forward_len) * 180 / M_PI;
+		if (pitch < 0)
+			pitch += 360;
+	}
+
+	// Adjust pitch relative to flat ground (90 degrees = straight up)
+	pitch = pitch - 90;
+
+	// Get direction vector for the slope's yaw
+	VectorSet(new_angles2, 0, yaw, 0);
+	AngleVectors(new_angles2, new_forward, new_right, new_up);
+
+	// Calculate how much the slope aligns with old movement direction
+	mod = DotProduct(new_forward, old_right);
+	if (mod < 0)
+		mod = 1;
+	else
+		mod = -1;
+
+	dot = DotProduct(new_forward, old_forward);
+
+	// Apply pitch and roll to entity based on slope alignment
+	actor->v.angles[0] = dot * pitch;
+	actor->v.angles[2] = (1 - fabs(dot)) * pitch * mod;
 }
 
 /*
