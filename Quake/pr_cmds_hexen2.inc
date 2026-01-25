@@ -300,14 +300,47 @@ static void PF_h2_plaque_draw (void)
 =================
 PF_h2_rain_go
 
-Start rain effect
-void rain_go(vector start, vector end, vector edir, float color, float count) = #80
+Start immediate rain effect (non-persistent, one-shot)
+void rain_go(vector min_org, vector max_org, vector e_size, vector dir, float color, float count) = #80
+
+Note: This is different from starteffect(CE_RAIN, ...) which creates a persistent effect.
+This sends svc_h2_raineffect directly to clients.
 =================
 */
 static void PF_h2_rain_go (void)
 {
-	// Stub: TODO - implement weather effects in Phase 3
-	Con_DPrintf("PF_h2_rain_go: stub\n");
+	float	*min_org, *max_org, *e_size, *dir;
+	vec3_t	org;
+	int		color, count, x_dir, y_dir;
+
+	min_org = G_VECTOR(OFS_PARM0);
+	max_org = G_VECTOR(OFS_PARM1);
+	e_size = G_VECTOR(OFS_PARM2);
+	dir = G_VECTOR(OFS_PARM3);
+	color = (int)G_FLOAT(OFS_PARM4);
+	count = (int)G_FLOAT(OFS_PARM5);
+
+	org[0] = min_org[0];
+	org[1] = min_org[1];
+	org[2] = max_org[2];
+
+	x_dir = (int)dir[0];
+	y_dir = (int)dir[1];
+
+	if (sv.datagram.cursize > MAX_DATAGRAM - 20)
+		return;
+
+	MSG_WriteByte(&sv.datagram, svc_h2_raineffect);
+	MSG_WriteCoord(&sv.datagram, org[0], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[1], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[2], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, e_size[0], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, e_size[1], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, e_size[2], sv.protocolflags);
+	MSG_WriteAngle(&sv.datagram, x_dir, sv.protocolflags);
+	MSG_WriteAngle(&sv.datagram, y_dir, sv.protocolflags);
+	MSG_WriteShort(&sv.datagram, color);
+	MSG_WriteShort(&sv.datagram, count);
 }
 
 /*
@@ -316,12 +349,30 @@ PF_h2_particleexplosion
 
 Material-aware particle explosion
 void particleexplosion(vector org, float color, float radius, float counter) = #81
+
+Sends svc_h2_particle_explosion to clients.
 =================
 */
 static void PF_h2_particleexplosion (void)
 {
-	// Stub: TODO - implement in Phase 3
-	Con_DPrintf("PF_h2_particleexplosion: stub\n");
+	float	*org;
+	int		color, radius, counter;
+
+	org = G_VECTOR(OFS_PARM0);
+	color = (int)G_FLOAT(OFS_PARM1);
+	radius = (int)G_FLOAT(OFS_PARM2);
+	counter = (int)G_FLOAT(OFS_PARM3);
+
+	if (sv.datagram.cursize > MAX_DATAGRAM - 12)
+		return;
+
+	MSG_WriteByte(&sv.datagram, svc_h2_particle_explosion);
+	MSG_WriteCoord(&sv.datagram, org[0], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[1], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[2], sv.protocolflags);
+	MSG_WriteShort(&sv.datagram, color);
+	MSG_WriteShort(&sv.datagram, radius);
+	MSG_WriteShort(&sv.datagram, counter);
 }
 
 /*
