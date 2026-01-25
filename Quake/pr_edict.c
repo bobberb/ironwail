@@ -2224,13 +2224,15 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 			case 32401:	//tenebrae
 				Con_Printf("%s - tenebrae gamecode is not supported\n", filename);
 				break;
+			case 5927:	// Standard Quake progs.dat - not supported with H2 progdefs
+				Con_Printf("%s - Quake gamecode not supported (using H2 progdefs)\n", filename);
+				break;
 			case PROGHEADER_CRC_H2_V112:	// 26905
 			case PROGHEADER_CRC_H2_V111:	// 38488
 			case PROGHEADER_CRC_H2_V103:	// 14046
 			case PROGHEADER_CRC_H2_UQE:		// 19889
 				Con_Printf("%s - hexen2 gamecode requires hexen2_mode\n", filename);
 				break;
-			//case 5927: //nq PROGHEADER_CRC as above. shouldn't happen, obviously.
 			default:
 				Con_Printf("%s system vars are not supported\n", filename);
 				break;

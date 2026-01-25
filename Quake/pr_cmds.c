@@ -3401,11 +3401,16 @@ builtindef_t pr_builtindefs[] =
 	{"min",						PF_BOTH(PF_min),				94,		DP_QC_MINMAXBOUND},	// float(float a, float b, ...)
 	{"max",						PF_BOTH(PF_max),				95,		DP_QC_MINMAXBOUND},	// float(float a, float b, ...)
 	{"bound",					PF_BOTH(PF_bound),				96,		DP_QC_MINMAXBOUND},	// float(float minimum, float val, float maximum)
+	{"precache_sound3",			PF_SSQC(PF_precache_sound),		96},	// H2: string(string) = #96 (overrides bound in H2 mode)
 
 	{"pow",						PF_BOTH(PF_pow),				97,		DP_QC_SINCOSSQRTPOW},	// float(float value, float exp)
+	{"precache_model3",			PF_SSQC(PF_precache_model),		97},	// H2: string(string) = #97 (overrides pow in H2 mode)
 
 	{"matchAngleToSlope",		PF_SSQC(PF_h2_matchAngleToSlope), 99},	// H2: void(entity, vector) = #99
 	{"updateInfoPlaque",		PF_SSQC(PF_h2_updateInfoPlaque), 100},	// H2: void(float, float) = #100
+
+	{"precache_sound4",			PF_SSQC(PF_precache_sound),		101},	// H2: string(string) = #101 (portals 1.12)
+	{"precache_model4",			PF_SSQC(PF_precache_model),		102},	// H2: string(string) = #102 (portals 1.12)
 
 	{"doWhiteFlash",			PF_SSQC(PF_h2_doWhiteFlash),	104},	// H2: void() = #104
 	{"UpdateSoundPos",			PF_SSQC(PF_h2_UpdateSoundPos),	105},	// H2: void(entity, float) = #105

@@ -2432,12 +2432,13 @@ void COM_AddGameDirectory (const char *dir)
 		com_searchpaths = search;
 
 		// add any pak files in the format pak0.pak pak1.pak, ...
-		for (i = 0; ; i++)
+		// Note: Hexen II portals has pak3.pak without pak0/1/2, so we check up to pak9
+		for (i = 0; i < 10; i++)
 		{
 			q_snprintf (pakfile, sizeof(pakfile), "%s/pak%i.pak", com_gamedir, i);
 			pak = COM_LoadPackFile (pakfile);
 			if (!pak)
-				break;
+				continue;  // Skip missing paks, don't break
 
 			search = (searchpath_t *) Z_Malloc(sizeof(searchpath_t));
 			search->path_id = path_id;
@@ -3311,8 +3312,20 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 	}
 	else
 	{
-		// start up with GAMENAME by default (id1)
-		COM_AddGameDirectory (GAMENAME);
+		// Check if this is a Hexen II installation (data1 exists)
+		// This needs to happen before H2_DetectGameType since search paths aren't set yet
+		char h2check[MAX_OSPATH];
+		q_snprintf(h2check, sizeof(h2check), "%s/data1/pak0.pak", com_basedirs[0]);
+		if (Sys_FileExists(h2check))
+		{
+			// Hexen II installation - use data1 instead of id1
+			COM_AddGameDirectory("data1");
+		}
+		else
+		{
+			// start up with GAMENAME by default (id1)
+			COM_AddGameDirectory (GAMENAME);
+		}
 	}
 
 	/* this is the end of our base searchpath:
@@ -3331,6 +3344,8 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 		COM_AddGameDirectory ("hipnotic");
 	if (COM_CheckParm ("-quoth"))
 		COM_AddGameDirectory ("quoth");
+	if (COM_CheckParm ("-portals"))
+		COM_AddGameDirectory ("portals");
 
 	for(i = 0;;)
 	{

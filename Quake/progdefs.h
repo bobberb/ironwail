@@ -24,17 +24,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define __PROGDEFS_H
 
 /*
- * Note: We always use the H2 extended progdefs to support both
- * Quake and Hexen II in a single binary. The H2 entvars_t is
- * a superset of Quake's entvars_t, so Quake progs work fine.
- * The extra H2 fields are simply ignored when running Quake.
+ * IMPORTANT: Runtime structure selection is required for proper Q1/H2 support.
+ *
+ * Current state: Using H2 progdefs as default. This breaks Quake because
+ * the global variable field offsets differ between games.
+ *
+ * TODO: Implement accessor layer that uses correct offsets based on progs CRC.
+ * For now, Quake compatibility is broken - see issue ironwail-hu3.34.
  */
 #include "progdefs.h2"
-
-/*
- * For reference, Quake-only progdefs are in progdefs.q1
- * We keep it around for documentation but don't use it.
- */
 
 #endif	/* __PROGDEFS_H */
 

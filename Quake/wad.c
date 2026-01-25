@@ -79,11 +79,21 @@ void W_LoadWadFile (void) //johnfitz -- filename is now hard-coded for honesty
 		free (wad_base);
 	wad_base = COM_LoadMallocFile (filename, NULL);
 	if (!wad_base)
+	{
+		// Hexen II doesn't have a gfx.wad - graphics are in gfx/menu/*.lmp files
+		if (hexen2_mode)
+		{
+			Con_Printf ("W_LoadWadFile: %s not found (Hexen II mode, using gfx/menu/)\n", filename);
+			wad_numlumps = 0;
+			wad_lumps = NULL;
+			return;
+		}
 		Sys_Error ("W_LoadWadFile: couldn't load %s\n\n"
 			   "Basedir is: %s\n\n"
 			   "Check that this has an " GAMENAME " subdirectory containing pak0.pak and pak1.pak, "
 			   "or use the -basedir command-line option to specify another directory.",
 			   filename, com_basedirs[0]);
+	}
 
 	header = (wadinfo_t *)wad_base;
 

@@ -32,6 +32,7 @@ static char	loadname[32];	// for hunk tags
 static void Mod_LoadSpriteModel (qmodel_t *mod, void *buffer);
 static void Mod_LoadBrushModel (qmodel_t *mod, void *buffer);
 static void Mod_LoadAliasModel (qmodel_t *mod, void *buffer);
+static void Mod_LoadAliasModelNew (qmodel_t *mod, void *buffer); // Hexen II format
 static void Mod_LoadMD3Model (qmodel_t* mod, const char* buffer);
 static void Mod_LoadMD5MeshModel (qmodel_t *mod, const char *buffer);
 static qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash);
@@ -407,6 +408,10 @@ static qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 	{
 	case IDPOLYHEADER:
 		Mod_LoadAliasModel (mod, buf);
+		break;
+
+	case RAPOLYHEADER:
+		Mod_LoadAliasModelNew (mod, buf);
 		break;
 
 	case IDSPRITEHEADER:
@@ -3515,6 +3520,181 @@ static void Mod_LoadAliasModel (qmodel_t *mod, void *buffer)
 	Mod_SetExtraFlags (mod); //johnfitz
 
 	Mod_CalcAliasBounds (pheader); //johnfitz
+
+	//
+	// build the draw lists
+	//
+	GL_MakeAliasModelDisplayLists (mod, pheader);
+
+//
+// move the complete, relocatable alias model to the cache
+//
+	end = Hunk_LowMark ();
+	total = end - start;
+
+	Cache_Alloc (&mod->cache, total, loadname);
+	if (!mod->cache.data)
+		return;
+	memcpy (mod->cache.data, pheader, total);
+
+	mod->sortkey = ((CRC_Block (mod->name, strlen(mod->name)) >> 1) & MODSORT_FRAMEMASK) << MODSORT_FRAMEBITS;
+	if (mod->flags & MF_HOLEY)
+		mod->sortkey |= MODSORT_ALIAS_ALPHATEST;
+	else
+		mod->sortkey &= ~MODSORT_ALIAS_ALPHATEST;
+
+	Hunk_FreeToLowMark (start);
+}
+
+/*
+=================
+Mod_LoadAliasModelNew
+
+Hexen II model format loader (RAPO header, version 50)
+Key differences from Quake MDL:
+- Extra num_st_verts field in header (separate ST vertex count)
+- Triangles use short indices + separate stindex array
+=================
+*/
+static void Mod_LoadAliasModelNew (qmodel_t *mod, void *buffer)
+{
+	int					i, j;
+	newmdl_t			*pinmodel;
+	stvert_t			*pinstverts;
+	dnewtriangle_t		*pintriangles;
+	int					version, numframes;
+	int					size;
+	int					num_st_verts;
+	daliasframetype_t	*pframetype;
+	daliasskintype_t	*pskintype;
+	int					start, end, total;
+
+	start = Hunk_LowMark ();
+
+	pinmodel = (newmdl_t *)buffer;
+	mod_base = (byte *)buffer;
+
+	version = LittleLong (pinmodel->version);
+	if (version != ALIAS_VERSION_H2)
+		Sys_Error ("%s has wrong version number (%i should be %i)",
+			mod->name, version, ALIAS_VERSION_H2);
+	mod->flags = LittleLong (pinmodel->flags);
+
+//
+// allocate space for a working header, plus all the data except the frames,
+// skin and group info
+//
+	size	= sizeof(aliashdr_t) +
+		 (LittleLong (pinmodel->numframes) - 1) * sizeof (pheader->frames[0]);
+	pheader = (aliashdr_t *) Hunk_AllocName (size, loadname);
+
+//
+// endian-adjust and copy the data, starting with the alias model header
+//
+	pheader->boundingradius = LittleFloat (pinmodel->boundingradius);
+	pheader->numskins = LittleLong (pinmodel->numskins);
+	pheader->skinwidth = LittleLong (pinmodel->skinwidth);
+	pheader->skinheight = LittleLong (pinmodel->skinheight);
+
+	if (pheader->skinheight > MAX_LBM_HEIGHT)
+		Con_DWarning ("model %s has a skin taller than %d", mod->name,
+				   MAX_LBM_HEIGHT);
+
+	pheader->numverts = LittleLong (pinmodel->numverts);
+	num_st_verts = LittleLong (pinmodel->num_st_verts);  // H2: separate ST vertex count
+
+	if (pheader->numverts <= 0)
+		Sys_Error ("model %s has no vertices", mod->name);
+	else if (pheader->numverts > MAXALIASVERTS)
+		Sys_Error ("model %s has too many vertices (%d; max = %d)", mod->name, pheader->numverts, MAXALIASVERTS);
+
+	pheader->numtris = LittleLong (pinmodel->numtris);
+
+	if (pheader->numtris <= 0)
+		Sys_Error ("model %s has no triangles", mod->name);
+
+	pheader->numframes = LittleLong (pinmodel->numframes);
+	numframes = pheader->numframes;
+	if (numframes < 1)
+		Sys_Error ("Mod_LoadAliasModelNew: Invalid # of frames: %d", numframes);
+
+	pheader->size = LittleFloat (pinmodel->size) * ALIAS_BASE_SIZE_RATIO;
+	mod->synctype = (synctype_t) LittleLong (pinmodel->synctype);
+	mod->numframes = pheader->numframes;
+
+	for (i=0 ; i<3 ; i++)
+	{
+		pheader->scale[i] = LittleFloat (pinmodel->scale[i]);
+		pheader->scale_origin[i] = LittleFloat (pinmodel->scale_origin[i]);
+		pheader->eyeposition[i] = LittleFloat (pinmodel->eyeposition[i]);
+	}
+
+//
+// load the skins
+//
+	pskintype = (daliasskintype_t *)&pinmodel[1];
+	pskintype = (daliasskintype_t *) Mod_LoadAllSkins (pheader->numskins, pskintype);
+
+//
+// load base s and t vertices (H2 uses num_st_verts, not numverts)
+//
+	pinstverts = (stvert_t *)pskintype;
+	stverts = pinstverts;
+
+	for (i=0 ; i<num_st_verts ; i++)
+	{
+		pinstverts[i].onseam = LittleLong (pinstverts[i].onseam);
+		pinstverts[i].s = LittleLong (pinstverts[i].s);
+		pinstverts[i].t = LittleLong (pinstverts[i].t);
+	}
+
+//
+// load triangle lists (H2 uses dnewtriangle_t with short indices and stindex)
+// Convert to standard dtriangle_t format for compatibility with GL code
+//
+	pintriangles = (dnewtriangle_t *)&pinstverts[num_st_verts];
+
+	// Allocate standard triangles array (use local ptr since global is const)
+	{
+		dtriangle_t *tris = (dtriangle_t *) Hunk_AllocName (pheader->numtris * sizeof(dtriangle_t), loadname);
+
+		for (i=0 ; i<pheader->numtris ; i++)
+		{
+			tris[i].facesfront = LittleLong (pintriangles[i].facesfront);
+
+			for (j=0 ; j<3 ; j++)
+			{
+				// H2 uses short indices; stindex provides the ST vertex lookup
+				tris[i].vertindex[j] = LittleShort (pintriangles[i].vertindex[j]);
+			}
+		}
+		triangles = tris;
+	}
+
+//
+// load the frames
+//
+	posenum = 0;
+	pframetype = (daliasframetype_t *)&pintriangles[pheader->numtris];
+
+	for (i=0 ; i<numframes ; i++)
+	{
+		aliasframetype_t	frametype;
+		frametype = (aliasframetype_t) LittleLong (pframetype->type);
+		if (frametype == ALIAS_SINGLE)
+			pframetype = (daliasframetype_t *) Mod_LoadAliasFrame (pframetype + 1, &pheader->frames[i]);
+		else
+			pframetype = (daliasframetype_t *) Mod_LoadAliasGroup (pframetype + 1, &pheader->frames[i]);
+	}
+
+	pheader->numposes = posenum;
+	pheader->poseverttype = PV_QUAKE1;  // H2 uses same vertex format
+
+	mod->type = mod_alias;
+
+	Mod_SetExtraFlags (mod);
+
+	Mod_CalcAliasBounds (pheader);
 
 	//
 	// build the draw lists

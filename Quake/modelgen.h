@@ -137,5 +137,37 @@ typedef struct {
 #define IDPOLYHEADER	(('O'<<24)+('P'<<16)+('D'<<8)+'I')
 														// little-endian "IDPO"
 
+// Hexen II model format (Ravensoft)
+#define RAPOLYHEADER	(('O'<<24)+('P'<<16)+('A'<<8)+'R')
+														// little-endian "RAPO"
+#define ALIAS_VERSION_H2	50	// Hexen II model version
+
+// Hexen II newmdl_t - has extra num_st_verts field
+typedef struct {
+	int		ident;
+	int		version;
+	vec3_t		scale;
+	vec3_t		scale_origin;
+	float		boundingradius;
+	vec3_t		eyeposition;
+	int		numskins;
+	int		skinwidth;
+	int		skinheight;
+	int		numverts;
+	int		numtris;
+	int		numframes;
+	synctype_t	synctype;
+	int		flags;
+	float		size;
+	int		num_st_verts;	// H2: separate ST vertex count
+} newmdl_t;
+
+// Hexen II triangle with separate ST indices
+typedef struct {
+	int		facesfront;
+	unsigned short	vertindex[3];
+	unsigned short	stindex[3];
+} dnewtriangle_t;
+
 #endif	/* _MODELGEN_H */
 

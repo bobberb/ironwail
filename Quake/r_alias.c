@@ -273,7 +273,6 @@ void R_SetupAliasLighting (entity_t	*e)
 		// These use lightstyles 25-27 which have special animated values
 		if (mls == H2_MLS_FULLBRIGHT || mls == H2_MLS_POWERMODE || mls == H2_MLS_TORCH)
 		{
-			extern int d_lightstylevalue[MAX_LIGHTSTYLES];
 			int style_idx = 24 + mls;  // MLS 1,2,3 map to styles 25,26,27
 			if (style_idx < MAX_LIGHTSTYLES)
 			{
