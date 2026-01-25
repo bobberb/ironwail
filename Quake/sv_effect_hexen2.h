@@ -40,6 +40,6 @@ void SV_EndEffect(int idx);
 
 // Save/load effects for save games
 void SV_SaveEffects(FILE *f);
-void SV_LoadEffects(FILE *f);
+const char *SV_LoadEffects(const char *data);
 
 #endif // SV_EFFECT_HEXEN2_H

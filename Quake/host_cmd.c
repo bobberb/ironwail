@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "q_ctype.h"
 #include "json.h"
+#include "sv_effect_hexen2.h"
 #include <time.h>
 #ifndef WITHOUT_CURL
 #include <curl/curl.h>
@@ -2337,7 +2338,11 @@ static int Host_BackgroundSave (void *param)
 			fflush (save->file);
 		}
 		if (!abort)
+		{
 			fprintf (save->file, "// %d edicts\n", save->num_edicts);
+			// Hexen II: Save effects after edicts
+			SV_SaveEffects(save->file);
+		}
 		PR_SwitchQCVM (NULL);
 
 		fclose (save->file);
