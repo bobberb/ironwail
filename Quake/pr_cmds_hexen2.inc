@@ -789,26 +789,76 @@ static void PF_h2_doWhiteFlash (void)
 =================
 PF_h2_UpdateSoundPos
 
-Update positional sound
+Update positional sound - sends current entity position for a playing sound
 void UpdateSoundPos(entity e, float channel) = #105
 =================
 */
 static void PF_h2_UpdateSoundPos (void)
 {
-	// Stub: TODO - implement sound position updates
-	Con_DPrintf("PF_h2_UpdateSoundPos: stub\n");
+	edict_t	*entity;
+	int		channel;
+	int		ent;
+	vec3_t	pos;
+
+	entity = G_EDICT(OFS_PARM0);
+	channel = (int)G_FLOAT(OFS_PARM1);
+
+	if (channel < 0 || channel > 7)
+	{
+		Con_Warning("PF_h2_UpdateSoundPos: channel = %i\n", channel);
+		return;
+	}
+
+	// Check if there's room in the datagram (1 cmd + 2 short + 12 coords = ~15 bytes)
+	if (sv.datagram.cursize > MAX_DATAGRAM - 16)
+		return;
+
+	ent = NUM_FOR_EDICT(entity);
+
+	// Compute entity center (origin + half of bounding box)
+	pos[0] = entity->v.origin[0] + 0.5f * (entity->v.mins[0] + entity->v.maxs[0]);
+	pos[1] = entity->v.origin[1] + 0.5f * (entity->v.mins[1] + entity->v.maxs[1]);
+	pos[2] = entity->v.origin[2] + 0.5f * (entity->v.mins[2] + entity->v.maxs[2]);
+
+	// Pack entity and channel into a short (entity in upper bits, channel in lower 3)
+	MSG_WriteByte(&sv.datagram, svc_h2_sound_update_pos);
+	MSG_WriteShort(&sv.datagram, (ent << 3) | channel);
+	MSG_WriteCoord(&sv.datagram, pos[0], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, pos[1], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, pos[2], sv.protocolflags);
 }
 
 /*
 =================
 PF_h2_StopSound
 
-Stop a playing sound
+Stop a playing sound on an entity/channel
 void StopSound(entity e, float channel) = #106
 =================
 */
 static void PF_h2_StopSound (void)
 {
-	// Stub: TODO - implement sound stopping
-	Con_DPrintf("PF_h2_StopSound: stub\n");
+	edict_t	*entity;
+	int		channel;
+	int		ent;
+
+	entity = G_EDICT(OFS_PARM0);
+	channel = (int)G_FLOAT(OFS_PARM1);
+
+	if (channel < 0 || channel > 7)
+	{
+		Con_Warning("PF_h2_StopSound: channel = %i\n", channel);
+		return;
+	}
+
+	// Check if there's room in the datagram (1 cmd + 2 short = 3 bytes)
+	if (sv.datagram.cursize > MAX_DATAGRAM - 4)
+		return;
+
+	ent = NUM_FOR_EDICT(entity);
+
+	// Pack entity and channel into a short (entity in upper bits, channel in lower 3)
+	// Uses standard svc_stopsound which is protocol-independent
+	MSG_WriteByte(&sv.datagram, svc_stopsound);
+	MSG_WriteShort(&sv.datagram, (ent << 3) | channel);
 }
