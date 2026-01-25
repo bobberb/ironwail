@@ -257,11 +257,22 @@ svc_sound_update_pos = 53
 - Inventory commands with wrapping selection
 - Ring power tracking for HUD display
 
-### 4.3 Menu Extensions
-- [ ] Add class selection menu
-- [ ] Implement H2 mission pack detection
-- [ ] Add objectives/info string display
-- [ ] Support H2 game data detection
+### 4.3 Menu Extensions ✅ **COMPLETED**
+- [ ] Add class selection menu - DEFERRED (use "playerclass X" command)
+- [x] Implement H2 mission pack detection
+- [x] Add objectives/info string display
+- [x] Support H2 game data detection (done in Phase 1)
+
+**Files modified:**
+- `protocol_hexen2.c` - Added hexen2_missionpack flag
+- `protocol_hexen2.h` - Added extern for missionpack flag
+- `sbar_hexen2.c` - Added Sbar_H2_DrawInfoOverlay() for puzzle display
+- `sbar.c` - Registered +showinfo/-showinfo, +showdm/-showdm commands
+
+**What works:**
+- Portal of Praevus mission pack auto-detected
+- +showinfo shows puzzle pieces overlay
+- +showdm for deathmatch overlay toggle
 
 ## Phase 5: Audio & Assets
 

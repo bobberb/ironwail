@@ -27,6 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Global flag indicating if Hexen II mode is active
 qboolean hexen2_mode = false;
 
+// Global flag indicating if Portal of Praevus mission pack is detected
+qboolean hexen2_missionpack = false;
+
 // Console variable for forcing Hexen II mode
 static cvar_t cv_game_hexen2 = {"game_hexen2", "0", CVAR_NONE};
 
@@ -140,7 +143,8 @@ void H2_DetectGameType(void)
 		{
 			fclose(dummy);
 			hexen2_mode = true;
-			Con_Printf("Hexen II mode: DETECTED (portals/pak3.pak found)\n");
+			hexen2_missionpack = true;
+			Con_Printf("Hexen II mode: DETECTED (Portal of Praevus mission pack)\n");
 			return;
 		}
 

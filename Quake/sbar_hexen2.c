@@ -96,6 +96,7 @@ static void Sbar_H2_DrawHealthChain(void);
 static void Sbar_H2_DrawArmor(void);
 static void Sbar_H2_DrawRings(void);
 static void Sbar_H2_DrawArtifactInventory(void);
+static void Sbar_H2_DrawInfoOverlay(void);
 static qboolean Sbar_H2_SetChainPosition(float health, float maxHealth, qboolean immediate);
 
 /*
@@ -635,6 +636,9 @@ void Sbar_H2_Draw(void)
 	Sbar_H2_DrawTopBar();
 	Sbar_H2_DrawBottomBar();
 	Sbar_H2_DrawArtifactInventory();
+
+	// Draw info overlay if active
+	Sbar_H2_DrawInfoOverlay();
 }
 
 /*
@@ -811,12 +815,63 @@ void Sbar_H2_InvChanged(void)
 Info display toggles
 ===============
 */
+static qboolean sb_h2_showinfo = false;
+static qboolean sb_h2_showdm = false;
+
 void Sbar_H2_ShowInfo(qboolean show)
 {
-	// TODO: Implement objectives/info display
+	if (show && !sb_h2_showinfo)
+	{
+		S_LocalSound("misc/barmovup.wav");
+	}
+	sb_h2_showinfo = show;
 }
 
 void Sbar_H2_ShowDM(qboolean show)
 {
-	// TODO: Implement deathmatch overlay toggle
+	sb_h2_showdm = show;
+}
+
+/*
+===============
+Sbar_H2_DrawInfoOverlay
+
+Draw puzzle pieces and objectives when +showinfo is pressed
+===============
+*/
+static void Sbar_H2_DrawInfoOverlay(void)
+{
+	int i, y, piece;
+	char puzPath[64];
+
+	if (!sb_h2_showinfo)
+		return;
+
+	// Draw puzzle pieces with names
+	y = 32;
+	piece = 0;
+
+	Draw_String(80, y, "Puzzle Pieces:");
+	y += 16;
+
+	for (i = 0; i < 8; i++)
+	{
+		if (cl.puzzle_pieces[i][0] == 0)
+			continue;
+
+		// Draw puzzle piece icon
+		q_snprintf(puzPath, sizeof(puzPath), "gfx/puzzle/%s.lmp", cl.puzzle_pieces[i]);
+		Draw_Pic(80, y, Draw_CachePic(puzPath));
+
+		// Draw puzzle piece name
+		Draw_String(120, y + 8, cl.puzzle_pieces[i]);
+
+		y += 36;
+		piece++;
+	}
+
+	if (piece == 0)
+	{
+		Draw_String(80, y, "(none)");
+	}
 }

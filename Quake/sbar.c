@@ -276,6 +276,30 @@ static void Sbar_InvOff_f(void)
 		Sbar_H2_InvOff();
 }
 
+static void Sbar_ShowInfo_f(void)
+{
+	if (hexen2_mode)
+		Sbar_H2_ShowInfo(true);
+}
+
+static void Sbar_HideInfo_f(void)
+{
+	if (hexen2_mode)
+		Sbar_H2_ShowInfo(false);
+}
+
+static void Sbar_ShowDM_f(void)
+{
+	if (hexen2_mode)
+		Sbar_H2_ShowDM(true);
+}
+
+static void Sbar_HideDM_f(void)
+{
+	if (hexen2_mode)
+		Sbar_H2_ShowDM(false);
+}
+
 /*
 ===============
 Sbar_Init -- johnfitz -- rewritten
@@ -291,8 +315,10 @@ void Sbar_Init (void)
 	Cmd_AddCommand ("invright", Sbar_InvRight_f);
 	Cmd_AddCommand ("invuse", Sbar_InvUse_f);
 	Cmd_AddCommand ("invoff", Sbar_InvOff_f);
-	Cmd_AddCommand ("+showinfo", NULL);  // TODO: Implement info overlay
-	Cmd_AddCommand ("-showinfo", NULL);
+	Cmd_AddCommand ("+showinfo", Sbar_ShowInfo_f);
+	Cmd_AddCommand ("-showinfo", Sbar_HideInfo_f);
+	Cmd_AddCommand ("+showdm", Sbar_ShowDM_f);
+	Cmd_AddCommand ("-showdm", Sbar_HideDM_f);
 
 	Sbar_LoadPics ();
 }

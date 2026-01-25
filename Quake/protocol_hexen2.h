@@ -337,9 +337,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define H2_SFL_128				128		// Reserved flag
 
 //==================
-// Global flag to indicate Hexen II mode is active
+// Global flags to indicate Hexen II mode and mission pack
 //==================
 extern qboolean hexen2_mode;
+extern qboolean hexen2_missionpack;	// Portal of Praevus detected
 
 //==================
 // Function declarations
