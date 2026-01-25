@@ -358,6 +358,44 @@ static ddef_t *ED_FindGlobal (const char *name)
 	return NULL;
 }
 
+/*
+============
+H2_SetupGlobals
+
+Set up Hexen II specific global pointers and entity field offsets after loading H2 progs
+============
+*/
+void H2_SetupGlobals (void)
+{
+	ddef_t *def;
+
+	// Initialize to defaults
+	h2_globals.cycle_wrapped = NULL;
+	h2_globals.ofs_frame = -1;
+	h2_globals.ofs_weaponframe = -1;
+	h2_globals.ofs_nextthink = -1;
+	h2_globals.ofs_think = -1;
+
+	if (!hexen2_mode)
+		return;
+
+	// Find cycle_wrapped global
+	def = ED_FindGlobal("cycle_wrapped");
+	if (def)
+		h2_globals.cycle_wrapped = (float *)&qcvm->globals[def->ofs];
+	else
+		Con_DPrintf("H2_SetupGlobals: cycle_wrapped not found in progs\n");
+
+	// Find entity field offsets
+	h2_globals.ofs_frame = ED_FindFieldOffset("frame");
+	h2_globals.ofs_weaponframe = ED_FindFieldOffset("weaponframe");
+	h2_globals.ofs_nextthink = ED_FindFieldOffset("nextthink");
+	h2_globals.ofs_think = ED_FindFieldOffset("think");
+
+	Con_Printf("H2_SetupGlobals: frame=%d weaponframe=%d nextthink=%d think=%d cycle_wrapped=%p\n",
+		h2_globals.ofs_frame, h2_globals.ofs_weaponframe,
+		h2_globals.ofs_nextthink, h2_globals.ofs_think, h2_globals.cycle_wrapped);
+}
 
 /*
 ============
@@ -1608,6 +1646,7 @@ void PR_ShutdownExtensions (void)
 
 THREAD_LOCAL qcvm_t			*qcvm;
 THREAD_LOCAL globalvars_t	*pr_global_struct;
+THREAD_LOCAL h2_globals_t	h2_globals;
 
 void PR_SwitchQCVM(qcvm_t *nvm)
 {
@@ -2130,8 +2169,8 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 		qboolean is_h2_crc = false;
 		switch(qcvm->progs->crc)
 		{
-		case PROGHEADER_CRC_H2_V112:	// 38488 - hexen2 mission pack (Portal of Praevus)
-		case PROGHEADER_CRC_H2_V111:	// 26905 - hexen2 1.11
+		case PROGHEADER_CRC_H2_V112:	// 26905 - Portal of Praevus (mission pack)
+		case PROGHEADER_CRC_H2_V111:	// 38488 - hexen2 1.11
 		case PROGHEADER_CRC_H2_V103:	// 14046 - hexen2 demo/1.03
 		case PROGHEADER_CRC_H2_UQE:		// 19889 - UQE patch
 			is_h2_crc = true;
@@ -2166,8 +2205,8 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 			case 32401:	//tenebrae
 				Con_Printf("%s - tenebrae gamecode is not supported\n", filename);
 				break;
-			case PROGHEADER_CRC_H2_V112:	// 38488
-			case PROGHEADER_CRC_H2_V111:	// 26905
+			case PROGHEADER_CRC_H2_V112:	// 26905
+			case PROGHEADER_CRC_H2_V111:	// 38488
 			case PROGHEADER_CRC_H2_V103:	// 14046
 			case PROGHEADER_CRC_H2_UQE:		// 19889
 				Con_Printf("%s - hexen2 gamecode requires hexen2_mode\n", filename);
@@ -2267,6 +2306,9 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 	PR_FillOffsetTables ();
 
 	qcvm->effects_mask = PR_FindSupportedEffects ();
+
+	// Set up Hexen II specific global pointers
+	H2_SetupGlobals ();
 
 	return true;
 }

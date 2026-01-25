@@ -307,6 +307,19 @@ typedef struct savedata_s
 extern THREAD_LOCAL globalvars_t	*pr_global_struct;
 extern THREAD_LOCAL qcvm_t			*qcvm;
 
+/* Hexen II specific global and entity field pointers - set up when loading H2 progs */
+typedef struct
+{
+	float	*cycle_wrapped;
+	/* Entity field offsets (in words, -1 if not found) */
+	int		ofs_frame;
+	int		ofs_weaponframe;
+	int		ofs_nextthink;
+	int		ofs_think;
+} h2_globals_t;
+
+extern THREAD_LOCAL h2_globals_t	h2_globals;
+
 void PR_SwitchQCVM(qcvm_t *nvm);
 void PR_PushQCVM(qcvm_t *newvm, qcvm_t **oldvm);
 void PR_PopQCVM(qcvm_t *oldvm);

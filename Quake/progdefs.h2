@@ -224,10 +224,10 @@ typedef struct
 	float	string_index;		// H2: string index
 } entvars_t;
 
-// Hexen II progs CRC values
-#define PROGHEADER_CRC_H2_V103		14046
-#define PROGHEADER_CRC_H2_V111		26905
-#define PROGHEADER_CRC_H2_V112		38488	// Mission Pack
+// Hexen II progs CRC values (from uhexen2 progdefs.h)
+#define PROGHEADER_CRC_H2_V103		14046	// Hexen II 1.03/demo
+#define PROGHEADER_CRC_H2_V111		38488	// Hexen II 1.11 (also 1.09)
+#define PROGHEADER_CRC_H2_V112		26905	// Portal of Praevus (Mission Pack)
 #define PROGHEADER_CRC_H2_UQE		19889	// UQE patch
 
 // Use mission pack CRC as default

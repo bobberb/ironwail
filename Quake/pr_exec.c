@@ -107,7 +107,58 @@ static const char *const pr_opnames[] =
 	"OR",
 
 	"BITAND",
-	"BITOR"
+	"BITOR",
+
+	/* Hexen II opcodes */
+	"MULSTORE_F",
+	"MULSTORE_V",
+	"MULSTOREP_F",
+	"MULSTOREP_V",
+
+	"DIVSTORE_F",
+	"DIVSTOREP_F",
+
+	"ADDSTORE_F",
+	"ADDSTORE_V",
+	"ADDSTOREP_F",
+	"ADDSTOREP_V",
+
+	"SUBSTORE_F",
+	"SUBSTORE_V",
+	"SUBSTOREP_F",
+	"SUBSTOREP_V",
+
+	"FETCH_GBL_F",
+	"FETCH_GBL_V",
+	"FETCH_GBL_S",
+	"FETCH_GBL_E",
+	"FETCH_GBL_FNC",
+
+	"CSTATE",
+	"CWSTATE",
+
+	"THINKTIME",
+
+	"BITSET",
+	"BITSETP",
+	"BITCLR",
+	"BITCLRP",
+
+	"RAND0",
+	"RAND1",
+	"RAND2",
+	"RANDV0",
+	"RANDV1",
+	"RANDV2",
+
+	"SWITCH_F",
+	"SWITCH_V",
+	"SWITCH_S",
+	"SWITCH_E",
+	"SWITCH_FNC",
+
+	"CASE",
+	"CASERANGE"
 };
 
 static const char *const pr_extnames[QCEXT_COUNT] =
@@ -392,6 +443,23 @@ The interpretation main loop
 #define OPB ((eval_t *)&qcvm->globals[(unsigned short)st->b])
 #define OPC ((eval_t *)&qcvm->globals[(unsigned short)st->c])
 
+/* Hexen II frame time constant (20 fps) */
+#define HX_FRAME_TIME	0.05f
+
+/* H2 entity field access macros - use dynamic offsets for H2 mode */
+#define H2_ED_FLOAT(ed, ofs) (((float *)&(ed)->v)[ofs])
+#define H2_ED_INT(ed, ofs) (((int *)&(ed)->v)[ofs])
+#define H2_ED_FUNC(ed, ofs) (((func_t *)&(ed)->v)[ofs])
+
+/* Hexen II switch statement types */
+enum {
+	H2_SWITCH_F,
+	H2_SWITCH_V,
+	H2_SWITCH_S,
+	H2_SWITCH_E,
+	H2_SWITCH_FNC
+};
+
 void PR_ExecuteProgram (func_t fnum)
 {
 	eval_t		*ptr;
@@ -400,6 +468,9 @@ void PR_ExecuteProgram (func_t fnum)
 	int profile, startprofile;
 	edict_t		*ed;
 	int		exitdepth;
+	/* Hexen II switch statement state */
+	int		h2_case_type = 0;
+	float		h2_switch_float = 0;
 
 	if (!fnum || fnum >= qcvm->progs->numfunctions)
 	{
@@ -680,6 +751,308 @@ void PR_ExecuteProgram (func_t fnum)
 		ed->v.nextthink = pr_global_struct->time + 0.1;
 		ed->v.frame = OPA->_float;
 		ed->v.think = OPB->function;
+		break;
+
+	/* ==================== */
+	/* Hexen II Opcodes     */
+	/* ==================== */
+
+	case OP_MULSTORE_F:	/* f *= f */
+		OPB->_float *= OPA->_float;
+		break;
+	case OP_MULSTORE_V:	/* v *= f */
+		OPB->vector[0] *= OPA->_float;
+		OPB->vector[1] *= OPA->_float;
+		OPB->vector[2] *= OPA->_float;
+		break;
+	case OP_MULSTOREP_F:	/* e.f *= f */
+		ptr = (eval_t *)((byte *)qcvm->edicts + OPB->_int);
+		OPC->_float = (ptr->_float *= OPA->_float);
+		break;
+	case OP_MULSTOREP_V:	/* e.v *= f */
+		ptr = (eval_t *)((byte *)qcvm->edicts + OPB->_int);
+		OPC->vector[0] = (ptr->vector[0] *= OPA->_float);
+		OPC->vector[1] = (ptr->vector[1] *= OPA->_float);
+		OPC->vector[2] = (ptr->vector[2] *= OPA->_float);
+		break;
+
+	case OP_DIVSTORE_F:	/* f /= f */
+		OPB->_float /= OPA->_float;
+		break;
+	case OP_DIVSTOREP_F:	/* e.f /= f */
+		ptr = (eval_t *)((byte *)qcvm->edicts + OPB->_int);
+		OPC->_float = (ptr->_float /= OPA->_float);
+		break;
+
+	case OP_ADDSTORE_F:	/* f += f */
+		OPB->_float += OPA->_float;
+		break;
+	case OP_ADDSTORE_V:	/* v += v */
+		OPB->vector[0] += OPA->vector[0];
+		OPB->vector[1] += OPA->vector[1];
+		OPB->vector[2] += OPA->vector[2];
+		break;
+	case OP_ADDSTOREP_F:	/* e.f += f */
+		ptr = (eval_t *)((byte *)qcvm->edicts + OPB->_int);
+		OPC->_float = (ptr->_float += OPA->_float);
+		break;
+	case OP_ADDSTOREP_V:	/* e.v += v */
+		ptr = (eval_t *)((byte *)qcvm->edicts + OPB->_int);
+		OPC->vector[0] = (ptr->vector[0] += OPA->vector[0]);
+		OPC->vector[1] = (ptr->vector[1] += OPA->vector[1]);
+		OPC->vector[2] = (ptr->vector[2] += OPA->vector[2]);
+		break;
+
+	case OP_SUBSTORE_F:	/* f -= f */
+		OPB->_float -= OPA->_float;
+		break;
+	case OP_SUBSTORE_V:	/* v -= v */
+		OPB->vector[0] -= OPA->vector[0];
+		OPB->vector[1] -= OPA->vector[1];
+		OPB->vector[2] -= OPA->vector[2];
+		break;
+	case OP_SUBSTOREP_F:	/* e.f -= f */
+		ptr = (eval_t *)((byte *)qcvm->edicts + OPB->_int);
+		OPC->_float = (ptr->_float -= OPA->_float);
+		break;
+	case OP_SUBSTOREP_V:	/* e.v -= v */
+		ptr = (eval_t *)((byte *)qcvm->edicts + OPB->_int);
+		OPC->vector[0] = (ptr->vector[0] -= OPA->vector[0]);
+		OPC->vector[1] = (ptr->vector[1] -= OPA->vector[1]);
+		OPC->vector[2] = (ptr->vector[2] -= OPA->vector[2]);
+		break;
+
+	case OP_FETCH_GBL_F:
+	case OP_FETCH_GBL_S:
+	case OP_FETCH_GBL_E:
+	case OP_FETCH_GBL_FNC:
+	  {
+		int i = (int)OPB->_float;
+		if (i < 0 || i > G_INT((unsigned short)st->a - 1))
+		{
+			qcvm->xstatement = st - qcvm->statements;
+			PR_RunError("array index out of bounds: %d", i);
+		}
+		ptr = (eval_t *)&qcvm->globals[(unsigned short)st->a + i];
+		OPC->_int = ptr->_int;
+	  }
+		break;
+	case OP_FETCH_GBL_V:
+	  {
+		int i = (int)OPB->_float;
+		if (i < 0 || i > G_INT((unsigned short)st->a - 1))
+		{
+			qcvm->xstatement = st - qcvm->statements;
+			PR_RunError("array index out of bounds: %d", i);
+		}
+		ptr = (eval_t *)&qcvm->globals[(unsigned short)st->a + (i * 3)];
+		OPC->vector[0] = ptr->vector[0];
+		OPC->vector[1] = ptr->vector[1];
+		OPC->vector[2] = ptr->vector[2];
+	  }
+		break;
+
+	case OP_CSTATE:	/* Cycle state - frame animation */
+	  {
+		int startFrame, endFrame;
+		float curFrame;
+		ed = PROG_TO_EDICT(pr_global_struct->self);
+		H2_ED_FLOAT(ed, h2_globals.ofs_nextthink) = pr_global_struct->time + HX_FRAME_TIME;
+		H2_ED_FUNC(ed, h2_globals.ofs_think) = qcvm->xfunction - qcvm->functions;
+		if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = false;
+		startFrame = (int)OPA->_float;
+		endFrame = (int)OPB->_float;
+		curFrame = H2_ED_FLOAT(ed, h2_globals.ofs_frame);
+		if (startFrame <= endFrame)
+		{
+			if (curFrame < startFrame || curFrame > endFrame)
+				H2_ED_FLOAT(ed, h2_globals.ofs_frame) = startFrame;
+			else
+			{
+				curFrame++;
+				H2_ED_FLOAT(ed, h2_globals.ofs_frame) = curFrame;
+				if (curFrame > endFrame)
+				{
+					if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = true;
+					H2_ED_FLOAT(ed, h2_globals.ofs_frame) = startFrame;
+				}
+			}
+		}
+		else
+		{
+			if (curFrame > startFrame || curFrame < endFrame)
+				H2_ED_FLOAT(ed, h2_globals.ofs_frame) = startFrame;
+			else
+			{
+				curFrame--;
+				H2_ED_FLOAT(ed, h2_globals.ofs_frame) = curFrame;
+				if (curFrame < endFrame)
+				{
+					if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = true;
+					H2_ED_FLOAT(ed, h2_globals.ofs_frame) = startFrame;
+				}
+			}
+		}
+	  }
+		break;
+
+	case OP_CWSTATE:	/* Cycle weapon state - weapon frame animation */
+	  {
+		int startFrame, endFrame;
+		float curFrame;
+		ed = PROG_TO_EDICT(pr_global_struct->self);
+		H2_ED_FLOAT(ed, h2_globals.ofs_nextthink) = pr_global_struct->time + HX_FRAME_TIME;
+		H2_ED_FUNC(ed, h2_globals.ofs_think) = qcvm->xfunction - qcvm->functions;
+		if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = false;
+		startFrame = (int)OPA->_float;
+		endFrame = (int)OPB->_float;
+		curFrame = H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe);
+		if (startFrame <= endFrame)
+		{
+			if (curFrame < startFrame || curFrame > endFrame)
+				H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = startFrame;
+			else
+			{
+				curFrame++;
+				H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = curFrame;
+				if (curFrame > endFrame)
+				{
+					if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = true;
+					H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = startFrame;
+				}
+			}
+		}
+		else
+		{
+			if (curFrame > startFrame || curFrame < endFrame)
+				H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = startFrame;
+			else
+			{
+				curFrame--;
+				H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = curFrame;
+				if (curFrame < endFrame)
+				{
+					if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = true;
+					H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = startFrame;
+				}
+			}
+		}
+	  }
+		break;
+
+	case OP_THINKTIME:
+		ed = PROG_TO_EDICT(OPA->edict);
+		if (ed == (edict_t *)qcvm->edicts && sv.state == ss_active)
+		{
+			qcvm->xstatement = st - qcvm->statements;
+			PR_RunError("assignment to world entity");
+		}
+		H2_ED_FLOAT(ed, h2_globals.ofs_nextthink) = pr_global_struct->time + OPB->_float;
+		break;
+
+	case OP_BITSET:		/* f (+) f  - set bits */
+		OPB->_float = (int)OPB->_float | (int)OPA->_float;
+		break;
+	case OP_BITSETP:	/* e.f (+) f */
+		ptr = (eval_t *)((byte *)qcvm->edicts + OPB->_int);
+		ptr->_float = (int)ptr->_float | (int)OPA->_float;
+		break;
+	case OP_BITCLR:		/* f (-) f  - clear bits */
+		OPB->_float = (int)OPB->_float & ~((int)OPA->_float);
+		break;
+	case OP_BITCLRP:	/* e.f (-) f */
+		ptr = (eval_t *)((byte *)qcvm->edicts + OPB->_int);
+		ptr->_float = (int)ptr->_float & ~((int)OPA->_float);
+		break;
+
+	case OP_RAND0:	/* random() - 0 to 1 */
+	  {
+		float val = rand() * (1.0f / RAND_MAX);
+		G_FLOAT(OFS_RETURN) = val;
+	  }
+		break;
+	case OP_RAND1:	/* random(f) - 0 to f */
+	  {
+		float val = rand() * (1.0f / RAND_MAX) * OPA->_float;
+		G_FLOAT(OFS_RETURN) = val;
+	  }
+		break;
+	case OP_RAND2:	/* random(f, f) - min to max */
+	  {
+		float val;
+		if (OPA->_float < OPB->_float)
+			val = OPA->_float + (rand() * (1.0f / RAND_MAX) * (OPB->_float - OPA->_float));
+		else
+			val = OPB->_float + (rand() * (1.0f / RAND_MAX) * (OPA->_float - OPB->_float));
+		G_FLOAT(OFS_RETURN) = val;
+	  }
+		break;
+	case OP_RANDV0:	/* randomv() - vector 0 to 1 */
+	  {
+		float *retptr = &G_FLOAT(OFS_RETURN);
+		*retptr++ = rand() * (1.0f / RAND_MAX);
+		*retptr++ = rand() * (1.0f / RAND_MAX);
+		*retptr   = rand() * (1.0f / RAND_MAX);
+	  }
+		break;
+	case OP_RANDV1:	/* randomv(v) - vector 0 to v */
+	  {
+		float *retptr = &G_FLOAT(OFS_RETURN);
+		*retptr++ = rand() * (1.0f / RAND_MAX) * OPA->vector[0];
+		*retptr++ = rand() * (1.0f / RAND_MAX) * OPA->vector[1];
+		*retptr   = rand() * (1.0f / RAND_MAX) * OPA->vector[2];
+	  }
+		break;
+	case OP_RANDV2:	/* randomv(v, v) - vector min to max */
+	  {
+		float val;
+		int i;
+		float *retptr = &G_FLOAT(OFS_RETURN);
+		for (i = 0; i < 3; i++)
+		{
+			if (OPA->vector[i] < OPB->vector[i])
+				val = OPA->vector[i] + (rand() * (1.0f / RAND_MAX) * (OPB->vector[i] - OPA->vector[i]));
+			else
+				val = OPB->vector[i] + (rand() * (1.0f / RAND_MAX) * (OPA->vector[i] - OPB->vector[i]));
+			*retptr++ = val;
+		}
+	  }
+		break;
+
+	case OP_SWITCH_F:
+		h2_case_type = H2_SWITCH_F;
+		h2_switch_float = OPA->_float;
+		st += (short)st->b - 1;	/* -1 to offset the st++ */
+		break;
+	case OP_SWITCH_V:
+	case OP_SWITCH_S:
+	case OP_SWITCH_E:
+	case OP_SWITCH_FNC:
+		qcvm->xstatement = st - qcvm->statements;
+		PR_RunError("switch type %d not implemented", st->op - OP_SWITCH_F);
+		break;
+
+	case OP_CASE:
+		if (h2_case_type == H2_SWITCH_F)
+		{
+			if (h2_switch_float == OPA->_float)
+				st += (short)st->b - 1;	/* -1 to offset the st++ */
+		}
+		else
+		{
+			qcvm->xstatement = st - qcvm->statements;
+			PR_RunError("case for switch type %d not implemented", h2_case_type);
+		}
+		break;
+
+	case OP_CASERANGE:
+		if (h2_case_type != H2_SWITCH_F)
+		{
+			qcvm->xstatement = st - qcvm->statements;
+			PR_RunError("caserange requires float switch");
+		}
+		if ((h2_switch_float >= OPA->_float) && (h2_switch_float <= OPB->_float))
+			st += (short)st->c - 1;	/* -1 to offset the st++ */
 		break;
 
 	default:
