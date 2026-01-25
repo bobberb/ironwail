@@ -227,6 +227,7 @@ typedef enum
 	FL_PARTIALGROUND			= 1024,	// not all corners are valid
 	FL_WATERJUMP				= 2048,	// player jumping out of water
 	FL_JUMPRELEASED				= 4096,	// for jump debouncing
+	FL_MOVECHAIN_ANGLE			= 32768,	// Hexen II: when in movechain, also update angles
 } eflags_t;
 
 // entity effects

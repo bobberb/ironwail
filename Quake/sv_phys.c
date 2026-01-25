@@ -1498,8 +1498,12 @@ SV_Physics
 void SV_Physics (void)
 {
 	int	i;
-	int	entity_cap; // For sv_freezenonclients 
+	int	entity_cap; // For sv_freezenonclients
 	edict_t	*ent;
+	// Hexen II movechain support
+	vec3_t	oldOrigin, oldAngle;
+	edict_t	*movechain_ent;
+	eval_t	*val;
 
 // let the progs know that a new frame has started
 	pr_global_struct->self = EDICT_TO_PROG(qcvm->edicts);
@@ -1525,6 +1529,24 @@ void SV_Physics (void)
 		if (ent->free)
 			continue;
 
+		// Hexen II: Save old origin/angles for movechain propagation
+		movechain_ent = NULL;
+		if (hexen2_mode)
+		{
+			val = GetEdictFieldValueByName(ent, "movechain");
+			if (val && val->edict != 0)
+			{
+				movechain_ent = PROG_TO_EDICT(val->edict);
+				if (movechain_ent == qcvm->edicts)
+					movechain_ent = NULL;
+				else
+				{
+					VectorCopy(ent->v.origin, oldOrigin);
+					VectorCopy(ent->v.angles, oldAngle);
+				}
+			}
+		}
+
 		if (pr_global_struct->force_retouch)
 		{
 			SV_LinkEdict (ent, true);	// force retouch even for stationary
@@ -1548,6 +1570,58 @@ void SV_Physics (void)
 			SV_Physics_Toss (ent);
 		else
 			Sys_Error ("SV_Physics: bad movetype %i", (int)ent->v.movetype);
+
+		// Hexen II: Propagate movement to chained entities
+		if (movechain_ent != NULL)
+		{
+			vec3_t origin_delta, angle_delta;
+			qboolean origin_moved;
+			int chain_count;
+			edict_t *chain_ent;
+
+			origin_moved = !VectorCompare(ent->v.origin, oldOrigin);
+			if (origin_moved || !VectorCompare(ent->v.angles, oldAngle))
+			{
+				VectorSubtract(ent->v.origin, oldOrigin, origin_delta);
+				VectorSubtract(ent->v.angles, oldAngle, angle_delta);
+
+				chain_ent = movechain_ent;
+				for (chain_count = 0; chain_count < 10; chain_count++)
+				{
+					if (chain_ent->free)
+						break;
+
+					// Apply movement delta to chained entity
+					VectorAdd(origin_delta, chain_ent->v.origin, chain_ent->v.origin);
+
+					// Apply angle delta if FL_MOVECHAIN_ANGLE is set
+					if ((int)chain_ent->v.flags & FL_MOVECHAIN_ANGLE)
+					{
+						VectorAdd(angle_delta, chain_ent->v.angles, chain_ent->v.angles);
+					}
+
+					// Call chainmoved callback if entity moved and callback exists
+					if (origin_moved)
+					{
+						val = GetEdictFieldValueByName(chain_ent, "chainmoved");
+						if (val && val->function)
+						{
+							pr_global_struct->self = EDICT_TO_PROG(chain_ent);
+							pr_global_struct->other = EDICT_TO_PROG(ent);
+							PR_ExecuteProgram(val->function);
+						}
+					}
+
+					// Follow the chain
+					val = GetEdictFieldValueByName(chain_ent, "movechain");
+					if (!val || val->edict == 0)
+						break;
+					chain_ent = PROG_TO_EDICT(val->edict);
+					if (chain_ent == qcvm->edicts)
+						break;
+				}
+			}
+		}
 
 	//johnfitz -- PROTOCOL_FITZQUAKE
 	//capture interval to nextthink here and send it to client for better
