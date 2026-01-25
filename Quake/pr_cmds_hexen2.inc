@@ -590,30 +590,60 @@ static void PF_h2_precache_puzzle_model (void)
 =================
 PF_h2_concatv
 
-Concatenate vectors (string concat of vector values)
-string concatv(vector v1, vector v2, ...) = #91
+Clamp input vector components to range
+vector concatv(vector in, vector range) = #91
+
+Despite the name, this doesn't concatenate strings.
+It clamps each component of 'in' to [-range, +range].
 =================
 */
 static void PF_h2_concatv (void)
 {
-	// Stub: TODO - implement vector string concatenation
-	Con_DPrintf("PF_h2_concatv: stub\n");
-	G_INT(OFS_RETURN) = 0;
+	float *in, *range;
+	vec3_t result;
+
+	in = G_VECTOR(OFS_PARM0);
+	range = G_VECTOR(OFS_PARM1);
+
+	VectorCopy(in, result);
+
+	if (result[0] < -range[0])
+		result[0] = -range[0];
+	if (result[0] > range[0])
+		result[0] = range[0];
+	if (result[1] < -range[1])
+		result[1] = -range[1];
+	if (result[1] > range[1])
+		result[1] = range[1];
+	if (result[2] < -range[2])
+		result[2] = -range[2];
+	if (result[2] > range[2])
+		result[2] = range[2];
+
+	VectorCopy(result, G_VECTOR(OFS_RETURN));
 }
 
 /*
 =================
 PF_h2_GetString
 
-Get string from index
+Get localized string from index
 string GetString(float index) = #92
+
+Returns the localized string from strings.txt by index.
+Note: This requires the host string system (strings.txt loading)
+which provides internationalized game text.
 =================
 */
 static void PF_h2_GetString (void)
 {
-	// Stub: TODO - implement string table lookup
-	Con_DPrintf("PF_h2_GetString: stub\n");
-	G_INT(OFS_RETURN) = 0;
+	int idx = (int)G_FLOAT(OFS_PARM0);
+
+	// Note: Full implementation requires loading strings.txt
+	// For now, return empty string to avoid crashes
+	// The game will still work but text will be missing
+	Con_DPrintf("PF_h2_GetString: index %d (strings.txt not loaded)\n", idx);
+	G_INT(OFS_RETURN) = PR_SetEngineString("");
 }
 
 /*
@@ -622,13 +652,18 @@ PF_h2_SpawnTemp
 
 Spawn temporary entity
 entity SpawnTemp() = #93
+
+In H2, temporary entities are managed in a separate pool for
+faster allocation/deallocation. Here we use regular ED_Alloc()
+which works identically, just without the optimization.
 =================
 */
 static void PF_h2_SpawnTemp (void)
 {
-	// Stub: TODO - implement temp entity spawning
 	edict_t	*ed;
+
 	ed = ED_Alloc();
+
 	RETURN_EDICT(ed);
 }
 
@@ -636,30 +671,76 @@ static void PF_h2_SpawnTemp (void)
 =================
 PF_h2_v_factor
 
-Vector factor calculation
-float v_factor(vector v1, vector v2) = #94
+Calculate vector from factors applied to direction vectors
+vector v_factor(vector factors) = #94
+
+Returns: (v_right * factors.x) + (v_forward * factors.y) + (v_up * factors.z)
 =================
 */
 static void PF_h2_v_factor (void)
 {
-	// Stub: TODO - implement vector math
-	Con_DPrintf("PF_h2_v_factor: stub\n");
-	G_FLOAT(OFS_RETURN) = 0;
+	float *factors;
+	vec3_t result;
+
+	factors = G_VECTOR(OFS_PARM0);
+
+	result[0] = (pr_global_struct->v_right[0] * factors[0]) +
+				(pr_global_struct->v_forward[0] * factors[1]) +
+				(pr_global_struct->v_up[0] * factors[2]);
+
+	result[1] = (pr_global_struct->v_right[1] * factors[0]) +
+				(pr_global_struct->v_forward[1] * factors[1]) +
+				(pr_global_struct->v_up[1] * factors[2]);
+
+	result[2] = (pr_global_struct->v_right[2] * factors[0]) +
+				(pr_global_struct->v_forward[2] * factors[1]) +
+				(pr_global_struct->v_up[2] * factors[2]);
+
+	VectorCopy(result, G_VECTOR(OFS_RETURN));
 }
 
 /*
 =================
 PF_h2_v_factorrange
 
-Vector factor range calculation
-float v_factorrange(vector v1, vector v2, float min, float max) = #95
+Calculate vector from random factors in range applied to direction vectors
+vector v_factorrange(vector minv, vector maxv) = #95
+
+Picks random factors between minv and maxv, then:
+Returns: (v_right * factor.x) + (v_forward * factor.y) + (v_up * factor.z)
 =================
 */
 static void PF_h2_v_factorrange (void)
 {
-	// Stub: TODO - implement vector math
-	Con_DPrintf("PF_h2_v_factorrange: stub\n");
-	G_FLOAT(OFS_RETURN) = 0;
+	float *minv, *maxv;
+	float num;
+	vec3_t factors, result;
+
+	minv = G_VECTOR(OFS_PARM0);
+	maxv = G_VECTOR(OFS_PARM1);
+
+	// Pick random factors in the range
+	num = (float)rand() / (float)RAND_MAX;
+	factors[0] = ((maxv[0] - minv[0]) * num) + minv[0];
+	num = (float)rand() / (float)RAND_MAX;
+	factors[1] = ((maxv[1] - minv[1]) * num) + minv[1];
+	num = (float)rand() / (float)RAND_MAX;
+	factors[2] = ((maxv[2] - minv[2]) * num) + minv[2];
+
+	// Apply to direction vectors
+	result[0] = (pr_global_struct->v_right[0] * factors[0]) +
+				(pr_global_struct->v_forward[0] * factors[1]) +
+				(pr_global_struct->v_up[0] * factors[2]);
+
+	result[1] = (pr_global_struct->v_right[1] * factors[0]) +
+				(pr_global_struct->v_forward[1] * factors[1]) +
+				(pr_global_struct->v_up[1] * factors[2]);
+
+	result[2] = (pr_global_struct->v_right[2] * factors[0]) +
+				(pr_global_struct->v_forward[2] * factors[1]) +
+				(pr_global_struct->v_up[2] * factors[2]);
+
+	VectorCopy(result, G_VECTOR(OFS_RETURN));
 }
 
 /*
