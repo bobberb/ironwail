@@ -80,14 +80,38 @@ static void PF_h2_tracearea (void)
 =================
 PF_h2_particle2
 
-Extended particle with color
+Extended particle with min/max bounds
 void particle2(vector org, vector dmin, vector dmax, float color, float effect, float count) = #42
 =================
 */
 static void PF_h2_particle2 (void)
 {
-	// Stub: TODO - implement extended particle system in Phase 3
-	Con_DPrintf("PF_h2_particle2: stub\n");
+	float	*org, *dmin, *dmax;
+	int		color, effect, count;
+
+	org = G_VECTOR(OFS_PARM0);
+	dmin = G_VECTOR(OFS_PARM1);
+	dmax = G_VECTOR(OFS_PARM2);
+	color = (int)G_FLOAT(OFS_PARM3);
+	effect = (int)G_FLOAT(OFS_PARM4);
+	count = (int)G_FLOAT(OFS_PARM5);
+
+	if (sv.datagram.cursize > MAX_DATAGRAM - 36)
+		return;
+
+	MSG_WriteByte(&sv.datagram, svc_h2_particle2);
+	MSG_WriteCoord(&sv.datagram, org[0], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[1], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[2], sv.protocolflags);
+	MSG_WriteFloat(&sv.datagram, dmin[0]);
+	MSG_WriteFloat(&sv.datagram, dmin[1]);
+	MSG_WriteFloat(&sv.datagram, dmin[2]);
+	MSG_WriteFloat(&sv.datagram, dmax[0]);
+	MSG_WriteFloat(&sv.datagram, dmax[1]);
+	MSG_WriteFloat(&sv.datagram, dmax[2]);
+	MSG_WriteShort(&sv.datagram, color);
+	MSG_WriteByte(&sv.datagram, count);
+	MSG_WriteByte(&sv.datagram, effect);
 }
 
 /*
@@ -115,28 +139,93 @@ static void PF_h2_vhlen (void)
 =================
 PF_h2_AdvanceFrame
 
-Advance animation frame
+Advance animation frame. Returns:
+  0 = frame advanced normally (or started fresh)
+  1 = frame wrapped back to start
+  2 = frame reached end
+
 void AdvanceFrame(float start, float end) = #63
 =================
 */
 static void PF_h2_AdvanceFrame (void)
 {
-	// Stub: TODO - implement proper animation frame advance
-	Con_DPrintf("PF_h2_AdvanceFrame: stub\n");
+	edict_t	*ent;
+	float	start, end, result;
+
+	ent = PROG_TO_EDICT(pr_global_struct->self);
+	start = G_FLOAT(OFS_PARM0);
+	end = G_FLOAT(OFS_PARM1);
+
+	if (ent->v.frame < start || ent->v.frame > end)
+	{
+		// Didn't start in the range
+		ent->v.frame = start;
+		result = 0;
+	}
+	else if (ent->v.frame == end)
+	{
+		// Wrapping
+		ent->v.frame = start;
+		result = 1;
+	}
+	else
+	{
+		// Regular advance
+		ent->v.frame++;
+		if (ent->v.frame == end)
+			result = 2;
+		else
+			result = 0;
+	}
+
+	G_FLOAT(OFS_RETURN) = result;
 }
 
 /*
 =================
 PF_h2_RewindFrame
 
-Rewind animation frame
+Rewind animation frame (plays backwards from start to end).
+Note: start > end for rewind. Returns:
+  0 = frame rewound normally (or started fresh)
+  1 = frame wrapped back to start
+  2 = frame reached end
+
 void RewindFrame(float start, float end) = #65
 =================
 */
 static void PF_h2_RewindFrame (void)
 {
-	// Stub: TODO - implement proper animation frame rewind
-	Con_DPrintf("PF_h2_RewindFrame: stub\n");
+	edict_t	*ent;
+	float	start, end, result;
+
+	ent = PROG_TO_EDICT(pr_global_struct->self);
+	start = G_FLOAT(OFS_PARM0);
+	end = G_FLOAT(OFS_PARM1);
+
+	if (ent->v.frame > start || ent->v.frame < end)
+	{
+		// Didn't start in the range
+		ent->v.frame = start;
+		result = 0;
+	}
+	else if (ent->v.frame == end)
+	{
+		// Wrapping
+		ent->v.frame = start;
+		result = 1;
+	}
+	else
+	{
+		// Regular rewind (decrement)
+		ent->v.frame--;
+		if (ent->v.frame == end)
+			result = 2;
+		else
+			result = 0;
+	}
+
+	G_FLOAT(OFS_RETURN) = result;
 }
 
 /*
@@ -253,42 +342,125 @@ static void PF_h2_movestep (void)
 =================
 PF_h2_advanceweaponframe
 
-Advance weapon animation frame
+Advance weapon animation frame. Handles bidirectional animation.
+Returns:
+  0 = WF_NORMAL_ADVANCE - frame advanced normally
+  1 = WF_CYCLE_STARTED - animation cycle started fresh
+  2 = WF_CYCLE_WRAPPED - animation wrapped back to start
+  3 = WF_LAST_FRAME - reached the end frame
+
 void advanceweaponframe(float start, float end) = #83
 =================
 */
+#define WF_NORMAL_ADVANCE	0
+#define WF_CYCLE_STARTED	1
+#define WF_CYCLE_WRAPPED	2
+#define WF_LAST_FRAME		3
+
 static void PF_h2_advanceweaponframe (void)
 {
-	// Stub: TODO - implement weapon animation
-	Con_DPrintf("PF_h2_advanceweaponframe: stub\n");
+	edict_t	*ent;
+	float	startframe, endframe;
+	float	state;
+
+	ent = PROG_TO_EDICT(pr_global_struct->self);
+	startframe = G_FLOAT(OFS_PARM0);
+	endframe = G_FLOAT(OFS_PARM1);
+
+	if ((endframe > startframe && (ent->v.weaponframe > endframe || ent->v.weaponframe < startframe)) ||
+	    (endframe < startframe && (ent->v.weaponframe < endframe || ent->v.weaponframe > startframe)))
+	{
+		// Start fresh
+		ent->v.weaponframe = startframe;
+		state = WF_CYCLE_STARTED;
+	}
+	else if (ent->v.weaponframe == endframe)
+	{
+		// Wrap back to start
+		ent->v.weaponframe = startframe;
+		state = WF_CYCLE_WRAPPED;
+	}
+	else
+	{
+		// Advance in the appropriate direction
+		if (startframe > endframe)
+			ent->v.weaponframe = ent->v.weaponframe - 1;
+		else if (startframe < endframe)
+			ent->v.weaponframe = ent->v.weaponframe + 1;
+
+		if (ent->v.weaponframe == endframe)
+			state = WF_LAST_FRAME;
+		else
+			state = WF_NORMAL_ADVANCE;
+	}
+
+	G_FLOAT(OFS_RETURN) = state;
 }
 
 /*
 =================
 PF_h2_particle3
 
-Extended particle variant 3
-void particle3(vector org, vector box, float color, float count) = #85
+Extended particle with box bounds
+void particle3(vector org, vector box, float color, float effect, float count) = #85
 =================
 */
 static void PF_h2_particle3 (void)
 {
-	// Stub: TODO - implement in Phase 3
-	Con_DPrintf("PF_h2_particle3: stub\n");
+	float	*org, *box;
+	int		color, effect, count;
+
+	org = G_VECTOR(OFS_PARM0);
+	box = G_VECTOR(OFS_PARM1);
+	color = (int)G_FLOAT(OFS_PARM2);
+	effect = (int)G_FLOAT(OFS_PARM3);
+	count = (int)G_FLOAT(OFS_PARM4);
+
+	if (sv.datagram.cursize > MAX_DATAGRAM - 15)
+		return;
+
+	MSG_WriteByte(&sv.datagram, svc_h2_particle3);
+	MSG_WriteCoord(&sv.datagram, org[0], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[1], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[2], sv.protocolflags);
+	MSG_WriteByte(&sv.datagram, (int)box[0]);
+	MSG_WriteByte(&sv.datagram, (int)box[1]);
+	MSG_WriteByte(&sv.datagram, (int)box[2]);
+	MSG_WriteShort(&sv.datagram, color);
+	MSG_WriteByte(&sv.datagram, count);
+	MSG_WriteByte(&sv.datagram, effect);
 }
 
 /*
 =================
 PF_h2_particle4
 
-Extended particle variant 4
-void particle4(vector org, float radius, float color, float count) = #86
+Extended particle with radius
+void particle4(vector org, float radius, float color, float effect, float count) = #86
 =================
 */
 static void PF_h2_particle4 (void)
 {
-	// Stub: TODO - implement in Phase 3
-	Con_DPrintf("PF_h2_particle4: stub\n");
+	float	*org;
+	int		radius, color, effect, count;
+
+	org = G_VECTOR(OFS_PARM0);
+	radius = (int)G_FLOAT(OFS_PARM1);
+	color = (int)G_FLOAT(OFS_PARM2);
+	effect = (int)G_FLOAT(OFS_PARM3);
+	count = (int)G_FLOAT(OFS_PARM4);
+
+	if (sv.datagram.cursize > MAX_DATAGRAM - 13)
+		return;
+
+	MSG_WriteByte(&sv.datagram, svc_h2_particle4);
+	MSG_WriteCoord(&sv.datagram, org[0], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[1], sv.protocolflags);
+	MSG_WriteCoord(&sv.datagram, org[2], sv.protocolflags);
+	MSG_WriteByte(&sv.datagram, radius);
+	MSG_WriteShort(&sv.datagram, color);
+	MSG_WriteByte(&sv.datagram, count);
+	MSG_WriteByte(&sv.datagram, effect);
 }
 
 /*
@@ -309,28 +481,49 @@ static void PF_h2_setpuzzlemodel (void)
 =================
 PF_h2_starteffect
 
-Start visual effect
+Start visual effect. Effect type and parameters are read from QC globals.
+This is a complex function that handles 60+ effect types.
 void starteffect() = #88
+
+TODO: Full implementation requires sv.Effects array and SV_ParseEffect
 =================
 */
 static void PF_h2_starteffect (void)
 {
-	// Stub: TODO - implement effect system in Phase 3
-	Con_DPrintf("PF_h2_starteffect: stub\n");
+	int effect_type;
+
+	effect_type = (int)G_FLOAT(OFS_PARM0);
+
+	// For now, just log the effect type - full implementation requires
+	// the effects management system from sv_effect.c
+	Con_DPrintf("PF_h2_starteffect: effect type %d (not fully implemented)\n", effect_type);
 }
 
 /*
 =================
 PF_h2_endeffect
 
-End visual effect
-void endeffect(float index) = #89
+End visual effect by index
+void endeffect(float index1, float index2) = #89
+
+Note: uhexen2 reads both parm0 and parm1 but only uses parm1
 =================
 */
 static void PF_h2_endeffect (void)
 {
-	// Stub: TODO - implement effect system in Phase 3
-	Con_DPrintf("PF_h2_endeffect: stub\n");
+	int idx;
+
+	/* uhexen2 reads both but only uses parm1 */
+	idx = (int)G_FLOAT(OFS_PARM1);
+
+	/* Send end effect message to clients */
+	if (sv.datagram.cursize > MAX_DATAGRAM - 2)
+		return;
+
+	MSG_WriteByte(&sv.datagram, svc_h2_end_effect);
+	MSG_WriteByte(&sv.datagram, idx);
+
+	Con_DPrintf("PF_h2_endeffect: ending effect %d\n", idx);
 }
 
 /*
