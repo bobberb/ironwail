@@ -24,6 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "sv_effect_hexen2.h"
 
+// Hexen II mission pack objective tracking
+// These bitmasks track which objectives have been achieved
+// TODO: Full implementation requires save/load support and network sync to clients
+static unsigned int h2_info_mask = 0;   // Objectives 0-31
+static unsigned int h2_info_mask2 = 0;  // Objectives 32-63
+
 /*
 =================
 PF_h2_lightstylestatic
@@ -286,14 +292,34 @@ static void PF_h2_lightstylevalue (void)
 =================
 PF_h2_plaque_draw
 
-Draw story plaque
-void plaque_draw(float) = #79
+Draw story plaque - displays text from strings.txt
+void plaque_draw(float to, float index) = #79
+
+The first param is the message destination (MSG_ONE, MSG_ALL, etc.)
+The second param is the string index into strings.txt (0 = clear plaque)
 =================
 */
 static void PF_h2_plaque_draw (void)
 {
-	// Stub: TODO - implement plaque drawing in Phase 4
-	Con_DPrintf("PF_h2_plaque_draw: stub\n");
+	int idx;
+	sizebuf_t *dest;
+
+	// OFS_PARM0 is the destination, read by WriteDest
+	idx = (int)G_FLOAT(OFS_PARM1);
+
+	// 0 means "clear the plaque message"
+	if (idx < 0)
+	{
+		Con_Warning("PF_h2_plaque_draw: invalid index %d\n", idx);
+		return;
+	}
+
+	dest = WriteDest();
+	if (!dest)
+		return;
+
+	MSG_WriteByte(dest, svc_h2_plaque);
+	MSG_WriteShort(dest, idx);
 }
 
 /*
@@ -902,14 +928,50 @@ static void PF_h2_matchAngleToSlope (void)
 =================
 PF_h2_updateInfoPlaque
 
-Update mission objective plaque
-void updateInfoPlaque(float index, float show) = #100
+Update mission objective tracking (Portal of Praevus mission pack)
+void updateInfoPlaque(float index, float mode) = #100
+
+Index is 0-63, mode is:
+  1 (FORCE_ON): Force objective to be set
+  2 (FORCE_OFF): Force objective to be cleared
+  Otherwise: Toggle the objective state
 =================
 */
 static void PF_h2_updateInfoPlaque (void)
 {
-	// Stub: TODO - implement in Phase 4
-	Con_DPrintf("PF_h2_updateInfoPlaque: stub\n");
+	unsigned int idx, mode;
+	unsigned int check;
+	unsigned int *use;
+
+	idx = (unsigned int)G_FLOAT(OFS_PARM0);
+	mode = (unsigned int)G_FLOAT(OFS_PARM1);
+
+	// Index must be in range 0-63
+	if (idx < 32)
+	{
+		use = &h2_info_mask;
+		check = 1U << idx;
+	}
+	else if (idx < 64)
+	{
+		use = &h2_info_mask2;
+		check = 1U << (idx - 32);
+	}
+	else
+	{
+		Con_Warning("PF_h2_updateInfoPlaque: bad objective index %u\n", idx);
+		return;
+	}
+
+	// Apply mode
+	if ((mode & 1 /* FORCE_ON */) && (*use & check))
+		; // Already set, do nothing
+	else if ((mode & 2 /* FORCE_OFF */) && !(*use & check))
+		; // Already clear, do nothing
+	else
+		*use ^= check; // Toggle
+
+	// TODO: Send update to clients when network sync is implemented
 }
 
 /*
