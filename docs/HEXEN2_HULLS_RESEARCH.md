@@ -123,11 +123,20 @@ Handle loading BSPs with 4 or 8 hulls based on detected format.
 ### progdefs.h
 Already includes `.hull` field in H2 progdefs.
 
-## Recommendations
+## Implementation Status
 
-1. **For now**: Use Quake hull selection, H2 maps need H2-compiled BSPs
-2. **Future**: Add runtime MAX_MAP_HULLS based on loaded BSP
-3. **Testing**: Verify with original H2 maps which use all hull types
+**IMPLEMENTED** - The following changes have been made:
+
+1. `bspfile.h`: MAX_MAP_HULLS increased from 4 to 8
+2. `gl_model.c`: H2 hulls 2-5 initialized when `hexen2_mode` is true
+3. `world.c`: H2 hull selection logic added to `SV_HullForEntity`
+
+### Remaining Work
+
+- The `.hull` entity field is not yet used for explicit hull selection
+  (would require passing move_ent to SV_HullForEntity)
+- Runtime detection of BSP hull count not implemented
+  (all BSPs assumed to support 8 hulls)
 
 ## References
 
