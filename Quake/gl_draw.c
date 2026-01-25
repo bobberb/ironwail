@@ -571,8 +571,17 @@ void Draw_LoadPics (void)
 	char_texture = TexMgr_LoadImage (NULL, WADFILENAME":conchars", 16*10, 16*10, SRC_INDEXED, char_texture_data,
 		"", (src_offset_t) char_texture_data, TEXPREF_ALPHA | TEXPREF_NEAREST | TEXPREF_NOPICMIP | TEXPREF_CONCHARS);
 
-	draw_disc = Draw_PicFromWad ("disc");
-	draw_backtile = Draw_PicFromWad2 ("backtile", TEXPREF_ALPHA | TEXPREF_NOPICMIP); // no pad flag to force separate allocation
+	if (hexen2_mode)
+	{
+		/* H2 doesn't use disc or backtile from WAD - load from lmp files or skip */
+		draw_disc = NULL;
+		draw_backtile = Draw_TryCachePic("gfx/menu/backtile.lmp", TEXPREF_ALPHA | TEXPREF_NOPICMIP);
+	}
+	else
+	{
+		draw_disc = Draw_PicFromWad ("disc");
+		draw_backtile = Draw_PicFromWad2 ("backtile", TEXPREF_ALPHA | TEXPREF_NOPICMIP); // no pad flag to force separate allocation
+	}
 }
 
 /*

@@ -119,6 +119,10 @@ void Sbar_LoadPics (void)
 {
 	int		i;
 
+	/* Hexen II has completely different HUD graphics - skip Quake pics */
+	if (hexen2_mode)
+		return;
+
 	for (i = 0; i < 10; i++)
 	{
 		sb_nums[0][i] = Draw_PicFromWad (va("num_%i",i));
