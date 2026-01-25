@@ -255,6 +255,7 @@ OBJS = strlcat.o \
 	cl_tent.o \
 	protocol_hexen2.o \
 	sv_effect_hexen2.o \
+	sv_inventory_hexen2.o \
 	console.o \
 	keys.o \
 	menu.o \

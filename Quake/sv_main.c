@@ -1226,6 +1226,10 @@ qboolean SV_SendClientDatagram (client_t *client)
 // add the client specific data to the datagram
 	SV_WriteClientdataToMessage (client->edict, &msg);
 
+	// Hexen II: send inventory/stats updates using SC1/SC2 protocol
+	if (hexen2_mode)
+		SV_H2_WriteInventoryUpdate(client, client->edict, &msg);
+
 	SV_WriteEntitiesToClient (client->edict, &msg);
 
 // copy the server datagram if there is space
