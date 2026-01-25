@@ -75,27 +75,37 @@ This document tracks the progress of porting Hexen II functionality from uhexen2
 | PF_RewindFrame (#65) | [ ] | `h2shared/pr_cmds.c:1318` | `pr_cmds_hexen2.inc` |
 | PF_setclass (#66) | [x] | `h2shared/pr_cmds.c:1356` | `pr_cmds_hexen2.inc` |
 | PF_lightstylevalue (#72) | [ ] | `h2shared/pr_cmds.c:1420` | `pr_cmds_hexen2.inc` |
-| PF_plaque_draw (#79) | [ ] | `h2shared/pr_cmds.c:1504` | `pr_cmds_hexen2.inc` |
-| PF_rain_go (#80) | [ ] | `h2shared/pr_cmds.c:1542` | `pr_cmds_hexen2.inc` |
-| PF_particleexplosion (#81) | [ ] | `h2shared/pr_cmds.c:1588` | `pr_cmds_hexen2.inc` |
-| PF_advanceweaponframe (#82) | [ ] | `h2shared/pr_cmds.c:1632` | `pr_cmds_hexen2.inc` |
+| PF_plaque_draw (#79) | [x] | `h2shared/pr_cmds.c:1504` | `pr_cmds_hexen2.inc` |
+| PF_rain_go (#80) | [x] | `h2shared/pr_cmds.c:1542` | `pr_cmds_hexen2.inc` |
+| PF_particleexplosion (#81) | [x] | `h2shared/pr_cmds.c:1588` | `pr_cmds_hexen2.inc` |
+| PF_movestep (#82) | [~] | `h2shared/pr_cmds.c:1632` | `pr_cmds_hexen2.inc` (stub) |
 | PF_particle3 (#85) | [ ] | `h2shared/pr_cmds.c:1712` | `pr_cmds_hexen2.inc` |
 | PF_particle4 (#86) | [ ] | `h2shared/pr_cmds.c:1758` | `pr_cmds_hexen2.inc` |
-| PF_setpuzzlemodel (#87) | [ ] | `h2shared/pr_cmds.c:1802` | `pr_cmds_hexen2.inc` |
-| PF_starteffect (#88) | [ ] | `h2shared/pr_cmds.c:1846` | `pr_cmds_hexen2.inc` |
-| PF_endeffect (#89) | [ ] | `h2shared/pr_cmds.c:1892` | `pr_cmds_hexen2.inc` |
-| PF_precache_puzzle (#90) | [ ] | `h2shared/pr_cmds.c:1932` | `pr_cmds_hexen2.inc` |
+| PF_setpuzzlemodel (#87) | [x] | `h2shared/pr_cmds.c:1802` | `pr_cmds_hexen2.inc` |
+| PF_starteffect (#88) | [x] | `h2shared/pr_cmds.c:1846` | `sv_effect_hexen2.c` |
+| PF_endeffect (#89) | [x] | `h2shared/pr_cmds.c:1892` | `sv_effect_hexen2.c` |
+| PF_precache_puzzle (#90) | [x] | `h2shared/pr_cmds.c:1932` | `pr_cmds_hexen2.inc` |
 | PF_concatv (#91) | [ ] | `h2shared/pr_cmds.c:1968` | `pr_cmds_hexen2.inc` |
 | PF_GetString (#92) | [ ] | `h2shared/pr_cmds.c:2002` | `pr_cmds_hexen2.inc` |
 | PF_SpawnTemp (#93) | [ ] | `h2shared/pr_cmds.c:2038` | `pr_cmds_hexen2.inc` |
-| PF_v_factor (#94) | [ ] | `h2shared/pr_cmds.c:2078` | `pr_cmds_hexen2.inc` |
-| PF_v_factorrange (#95) | [ ] | `h2shared/pr_cmds.c:2116` | `pr_cmds_hexen2.inc` |
-| PF_matchAngleToSlope (#99) | [ ] | `h2shared/pr_cmds.c:2208` | `pr_cmds_hexen2.inc` |
-| PF_updateInfoPlaque (#100) | [ ] | `h2shared/pr_cmds.c:2268` | `pr_cmds_hexen2.inc` |
+| PF_v_factor (#94) | [x] | `h2shared/pr_cmds.c:2078` | `pr_cmds_hexen2.inc` |
+| PF_v_factorrange (#95) | [x] | `h2shared/pr_cmds.c:2116` | `pr_cmds_hexen2.inc` |
+| PF_matchAngleToSlope (#99) | [x] | `h2shared/pr_cmds.c:2208` | `pr_cmds_hexen2.inc` |
+| PF_updateInfoPlaque (#100) | [x] | `h2shared/pr_cmds.c:2268` | `pr_cmds_hexen2.inc` |
 | PF_stof (#101) | [ ] | `h2shared/pr_cmds.c:2308` | `pr_cmds_hexen2.inc` |
-| PF_doWhiteFlash (#104) | [ ] | `h2shared/pr_cmds.c:2372` | `pr_cmds_hexen2.inc` |
-| PF_UpdateSoundPos (#105) | [ ] | `h2shared/pr_cmds.c:2408` | `pr_cmds_hexen2.inc` |
-| PF_StopSound (#106) | [ ] | `h2shared/pr_cmds.c:2454` | `pr_cmds_hexen2.inc` |
+| PF_doWhiteFlash (#104) | [x] | `h2shared/pr_cmds.c:2372` | `pr_cmds_hexen2.inc` |
+| PF_UpdateSoundPos (#105) | [x] | `h2shared/pr_cmds.c:2408` | `pr_cmds_hexen2.inc` |
+| PF_StopSound (#106) | [x] | `h2shared/pr_cmds.c:2454` | `pr_cmds_hexen2.inc` |
+
+### 2.4 Physics System
+| Feature | Status | uhexen2 Source | Ironwail File |
+|---------|--------|----------------|---------------|
+| SV_PushRotate (rotating BSP) | [x] | `hexen2/sv_phys.c` | `sv_phys.c` |
+| Movechain system | [x] | `hexen2/sv_phys.c` | `sv_phys.c` |
+| FL_MOVECHAIN_ANGLE | [x] | `hexen2/server.h` | `server.h` |
+| Hull field for collision | [x] | `hexen2/world.c` | `world.c` |
+| Server inventory sync (SC1/SC2) | [x] | `hexen2/sv_main.c` | `sv_inventory_hexen2.c` |
+| Effects save/load | [~] | `hexen2/sv_effect.c` | `sv_effect_hexen2.c` (save works) |
 
 ---
 
@@ -182,12 +192,16 @@ This document tracks the progress of porting Hexen II functionality from uhexen2
 
 ### High Priority (basic gameplay)
 1. **Frame control builtins** (`ironwail-vjj`) - AdvanceFrame, RewindFrame needed for animations
-2. **Effects builtins** (`ironwail-104`) - particle2-4, starteffect, endeffect
+2. ~~**Effects builtins** (`ironwail-104`) - particle2-4, starteffect, endeffect~~ ✅ DONE
 
 ### Medium Priority (full experience)
 1. **Rendering features** (`ironwail-80p`) - Verify scale/drawflags working
-2. **Protocol extensions** (`ironwail-soo`) - Extended stats SC1/SC2
-3. **Sound extensions** (`ironwail-deq`) - UpdateSoundPos, StopSound
+2. ~~**Protocol extensions** (`ironwail-soo`) - Extended stats SC1/SC2~~ ✅ DONE (server-side inventory sync)
+3. ~~**Sound extensions** (`ironwail-deq`) - UpdateSoundPos, StopSound~~ ✅ DONE
+4. **Water jump bug** (`ironwail-4m8`) - Some H2 maps require low physics framerates
+
+### Low Priority (polish)
+1. **Effects load from save** - Full string buffer parsing needed for load side
 
 ---
 
@@ -237,7 +251,9 @@ hexen2/snd_dma.c        - Sound system
 ### Created for H2
 - `protocol_hexen2.h` / `protocol_hexen2.c` - H2 protocol
 - `cl_parse_hexen2.h` / `cl_parse_hexen2.c` - H2 message parsing
-- `cl_effect.h` / `cl_effect.c` - Effect system
+- `cl_effect.h` / `cl_effect.c` - Client effect system
+- `sv_effect_hexen2.h` / `sv_effect_hexen2.c` - Server effect system with save/load
+- `sv_inventory_hexen2.c` - Server-side inventory sync (SC1/SC2 protocol)
 - `sbar_hexen2.h` / `sbar_hexen2.c` - H2 HUD
 - `pr_cmds_hexen2.h` / `pr_cmds_hexen2.inc` - H2 builtins
 - `progdefs.h2` - H2 entity/global structures
@@ -249,8 +265,11 @@ hexen2/snd_dma.c        - Sound system
 - `pr_edict.c` - H2 globals setup, CRC checking
 - `pr_cmds.c` - Builtin registration
 - `progs.h` - H2 globals struct
-- `sv_main.c` - H2 mode checks
-- `host_cmd.c` - H2 mode checks
+- `sv_main.c` - H2 mode checks, inventory sync hook
+- `sv_phys.c` - SV_PushRotate for rotating BSP, movechain system
+- `host_cmd.c` - H2 mode checks, effects save/load hook
+- `server.h` - FL_MOVECHAIN_ANGLE flag
+- `world.c` - Hull field for collision
 - `r_alias.c` - H2 rendering features
 - `r_part.c` - H2 particles/trails
 - `view.c` - H2 view effects
@@ -258,6 +277,7 @@ hexen2/snd_dma.c        - Sound system
 - `client.h` - H2 client state
 - `render.h` - drawflags/abslight
 - `glquake.h` - H2 particle/trail types
+- `Makefile` - Added sv_effect_hexen2.o, sv_inventory_hexen2.o
 
 ---
 

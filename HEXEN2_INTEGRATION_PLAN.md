@@ -98,11 +98,19 @@ svc_sound_update_pos = 53
 
 **Builtin implementations needed:**
 - [ ] Frame control builtins (AdvanceFrame, RewindFrame, advanceweaponframe) [bead: ironwail-vjj]
-- [ ] Effects builtins (particle2-4, starteffect, endeffect) [bead: ironwail-104]
-- [ ] rain_go builtin for weather effects [bead: ironwail-4gd]
-- [ ] setpuzzlemodel builtin [bead: ironwail-2l8]
-- [ ] matchAngleToSlope builtin [bead: ironwail-z44]
-- [ ] Remaining builtins (concatv, GetString, SpawnTemp, v_factor, stof) [bead: ironwail-dha]
+- [x] Effects builtins (particle2-4, starteffect, endeffect) - DONE
+- [x] rain_go builtin for weather effects - DONE
+- [x] setpuzzlemodel builtin - DONE
+- [x] matchAngleToSlope builtin - DONE
+- [x] Sound builtins (UpdateSoundPos, StopSound) - DONE
+- [x] Plaque builtins (plaque_draw, updateInfoPlaque) - DONE
+- [ ] Remaining builtins (concatv, GetString, SpawnTemp, stof) [bead: ironwail-dha]
+
+**Physics implementations:**
+- [x] SV_PushRotate for rotating SOLID_BSP entities - Full uhexen2 port
+- [x] Movechain system for linked entity movement
+- [x] Hull field for custom collision hull selection
+- [x] Server-side inventory sync (SC1/SC2 protocol)
 
 **Files modified:**
 - `pr_edict.c` - Modified CRC checking to accept H2 CRCs (38488, 26905, 14046, 19889) when hexen2_mode is active
@@ -273,7 +281,7 @@ svc_sound_update_pos = 53
 - [x] Implement H2 mission pack detection
 - [x] Add objectives/info string display
 - [x] Support H2 game data detection (done in Phase 1)
-- [ ] Plaque system (plaque_draw, updateInfoPlaque) [bead: ironwail-eco]
+- [x] Plaque system (plaque_draw, updateInfoPlaque) - DONE
 - [ ] Fix graphics loading issues in H2 mode (conchars, menus) [bead: ironwail-hu3.31]
 
 **Files modified:**
@@ -292,7 +300,7 @@ svc_sound_update_pos = 53
 ### 5.1 Audio Extensions
 - [ ] Add MIDI support for H2 music tracks [bead: ironwail-hu3.21]
 - [ ] Implement music name overrides (svc_midi_name, svc_mod_name) [bead: ironwail-hu3.24]
-- [ ] Support H2 sound positioning updates (UpdateSoundPos, StopSound, 512 sounds) [bead: ironwail-deq]
+- [x] Support H2 sound positioning updates (UpdateSoundPos, StopSound) - DONE
 - [ ] Handle H2-specific audio codec requirements [bead: ironwail-hu3.30]
 
 ### 5.2 Asset Loading
