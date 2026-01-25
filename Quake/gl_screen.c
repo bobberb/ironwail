@@ -611,6 +611,13 @@ SCR_LoadPics -- johnfitz
 */
 void SCR_LoadPics (void)
 {
+	if (hexen2_mode)
+	{
+		/* H2 doesn't have these icons in gfx.wad */
+		scr_net = NULL;
+		scr_turtle = NULL;
+		return;
+	}
 	scr_net = Draw_PicFromWad ("net");
 	scr_turtle = Draw_PicFromWad ("turtle");
 }
@@ -1042,6 +1049,9 @@ void SCR_DrawTurtle (void)
 	if (count < 3)
 		return;
 
+	if (!scr_turtle)
+		return;
+
 	GL_SetCanvas (CANVAS_DEFAULT); //johnfitz
 
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
@@ -1057,6 +1067,8 @@ void SCR_DrawNet (void)
 	if (realtime - cl.last_received_message < 0.3)
 		return;
 	if (cls.demoplayback)
+		return;
+	if (!scr_net)
 		return;
 
 	GL_SetCanvas (CANVAS_DEFAULT); //johnfitz
