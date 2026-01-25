@@ -32,6 +32,7 @@ This document outlines the plan to integrate Hexen II features into Ironwail, al
 - [x] Implement svc_start_effect/svc_end_effect for effect streaming
 - [x] Add svc_particle_explosion for material-aware particles
 - [x] Implement stat bar messages (SC1/SC2 stat bits) - Parser stubs ready
+- [ ] Complete protocol extensions (extended stats SC1/SC2, inventory sync) [bead: ironwail-soo]
 
 **Files modified:**
 - `cl_parse_hexen2.c` - Created with 13 H2 message parsers
@@ -93,6 +94,15 @@ svc_sound_update_pos = 53
 - [x] Implement progs CRC checking for H2 compatibility
 - [ ] Support multiple progs.dat loading (map-specific progs) - DEFERRED
 - [ ] Handle progs v6 detection - DEFERRED
+- [ ] Port H2 global variable layout for v103/v111/v112 [bead: ironwail-hu3.34]
+
+**Builtin implementations needed:**
+- [ ] Frame control builtins (AdvanceFrame, RewindFrame, advanceweaponframe) [bead: ironwail-vjj]
+- [ ] Effects builtins (particle2-4, starteffect, endeffect) [bead: ironwail-104]
+- [ ] rain_go builtin for weather effects [bead: ironwail-4gd]
+- [ ] setpuzzlemodel builtin [bead: ironwail-2l8]
+- [ ] matchAngleToSlope builtin [bead: ironwail-z44]
+- [ ] Remaining builtins (concatv, GetString, SpawnTemp, v_factor, stof) [bead: ironwail-dha]
 
 **Files modified:**
 - `pr_edict.c` - Modified CRC checking to accept H2 CRCs (38488, 26905, 14046, 19889) when hexen2_mode is active
@@ -131,6 +141,7 @@ svc_sound_update_pos = 53
 - [x] Implement abslight support (absolute lighting override)
 - [x] Update network parsing to handle drawflags and abslight
 - [ ] Add colormap extensions for class-specific skins - DEFERRED
+- [ ] Additional rendering features (entity scale, full drawflags) [bead: ironwail-80p]
 
 **Files modified:**
 - `protocol.h` - Added drawflags and abslight to entity_state_t
@@ -262,6 +273,8 @@ svc_sound_update_pos = 53
 - [x] Implement H2 mission pack detection
 - [x] Add objectives/info string display
 - [x] Support H2 game data detection (done in Phase 1)
+- [ ] Plaque system (plaque_draw, updateInfoPlaque) [bead: ironwail-eco]
+- [ ] Fix graphics loading issues in H2 mode (conchars, menus) [bead: ironwail-hu3.31]
 
 **Files modified:**
 - `protocol_hexen2.c` - Added hexen2_missionpack flag
@@ -277,40 +290,41 @@ svc_sound_update_pos = 53
 ## Phase 5: Audio & Assets
 
 ### 5.1 Audio Extensions
-- [ ] Add MIDI support for H2 music tracks
-- [ ] Implement music name overrides (svc_midi_name, svc_mod_name)
-- [ ] Support H2 sound positioning updates
-- [ ] Handle H2-specific audio codec requirements
+- [ ] Add MIDI support for H2 music tracks [bead: ironwail-hu3.21]
+- [ ] Implement music name overrides (svc_midi_name, svc_mod_name) [bead: ironwail-hu3.24]
+- [ ] Support H2 sound positioning updates (UpdateSoundPos, StopSound, 512 sounds) [bead: ironwail-deq]
+- [ ] Handle H2-specific audio codec requirements [bead: ironwail-hu3.30]
 
 ### 5.2 Asset Loading
-- [ ] Support H2 model formats (potentially different from Quake)
-- [ ] Load H2 textures and sprites
-- [ ] Handle H2 BSP format differences
-- [ ] Support puzzle string loading from external file
-- [ ] Load info strings for mission pack objectives
+- [ ] Support H2 model formats (potentially different from Quake) [bead: ironwail-hu3.33]
+- [ ] Load H2 textures and sprites [bead: ironwail-hu3.36]
+- [ ] Handle H2 BSP format differences [bead: ironwail-hu3.38]
+- [ ] Support puzzle string loading from external file [bead: ironwail-hu3.39]
+- [ ] Load info strings for mission pack objectives [bead: ironwail-hu3.40]
 
 ## Phase 6: Multiplayer Features
 
 ### 6.1 HexenWorld Support
-- [ ] Implement HexenWorld-specific protocol
-- [ ] Add King of the Hill game mode support
-- [ ] Handle class-aware networking
-- [ ] Implement objective tracking sync
+- [ ] Implement HexenWorld-specific protocol [bead: ironwail-hu3.18]
+- [ ] Add King of the Hill game mode support [bead: ironwail-hu3.20]
+- [ ] Handle class-aware networking [bead: ironwail-hu3.23]
+- [ ] Implement objective tracking sync [bead: ironwail-hu3.26]
 
 ### 6.2 Scoring & Stats
-- [ ] Add per-class scoreboards
-- [ ] Implement experience/level display
-- [ ] Show artifact status in multiplayer
-- [ ] Handle H2 team modes
+- [ ] Add per-class scoreboards [bead: ironwail-hu3.29]
+- [ ] Implement experience/level display [bead: ironwail-hu3.32]
+- [ ] Show artifact status in multiplayer [bead: ironwail-hu3.35]
+- [ ] Handle H2 team modes [bead: ironwail-hu3.37]
 
 ## Phase 7: Testing & Polish ✅ **COMPLETED**
 
 ### 7.1 Compatibility Testing
 - [x] Test with original Hexen II levels - Build verified
-- [ ] Test with Portal of Praevus (mission pack) - Requires game data
+- [ ] Test with Portal of Praevus (mission pack) [bead: ironwail-hu3.19]
 - [x] Verify Quake compatibility still works - No regressions
-- [ ] Test protocol switching between games - Requires game data
-- [ ] Test multiplayer in both modes - Requires testing
+- [ ] Test protocol switching between games [bead: ironwail-hu3.25]
+- [ ] Test multiplayer in both modes [bead: ironwail-hu3.28]
+- [ ] Test original Hexen II levels end-to-end [bead: ironwail-4mv]
 
 ### 7.2 Performance Optimization
 - [x] Optimize particle system for 7000 particles - Uses existing system
@@ -370,7 +384,7 @@ bind "tab" "+showinfo"
 
 ---
 
-## Side Mission: Headless Mode Support
+## Side Mission: Headless Mode Support [bead: ironwail-92c]
 
 **Purpose**: Enable testing and CI/CD without video/audio devices. Useful for automated testing, dedicated servers, and development in restricted environments.
 
@@ -481,15 +495,15 @@ Location: `/home/josh/tmp/claudedir/uhexen2/source/`
 
 ## Success Criteria
 
-- [ ] Can load and play original Hexen II levels
-- [ ] Can load and play Portal of Praevus
+- [ ] Can load and play original Hexen II levels [bead: ironwail-4mv]
+- [ ] Can load and play Portal of Praevus [bead: ironwail-hu3.19]
 - [ ] All 4 character classes functional
 - [ ] Mana/artifact/ring systems working
 - [ ] Particles and effects rendering correctly
 - [ ] HUD displays all game state properly
 - [ ] Quake compatibility maintained (no regressions)
 - [ ] Performance comparable to Ironwail's Quake mode
-- [ ] Can switch between Quake and H2 without restart
+- [ ] Can switch between Quake and H2 without restart [bead: ironwail-hu3.25]
 
 ## Estimated Effort
 

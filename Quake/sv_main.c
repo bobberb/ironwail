@@ -51,13 +51,16 @@ void SV_CalcStats(client_t *client, int *statsi, float *statsf, const char **sta
 	statsi[STAT_WEAPON] = SV_ModelIndex(PR_GetString(ent->v.weaponmodel));
 	//if ((unsigned int)statsi[STAT_WEAPON] >= client->limit_models)
 	//	statsi[STAT_WEAPON] = 0;
-	statsf[STAT_AMMO] = ent->v.currentammo;
+	if (!hexen2_mode)
+	{
+		statsf[STAT_AMMO] = ent->v.currentammo;
+		statsf[STAT_SHELLS] = ent->v.ammo_shells;
+		statsf[STAT_NAILS] = ent->v.ammo_nails;
+		statsf[STAT_ROCKETS] = ent->v.ammo_rockets;
+		statsf[STAT_CELLS] = ent->v.ammo_cells;
+	}
 	statsf[STAT_ARMOR] = ent->v.armorvalue;
 	statsf[STAT_WEAPONFRAME] = ent->v.weaponframe;
-	statsf[STAT_SHELLS] = ent->v.ammo_shells;
-	statsf[STAT_NAILS] = ent->v.ammo_nails;
-	statsf[STAT_ROCKETS] = ent->v.ammo_rockets;
-	statsf[STAT_CELLS] = ent->v.ammo_cells;
 	statsf[STAT_ACTIVEWEAPON] = ent->v.weapon;	//sent in a way that does NOT depend upon the current mod...
 
 	//FIXME: add support for clientstat/globalstat qc builtins.
@@ -442,8 +445,17 @@ void SV_SendServerinfo (client_t *client)
 
 // send music
 	MSG_WriteByte (&client->message, svc_cdtrack);
-	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
-	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
+	if (!hexen2_mode)
+	{
+		MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
+		MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
+	}
+	else
+	{
+		// H2 uses soundtype instead of sounds for CD track
+		MSG_WriteByte (&client->message, qcvm->edicts->v.soundtype);
+		MSG_WriteByte (&client->message, qcvm->edicts->v.soundtype);
+	}
 
 // set view
 	MSG_WriteByte (&client->message, svc_setview);
@@ -1072,11 +1084,14 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	{
 		if (bits & SU_WEAPON && SV_ModelIndex(PR_GetString(ent->v.weaponmodel)) & 0xFF00) bits |= SU_WEAPON2;
 		if ((int)ent->v.armorvalue & 0xFF00) bits |= SU_ARMOR2;
-		if ((int)ent->v.currentammo & 0xFF00) bits |= SU_AMMO2;
-		if ((int)ent->v.ammo_shells & 0xFF00) bits |= SU_SHELLS2;
-		if ((int)ent->v.ammo_nails & 0xFF00) bits |= SU_NAILS2;
-		if ((int)ent->v.ammo_rockets & 0xFF00) bits |= SU_ROCKETS2;
-		if ((int)ent->v.ammo_cells & 0xFF00) bits |= SU_CELLS2;
+		if (!hexen2_mode)
+		{
+			if ((int)ent->v.currentammo & 0xFF00) bits |= SU_AMMO2;
+			if ((int)ent->v.ammo_shells & 0xFF00) bits |= SU_SHELLS2;
+			if ((int)ent->v.ammo_nails & 0xFF00) bits |= SU_NAILS2;
+			if ((int)ent->v.ammo_rockets & 0xFF00) bits |= SU_ROCKETS2;
+			if ((int)ent->v.ammo_cells & 0xFF00) bits |= SU_CELLS2;
+		}
 		if (bits & SU_WEAPONFRAME && (int)ent->v.weaponframe & 0xFF00) bits |= SU_WEAPONFRAME2;
 		if (bits & SU_WEAPON && ent->alpha != ENTALPHA_DEFAULT) bits |= SU_WEAPONALPHA; //for now, weaponalpha = client entity alpha
 		if (bits >= 65536) bits |= SU_EXTEND1;
@@ -1119,11 +1134,23 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		MSG_WriteByte (msg, SV_ModelIndex(PR_GetString(ent->v.weaponmodel)));
 
 	MSG_WriteShort (msg, ent->v.health);
-	MSG_WriteByte (msg, ent->v.currentammo);
-	MSG_WriteByte (msg, ent->v.ammo_shells);
-	MSG_WriteByte (msg, ent->v.ammo_nails);
-	MSG_WriteByte (msg, ent->v.ammo_rockets);
-	MSG_WriteByte (msg, ent->v.ammo_cells);
+	if (!hexen2_mode)
+	{
+		MSG_WriteByte (msg, ent->v.currentammo);
+		MSG_WriteByte (msg, ent->v.ammo_shells);
+		MSG_WriteByte (msg, ent->v.ammo_nails);
+		MSG_WriteByte (msg, ent->v.ammo_rockets);
+		MSG_WriteByte (msg, ent->v.ammo_cells);
+	}
+	else
+	{
+		// H2: send zeros for Quake-style ammo fields
+		MSG_WriteByte (msg, 0);	// currentammo
+		MSG_WriteByte (msg, 0);	// ammo_shells
+		MSG_WriteByte (msg, 0);	// ammo_nails
+		MSG_WriteByte (msg, 0);	// ammo_rockets
+		MSG_WriteByte (msg, 0);	// ammo_cells
+	}
 
 	if (standard_quake)
 	{
@@ -1845,9 +1872,12 @@ static void SV_PrintMapChecklist (void)
 	//
 	// music track
 	//
-	track = (int)qcvm->edicts->v.sounds;
+	if (!hexen2_mode)
+		track = (int)qcvm->edicts->v.sounds;
+	else
+		track = (int)qcvm->edicts->v.soundtype;
 	if (track == 0)
-		SV_PrintMapCheck (MAPCHECK_FAILED, "music track (worldspawn \"sounds\" field)");
+		SV_PrintMapCheck (hexen2_mode ? MAPCHECK_OK : MAPCHECK_FAILED, "music track (worldspawn \"%s\" field)", hexen2_mode ? "soundtype" : "sounds");
 	else if (track < 2 || track > 255) 
 		SV_PrintMapCheck (MAPCHECK_FAILED, "music track (%d, should be between 2 and 255)");
 	else

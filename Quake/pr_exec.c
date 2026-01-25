@@ -670,18 +670,32 @@ void PR_ExecuteProgram (func_t fnum)
 	case OP_LOAD_ENT:
 	case OP_LOAD_S:
 	case OP_LOAD_FNC:
+		if (hexen2_mode)
+		{
+			int entofs = OPA->edict;
+			Con_Printf("OP_LOAD_*: entofs=%d (0x%x) st->a=%d op=%d func=%s\n",
+				entofs, (unsigned)entofs, (unsigned short)st->a, st->op,
+				qcvm->xfunction ? PR_GetString(qcvm->xfunction->s_name) : "?");
+		}
 		ed = PROG_TO_EDICT(OPA->edict);
-#ifdef PARANOID
 		NUM_FOR_EDICT(ed);	// Make sure it's in range
-#endif
 		OPC->_int = ((eval_t *)((int *)&ed->v + OPB->_int))->_int;
 		break;
 
 	case OP_LOAD_V:
-		ed = PROG_TO_EDICT(OPA->edict);
-#ifdef PARANOID
-		NUM_FOR_EDICT(ed);	// Make sure it's in range
-#endif
+		{
+			/* Debug: print value before PROG_TO_EDICT */
+			int entofs_before = OPA->edict;
+			ed = PROG_TO_EDICT(OPA->edict);
+			if (hexen2_mode)
+			{
+				Con_Printf("OP_LOAD_V: entofs=%d ed=%p edicts=%p func=%s\n",
+					entofs_before, (void*)ed, (void*)qcvm->edicts,
+					qcvm->xfunction ? PR_GetString(qcvm->xfunction->s_name) : "?");
+				Con_Printf("  Calling NUM_FOR_EDICT with ed=%p...\n", (void*)ed);
+			}
+			NUM_FOR_EDICT(ed);	// Make sure it's in range
+		}
 		ptr = (eval_t *)((int *)&ed->v + OPB->_int);
 		OPC->vector[0] = ptr->vector[0];
 		OPC->vector[1] = ptr->vector[1];
@@ -712,6 +726,9 @@ void PR_ExecuteProgram (func_t fnum)
 		/* H2: Copy second arg from st->c to OFS_PARM1 */
 		if (hexen2_mode)
 		{
+			/* Debug: check bounds */
+			if ((unsigned short)st->c >= qcvm->progs->numglobals)
+				Con_Printf("CALL: st->c=%d out of bounds (numglobals=%d)\n", (unsigned short)st->c, qcvm->progs->numglobals);
 			qcvm->globals[OFS_PARM1] = OPC->vector[0];
 			qcvm->globals[OFS_PARM1 + 1] = OPC->vector[1];
 			qcvm->globals[OFS_PARM1 + 2] = OPC->vector[2];
@@ -721,6 +738,9 @@ void PR_ExecuteProgram (func_t fnum)
 		/* H2: Copy first arg from st->b to OFS_PARM0 */
 		if (hexen2_mode)
 		{
+			/* Debug: check bounds */
+			if ((unsigned short)st->b >= qcvm->progs->numglobals)
+				Con_Printf("CALL: st->b=%d out of bounds (numglobals=%d)\n", (unsigned short)st->b, qcvm->progs->numglobals);
 			qcvm->globals[OFS_PARM0] = OPB->vector[0];
 			qcvm->globals[OFS_PARM0 + 1] = OPB->vector[1];
 			qcvm->globals[OFS_PARM0 + 2] = OPB->vector[2];

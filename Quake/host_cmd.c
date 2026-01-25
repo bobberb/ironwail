@@ -3335,6 +3335,11 @@ static void Host_Give_f (void)
 		break;
 
 	case 's':
+		if (hexen2_mode)
+		{
+			Con_Printf("give shells: not available in Hexen II\n");
+			break;
+		}
 		if (rogue)
 		{
 		    val = GetEdictFieldValueByName(sv_player, "ammo_shells1");
@@ -3345,6 +3350,11 @@ static void Host_Give_f (void)
 		break;
 
 	case 'n':
+		if (hexen2_mode)
+		{
+			Con_Printf("give nails: not available in Hexen II\n");
+			break;
+		}
 		if (rogue)
 		{
 		    val = GetEdictFieldValueByName(sv_player, "ammo_nails1");
@@ -3362,6 +3372,11 @@ static void Host_Give_f (void)
 		break;
 
 	case 'l':
+		if (hexen2_mode)
+		{
+			Con_Printf("give lava nails: not available in Hexen II\n");
+			break;
+		}
 		if (rogue)
 		{
 		    val = GetEdictFieldValueByName(sv_player, "ammo_lava_nails");
@@ -3375,6 +3390,11 @@ static void Host_Give_f (void)
 		break;
 
 	case 'r':
+		if (hexen2_mode)
+		{
+			Con_Printf("give rockets: not available in Hexen II\n");
+			break;
+		}
 		if (rogue)
 		{
 		    val = GetEdictFieldValueByName(sv_player, "ammo_rockets1");
@@ -3392,6 +3412,11 @@ static void Host_Give_f (void)
 		break;
 
 	case 'm':
+		if (hexen2_mode)
+		{
+			Con_Printf("give multi rockets: not available in Hexen II\n");
+			break;
+		}
 		if (rogue)
 		{
 		    val = GetEdictFieldValueByName(sv_player, "ammo_multi_rockets");
@@ -3409,6 +3434,11 @@ static void Host_Give_f (void)
 		break;
 
 	case 'c':
+		if (hexen2_mode)
+		{
+			Con_Printf("give cells: not available in Hexen II\n");
+			break;
+		}
 		if (rogue)
 		{
 		    val = GetEdictFieldValueByName(sv_player, "ammo_cells1");
@@ -3426,6 +3456,11 @@ static void Host_Give_f (void)
 		break;
 
 	case 'p':
+		if (hexen2_mode)
+		{
+			Con_Printf("give plasma: not available in Hexen II\n");
+			break;
+		}
 		if (rogue)
 		{
 		    val = GetEdictFieldValueByName(sv_player, "ammo_plasma");
@@ -3469,38 +3504,41 @@ static void Host_Give_f (void)
 	}
 
 	//johnfitz -- update currentammo to match new ammo (so statusbar updates correctly)
-	switch ((int)(sv_player->v.weapon))
+	if (!hexen2_mode)
 	{
-	case IT_SHOTGUN:
-	case IT_SUPER_SHOTGUN:
-		sv_player->v.currentammo = sv_player->v.ammo_shells;
-		break;
-	case IT_NAILGUN:
-	case IT_SUPER_NAILGUN:
-	case RIT_LAVA_SUPER_NAILGUN:
-		sv_player->v.currentammo = sv_player->v.ammo_nails;
-		break;
-	case IT_GRENADE_LAUNCHER:
-	case IT_ROCKET_LAUNCHER:
-	case RIT_MULTI_GRENADE:
-	case RIT_MULTI_ROCKET:
-		sv_player->v.currentammo = sv_player->v.ammo_rockets;
-		break;
-	case IT_LIGHTNING:
-	case HIT_LASER_CANNON:
-	case HIT_MJOLNIR:
-		sv_player->v.currentammo = sv_player->v.ammo_cells;
-		break;
-	case RIT_LAVA_NAILGUN: //same as IT_AXE
-		if (rogue)
+		switch ((int)(sv_player->v.weapon))
+		{
+		case IT_SHOTGUN:
+		case IT_SUPER_SHOTGUN:
+			sv_player->v.currentammo = sv_player->v.ammo_shells;
+			break;
+		case IT_NAILGUN:
+		case IT_SUPER_NAILGUN:
+		case RIT_LAVA_SUPER_NAILGUN:
 			sv_player->v.currentammo = sv_player->v.ammo_nails;
-		break;
-	case RIT_PLASMA_GUN: //same as HIT_PROXIMITY_GUN
-		if (rogue)
-			sv_player->v.currentammo = sv_player->v.ammo_cells;
-		if (hipnotic)
+			break;
+		case IT_GRENADE_LAUNCHER:
+		case IT_ROCKET_LAUNCHER:
+		case RIT_MULTI_GRENADE:
+		case RIT_MULTI_ROCKET:
 			sv_player->v.currentammo = sv_player->v.ammo_rockets;
-		break;
+			break;
+		case IT_LIGHTNING:
+		case HIT_LASER_CANNON:
+		case HIT_MJOLNIR:
+			sv_player->v.currentammo = sv_player->v.ammo_cells;
+			break;
+		case RIT_LAVA_NAILGUN: //same as IT_AXE
+			if (rogue)
+				sv_player->v.currentammo = sv_player->v.ammo_nails;
+			break;
+		case RIT_PLASMA_GUN: //same as HIT_PROXIMITY_GUN
+			if (rogue)
+				sv_player->v.currentammo = sv_player->v.ammo_cells;
+			if (hipnotic)
+				sv_player->v.currentammo = sv_player->v.ammo_rockets;
+			break;
+		}
 	}
 	//johnfitz
 }

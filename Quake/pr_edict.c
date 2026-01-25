@@ -2370,7 +2370,34 @@ int NUM_FOR_EDICT(edict_t *e)
 	b = b / qcvm->edict_size;
 
 	if (b < 0 || b >= qcvm->num_edicts)
+	{
+		int i;
+		dfunction_t *f;
+		Con_Printf("NUM_FOR_EDICT: e=%p edicts=%p edict_size=%d num_edicts=%d b=%d\n",
+			(void*)e, (void*)qcvm->edicts, qcvm->edict_size, qcvm->num_edicts, b);
+		if (qcvm->xfunction)
+			Con_Printf("  in function: %s\n", PR_GetString(qcvm->xfunction->s_name));
+		/* Print stack trace */
+		Con_Printf("Stack trace:\n");
+		qcvm->stack[qcvm->depth].f = qcvm->xfunction;
+		for (i = qcvm->depth; i >= 0; i--)
+		{
+			f = qcvm->stack[i].f;
+			if (f)
+				Con_Printf("  %s : %s\n", PR_GetString(f->s_file), PR_GetString(f->s_name));
+		}
+		/* Print statement info */
+		if (qcvm->xstatement >= 0 && qcvm->xstatement < qcvm->progs->numstatements)
+		{
+			dstatement_t *st = &qcvm->statements[qcvm->xstatement];
+			Con_Printf("Statement: op=%d a=%d b=%d c=%d\n", st->op, st->a, st->b, st->c);
+		}
+		/* Print parameter values - useful for debugging builtin calls */
+		Con_Printf("OFS_PARM0 entity offset: %d (0x%x)\n",
+			*(int *)&qcvm->globals[OFS_PARM0], *(unsigned int *)&qcvm->globals[OFS_PARM0]);
+		Con_Printf("Raw byte offset from edicts: %ld\n", (long)((byte *)e - (byte *)qcvm->edicts));
 		Host_Error ("NUM_FOR_EDICT: bad pointer");
+	}
 	return b;
 }
 

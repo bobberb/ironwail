@@ -1,5 +1,6 @@
 
 /* file generated from Hexen II progs - Hexen II entity definitions */
+/* Based on uhexen2's progdefs.h - must match exactly for field offsets */
 
 typedef struct
 {	int	pad[28];
@@ -94,60 +95,55 @@ typedef struct
 	float	frame;
 	float	skin;
 	float	effects;
-	float	scale;			// H2: entity scale
-	float	drawflags;		// H2: special rendering flags
-	float	abslight;		// H2: absolute lighting
+	float	scale;
+	float	drawflags;
+	float	abslight;
 	vec3_t	mins;
 	vec3_t	maxs;
 	vec3_t	size;
-	float	hull;			// H2: hull size
+	float	hull;
 	func_t	touch;
 	func_t	use;
 	func_t	think;
 	func_t	blocked;
 	float	nextthink;
 	int	groundentity;
-	float	stats_restored;		// H2
+	float	stats_restored;
 	float	frags;
 	float	weapon;
 	string_t	weaponmodel;
 	float	weaponframe;
-	float	currentammo;		// Quake: current ammo (not used in H2)
-	float	ammo_shells;		// Quake: shell ammo (not used in H2)
-	float	ammo_nails;		// Quake: nail ammo (not used in H2)
-	float	ammo_rockets;		// Quake: rocket ammo (not used in H2)
-	float	ammo_cells;		// Quake: cell ammo (not used in H2)
 	float	health;
 	float	max_health;
-	float	playerclass;		// H2: player class (1-5)
-	float	bluemana;		// H2: blue mana
-	float	greenmana;		// H2: green mana
-	float	max_mana;		// H2: maximum mana
-	float	armor_amulet;		// H2: armor slot
-	float	armor_bracer;		// H2: armor slot
-	float	armor_breastplate;	// H2: armor slot
-	float	armor_helmet;		// H2: armor slot
-	float	level;			// H2: player level
-	float	intelligence;		// H2: player stat
-	float	wisdom;			// H2: player stat
-	float	dexterity;		// H2: player stat
-	float	strength;		// H2: player stat
-	float	experience;		// H2: experience points
-	float	ring_flight;		// H2: ring of flight
-	float	ring_water;		// H2: ring of water breathing
-	float	ring_turning;		// H2: ring of turning
-	float	ring_regeneration;	// H2: ring of regeneration
-	float	haste_time;		// H2: haste artifact timer
-	float	tome_time;		// H2: tome of power timer
-	string_t	puzzle_inv1;	// H2: puzzle piece slot 1
-	string_t	puzzle_inv2;	// H2: puzzle piece slot 2
-	string_t	puzzle_inv3;	// H2: puzzle piece slot 3
-	string_t	puzzle_inv4;	// H2: puzzle piece slot 4
-	string_t	puzzle_inv5;	// H2: puzzle piece slot 5
-	string_t	puzzle_inv6;	// H2: puzzle piece slot 6
-	string_t	puzzle_inv7;	// H2: puzzle piece slot 7
-	string_t	puzzle_inv8;	// H2: puzzle piece slot 8
-	float	experience_value;	// H2: exp value when killed
+	float	playerclass;
+	float	bluemana;
+	float	greenmana;
+	float	max_mana;
+	float	armor_amulet;
+	float	armor_bracer;
+	float	armor_breastplate;
+	float	armor_helmet;
+	float	level;
+	float	intelligence;
+	float	wisdom;
+	float	dexterity;
+	float	strength;
+	float	experience;
+	float	ring_flight;
+	float	ring_water;
+	float	ring_turning;
+	float	ring_regeneration;
+	float	haste_time;
+	float	tome_time;
+	string_t	puzzle_inv1;
+	string_t	puzzle_inv2;
+	string_t	puzzle_inv3;
+	string_t	puzzle_inv4;
+	string_t	puzzle_inv5;
+	string_t	puzzle_inv6;
+	string_t	puzzle_inv7;
+	string_t	puzzle_inv8;
+	float	experience_value;
 	float	items;
 	float	takedamage;
 	int	chain;
@@ -160,25 +156,24 @@ typedef struct
 	float	fixangle;
 	vec3_t	v_angle;
 	float	idealpitch;
-	float	idealroll;		// H2: ideal roll for view
-	float	hoverz;			// H2: hovering height
+	float	idealroll;
+	float	hoverz;
 	string_t	netname;
 	int	enemy;
 	float	flags;
-	float	flags2;			// H2: additional flags
-	float	artifact_flags;		// H2: artifact status flags
+	float	flags2;
+	float	artifact_flags;
 	float	colormap;
 	float	team;
-	float	light_level;		// H2: light level at entity position
+	float	light_level;
 	float	teleport_time;
 	float	armortype;
 	float	armorvalue;
 	float	waterlevel;
 	float	watertype;
-	float	friction;		// H2: surface friction
+	float	friction;
 	float	ideal_yaw;
 	float	yaw_speed;
-	int	aiment;			// Quake: aimed entity (not used in H2)
 	int	goalentity;
 	float	spawnflags;
 	string_t	target;
@@ -188,40 +183,50 @@ typedef struct
 	int	dmg_inflictor;
 	int	owner;
 	vec3_t	movedir;
-	string_t	message;		// Quake: string message (H2 uses float)
-	float	sounds;			// Quake: sound index
-	float	soundtype;		// H2: sound type
+	float	message;	// H2: float (Quake uses string_t)
+	float	soundtype;
 	string_t	noise;
 	string_t	noise1;
 	string_t	noise2;
 	string_t	noise3;
-	float	rings;			// H2: rings bitmask
-	float	rings_active;		// H2: active rings
-	float	rings_low;		// H2: rings running low
-	float	artifacts;		// H2: artifacts bitmask
-	float	artifact_active;	// H2: active artifact
-	float	artifact_low;		// H2: artifact running low
-	float	hasted;			// H2: haste status
-	float	inventory;		// H2: inventory bitmask
-	float	cnt_torch;		// H2: torch count
-	float	cnt_h_boost;		// H2: health boost count
-	float	cnt_sh_boost;		// H2: super health boost count
-	float	cnt_mana_boost;		// H2: mana boost count
-	float	cnt_teleport;		// H2: teleport count
-	float	cnt_tome;		// H2: tome of power count
-	float	cnt_summon;		// H2: summon count
-	float	cnt_invisibility;	// H2: invisibility count
-	float	cnt_glyph;		// H2: glyph count
-	float	cnt_haste;		// H2: haste count
-	float	cnt_blast;		// H2: blast count
-	float	cnt_polymorph;		// H2: polymorph count
-	float	cnt_flight;		// H2: flight count
-	float	cnt_cubeofforce;	// H2: cube of force count
-	float	cnt_invincibility;	// H2: invincibility count
-	int	cameramode;		// H2: camera mode
-	int	movechain;		// H2: movechain entity
-	func_t	chainmoved;		// H2: chain moved function
-	float	string_index;		// H2: string index
+	float	rings;
+	float	rings_active;
+	float	rings_low;
+	float	artifacts;
+	float	artifact_active;
+	float	artifact_low;
+	float	hasted;
+	float	inventory;
+	float	cnt_torch;
+	float	cnt_h_boost;
+	float	cnt_sh_boost;
+	float	cnt_mana_boost;
+	float	cnt_teleport;
+	float	cnt_tome;
+	float	cnt_summon;
+	float	cnt_invisibility;
+	float	cnt_glyph;
+	float	cnt_haste;
+	float	cnt_blast;
+	float	cnt_polymorph;
+	float	cnt_flight;
+	float	cnt_cubeofforce;
+	float	cnt_invincibility;
+	int	cameramode;
+	int	movechain;
+	func_t	chainmoved;
+	float	string_index;
+
+	/* Quake-only fields - not used by H2 progs but needed for C code
+	 * These are placed AFTER all H2 fields to preserve H2 field offsets.
+	 * When in hexen2_mode, C code should NOT access these directly. */
+	float	currentammo;	// Quake: current ammo display value
+	float	ammo_shells;	// Quake: shell ammo
+	float	ammo_nails;	// Quake: nail ammo
+	float	ammo_rockets;	// Quake: rocket ammo
+	float	ammo_cells;	// Quake: cell ammo
+	int	aiment;		// Quake: aimed entity
+	float	sounds;		// Quake: sound index (H2 uses soundtype)
 } entvars_t;
 
 // Hexen II progs CRC values (from uhexen2 progdefs.h)
