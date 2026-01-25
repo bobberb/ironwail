@@ -611,6 +611,270 @@ void SV_PushMove (edict_t *pusher, float movetime)
 
 /*
 ================
+SV_PushRotate
+
+Hexen II: Push/rotate entities when a SOLID_BSP has angular velocity.
+Handles rotating platforms, doors, etc.
+Ported from uhexen2 sv_phys.c
+================
+*/
+static void SV_PushRotate (edict_t *pusher, float movetime)
+{
+	int		i, e, t;
+	edict_t		*check, *block;
+	vec3_t		move, a, amove, mins, maxs, move2, move3, testmove;
+	vec3_t		entorig, pushorig, pushorigangles;
+	int		num_moved;
+	int		mark;
+	edict_t		**moved_edict;
+	vec3_t		*moved_from;
+	vec3_t		org, org2, check_center;
+	vec3_t		forward, right, up;
+	edict_t		*ground;
+	qboolean	moveit;
+
+	// Calculate angular and linear movement
+	for (i = 0; i < 3; i++)
+	{
+		amove[i] = pusher->v.avelocity[i] * movetime;
+		move[i] = pusher->v.velocity[i] * movetime;
+		mins[i] = pusher->v.absmin[i] + move[i];
+		maxs[i] = pusher->v.absmax[i] + move[i];
+	}
+
+	// Get rotation vectors (negated for transforming world->entity space)
+	VectorSubtract(vec3_origin, amove, a);
+	AngleVectors(a, forward, right, up);
+
+	// Save original position
+	VectorCopy(pusher->v.origin, pushorig);
+	VectorCopy(pusher->v.angles, pushorigangles);
+
+	// Move the pusher to its final position
+	VectorAdd(pusher->v.origin, move, pusher->v.origin);
+	VectorAdd(pusher->v.angles, amove, pusher->v.angles);
+	pusher->v.ltime += movetime;
+	SV_LinkEdict(pusher, false);
+
+	// Allocate arrays for moved entities
+	mark = Hunk_LowMark();
+	moved_edict = (edict_t **)Hunk_Alloc(qcvm->num_edicts * sizeof(edict_t *));
+	moved_from = (vec3_t *)Hunk_Alloc(qcvm->num_edicts * sizeof(vec3_t));
+
+	// See if any solid entities are inside the final position
+	num_moved = 0;
+	check = NEXT_EDICT(qcvm->edicts);
+	VectorSet(testmove, 0, 0, 0);
+
+	for (e = 1; e < qcvm->num_edicts; e++, check = NEXT_EDICT(check))
+	{
+		if (check->free)
+			continue;
+		if (check->v.movetype == MOVETYPE_PUSH ||
+		    check->v.movetype == MOVETYPE_NONE ||
+		    check->v.movetype == MOVETYPE_NOCLIP)
+			continue;
+
+		// Check MOVETYPE_FOLLOW for H2 compatibility
+		eval_t *val = GetEdictFieldValueByName(check, "movetype");
+		if (val && (int)val->_float == 12) // MOVETYPE_FOLLOW = 12 in H2
+			continue;
+
+		// If the entity is standing on the pusher, it will definitely be moved
+		moveit = false;
+		ground = PROG_TO_EDICT(check->v.groundentity);
+		if ((int)check->v.flags & FL_ONGROUND)
+		{
+			if (ground == pusher)
+				moveit = true;
+		}
+
+		if (!moveit)
+		{
+			// Quick bounding box rejection
+			if (check->v.absmin[0] >= maxs[0] ||
+			    check->v.absmin[1] >= maxs[1] ||
+			    check->v.absmin[2] >= maxs[2] ||
+			    check->v.absmax[0] <= mins[0] ||
+			    check->v.absmax[1] <= mins[1] ||
+			    check->v.absmax[2] <= mins[2])
+				continue;
+
+			// See if the ent's bbox is inside the pusher's final position
+			if (!SV_TestEntityPosition(check))
+				continue;
+		}
+
+		// Remove onground flag for non-players
+		if (check->v.movetype != MOVETYPE_WALK)
+			check->v.flags = (int)check->v.flags & ~FL_ONGROUND;
+
+		VectorCopy(check->v.origin, entorig);
+		VectorCopy(check->v.origin, moved_from[num_moved]);
+		moved_edict[num_moved] = check;
+		num_moved++;
+
+		// Put check in first move spot
+		VectorAdd(check->v.origin, move, check->v.origin);
+
+		// Use center of model (H2 origins are on the bottom)
+		for (i = 0; i < 3; i++)
+			check_center[i] = (check->v.absmin[i] + check->v.absmax[i]) / 2;
+
+		// Calculate destination position
+		VectorSubtract(check_center, pusher->v.origin, org);
+		// Put check back
+		VectorSubtract(check->v.origin, move, check->v.origin);
+
+		org2[0] = DotProduct(org, forward);
+		org2[1] = -DotProduct(org, right);
+		org2[2] = DotProduct(org, up);
+		VectorSubtract(org2, org, move2);
+
+		// Add all moves together
+		VectorAdd(move, move2, move3);
+
+		// Try moving the contacted entity with multiple fallback strategies
+		for (t = 0; t < 13; t++)
+		{
+			switch (t)
+			{
+			case 0: // Try x, y and z
+				VectorCopy(move3, testmove);
+				break;
+			case 1: // Try xy only
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				testmove[0] = move3[0];
+				testmove[1] = move3[1];
+				testmove[2] = 0;
+				break;
+			case 2: // Try z only
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				testmove[0] = 0;
+				testmove[1] = 0;
+				testmove[2] = move3[2];
+				break;
+			case 3: // Try none
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				testmove[0] = 0;
+				testmove[1] = 0;
+				testmove[2] = 0;
+				break;
+			case 4: // Try xy in opposite dir
+				testmove[0] = move3[0] * -1;
+				testmove[1] = move3[1] * -1;
+				testmove[2] = move3[2];
+				break;
+			case 5: // Try z in opposite dir
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				testmove[0] = move3[0];
+				testmove[1] = move3[1];
+				testmove[2] = move3[2] * -1;
+				break;
+			case 6: // Try xyz in opposite dir
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				testmove[0] = move3[0] * -1;
+				testmove[1] = move3[1] * -1;
+				testmove[2] = move3[2] * -1;
+				break;
+			case 7: // Try move3 times 2
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				VectorScale(move3, 2, testmove);
+				break;
+			case 8: // Try normalized org
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				VectorScale(org, movetime, org);
+				VectorCopy(org, testmove);
+				break;
+			case 9: // Try normalized org z * 3 only
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				testmove[0] = 0;
+				testmove[1] = 0;
+				testmove[2] = org[2] * 3;
+				break;
+			case 10: // Try normalized org xy * 2 only
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				testmove[0] = org[0] * 2;
+				testmove[1] = org[1] * 2;
+				testmove[2] = 0;
+				break;
+			case 11: // Try xy in opposite org dir
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				testmove[0] = org[0] * -2;
+				testmove[1] = org[1] * -2;
+				testmove[2] = org[2];
+				break;
+			case 12: // Try z in opposite dir
+				VectorSubtract(check->v.origin, testmove, check->v.origin);
+				testmove[0] = org[0];
+				testmove[1] = org[1];
+				testmove[2] = org[2] * -3;
+				break;
+			}
+
+			if (t != 3)
+			{
+				// Temporarily make pusher non-solid
+				pusher->v.solid = SOLID_NOT;
+				SV_PushEntity(check, move3);
+				// Rotate the entity's yaw
+				check->v.angles[YAW] += amove[YAW];
+				pusher->v.solid = SOLID_BSP;
+			}
+
+			// If it is still inside the pusher, try next strategy
+			block = SV_TestEntityPosition(check);
+			if (!block)
+				break;
+		}
+
+		if (block)
+		{
+			// Fail the move
+			if (check->v.mins[0] == check->v.maxs[0])
+				continue;
+			if (check->v.solid == SOLID_NOT || check->v.solid == SOLID_TRIGGER)
+			{
+				// Corpse - shrink to point
+				check->v.mins[0] = check->v.mins[1] = 0;
+				VectorCopy(check->v.mins, check->v.maxs);
+				continue;
+			}
+
+			VectorCopy(entorig, check->v.origin);
+			SV_LinkEdict(check, true);
+
+			VectorCopy(pushorig, pusher->v.origin);
+			VectorCopy(pushorigangles, pusher->v.angles);
+			SV_LinkEdict(pusher, false);
+			pusher->v.ltime -= movetime;
+
+			// If the pusher has a "blocked" function, call it
+			if (pusher->v.blocked)
+			{
+				pr_global_struct->self = EDICT_TO_PROG(pusher);
+				pr_global_struct->other = EDICT_TO_PROG(check);
+				PR_ExecuteProgram(pusher->v.blocked);
+			}
+
+			// Move back any entities we already moved
+			for (i = 0; i < num_moved; i++)
+			{
+				VectorCopy(moved_from[i], moved_edict[i]->v.origin);
+				moved_edict[i]->v.angles[YAW] -= amove[YAW];
+				SV_LinkEdict(moved_edict[i], false);
+			}
+
+			Hunk_FreeToLowMark(mark);
+			return;
+		}
+	}
+
+	Hunk_FreeToLowMark(mark);
+}
+
+/*
+================
 SV_Physics_Pusher
 
 ================
@@ -635,7 +899,15 @@ void SV_Physics_Pusher (edict_t *ent)
 
 	if (movetime)
 	{
-		SV_PushMove (ent, movetime);	// advances ent->v.ltime if not blocked
+		// Hexen II: Check for angular velocity on SOLID_BSP entities
+		if (hexen2_mode && (ent->v.avelocity[0] || ent->v.avelocity[1] || ent->v.avelocity[2]))
+		{
+			SV_PushRotate(ent, movetime);
+		}
+		else
+		{
+			SV_PushMove (ent, movetime);	// advances ent->v.ltime if not blocked
+		}
 	}
 
 	if (thinktime > oldltime && thinktime <= ent->v.ltime)
