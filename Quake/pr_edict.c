@@ -2180,7 +2180,26 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 		if (is_h2_crc && hexen2_mode)
 		{
 			// H2 progs detected and we're in H2 mode - this is OK
-			Con_Printf("Hexen II progs detected (CRC %i)\n", qcvm->progs->crc);
+			switch(qcvm->progs->crc)
+			{
+			case PROGHEADER_CRC_H2_V112:
+				Con_Printf("Hexen II progs v1.12 (mission pack) detected\n");
+				break;
+			case PROGHEADER_CRC_H2_V111:
+				Con_Warning("Hexen II progs v1.11 detected - may have compatibility issues\n");
+				Con_Warning("  (globalvars_t layout differs from v1.12)\n");
+				break;
+			case PROGHEADER_CRC_H2_V103:
+				Con_Warning("Hexen II progs v1.03 detected - may have compatibility issues\n");
+				Con_Warning("  (globalvars_t layout differs from v1.12)\n");
+				break;
+			case PROGHEADER_CRC_H2_UQE:
+				Con_Printf("Hexen II progs UQE v1.13 detected\n");
+				break;
+			default:
+				Con_Printf("Hexen II progs detected (CRC %i)\n", qcvm->progs->crc);
+				break;
+			}
 		}
 		else if (fatal)
 		{
