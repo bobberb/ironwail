@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "protocol_hexen2.h"
 #include "sbar_hexen2.h"
+#include "bgmusic.h"
 
 /*
 ================
@@ -55,17 +56,33 @@ void CL_ParseUpdateClass(void)
 CL_ParseMidiName
 
 Parse svc_h2_midi_name message
-Sets the MIDI music file name to play
+Plays background music, searching for OGG/MP3/FLAC/WAV replacements in music/
 ================
 */
 void CL_ParseMidiName(void)
 {
 	const char *midi_name;
+	const char *fname;
+	char basename[MAX_QPATH];
 
 	midi_name = MSG_ReadString();
 
-	// TODO: Implement MIDI playback when audio system is extended
-	Con_DPrintf("MIDI name: %s\n", midi_name);
+	if (!midi_name || !*midi_name)
+	{
+		BGM_Stop();
+		return;
+	}
+
+	/* Extract just the filename (strip any path like "midi/") */
+	fname = COM_SkipPath(midi_name);
+
+	/* Strip extension to get base name */
+	COM_StripExtension(fname, basename, sizeof(basename));
+
+	Con_DPrintf("Playing music: %s\n", basename);
+
+	/* BGM_Play searches for music/<basename>.ogg/mp3/flac/wav/etc */
+	BGM_Play(basename);
 }
 
 /*
@@ -353,21 +370,30 @@ void CL_ParseRainEffect(void)
 CL_ParseSoundUpdatePos
 
 Parse svc_h2_sound_update_pos message
-Update position of a playing sound
+Update position of a playing sound (for moving sound sources)
 ================
 */
 void CL_ParseSoundUpdatePos(void)
 {
 	vec3_t pos;
-	int channel;
+	int channel, ent_num;
 
+	/* Channel short is packed: upper bits = entity, lower 3 bits = channel */
 	channel = MSG_ReadShort();
+	ent_num = channel >> 3;
+	channel &= 7;
+
 	pos[0] = MSG_ReadCoord(cl.protocolflags);
 	pos[1] = MSG_ReadCoord(cl.protocolflags);
 	pos[2] = MSG_ReadCoord(cl.protocolflags);
 
-	// TODO: Update sound position in audio system
-	Con_DPrintf("Sound update pos: channel %d\n", channel);
+	if (ent_num > MAX_EDICTS)
+	{
+		Con_Warning("svc_sound_update_pos: ent = %i\n", ent_num);
+		return;
+	}
+
+	S_UpdateSoundPos(ent_num, channel, pos);
 }
 
 /*
@@ -375,17 +401,33 @@ void CL_ParseSoundUpdatePos(void)
 CL_ParseModName
 
 Parse svc_h2_mod_name message (UQE 1.13)
-Sets the mod music file name
+Plays MOD/tracker music (IT/S3M/XM/MOD formats)
 ================
 */
 void CL_ParseModName(void)
 {
 	const char *mod_name;
+	const char *fname;
+	char basename[MAX_QPATH];
 
 	mod_name = MSG_ReadString();
 
-	// TODO: Implement MOD music playback
-	Con_DPrintf("MOD name: %s\n", mod_name);
+	if (!mod_name || !*mod_name)
+	{
+		BGM_Stop();
+		return;
+	}
+
+	/* Extract just the filename (strip any path) */
+	fname = COM_SkipPath(mod_name);
+
+	/* Strip extension to get base name */
+	COM_StripExtension(fname, basename, sizeof(basename));
+
+	Con_DPrintf("Playing MOD music: %s\n", basename);
+
+	/* BGM_Play searches for music/<basename>.it/s3m/xm/mod/etc */
+	BGM_Play(basename);
 }
 
 /*

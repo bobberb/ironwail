@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "steam.h"
 #include "protocol_hexen2.h"
 #include "cl_parse_hexen2.h"
+#include "cl_string_hexen2.h"
 
 const char *svc_strings[] =
 {
@@ -425,6 +426,15 @@ void CL_ParseServerInfo (void)
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
 
 	R_NewMap ();
+
+	/* Load Hexen II strings if in H2 mode */
+	if (hexen2_mode)
+	{
+		CL_LoadPuzzleStrings();
+		/* Load mission pack objectives if Portal of Praevus */
+		if (hexen2_missionpack)
+			CL_LoadInfoStrings();
+	}
 
 	//johnfitz -- clear out string; we don't consider identical
 	//messages to be duplicates if the map has changed in between

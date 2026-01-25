@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "sbar_hexen2.h"
+#include "cl_string_hexen2.h"
 
 // Bar dimensions
 #define BAR_TOP_HEIGHT		46
@@ -856,6 +857,8 @@ static void Sbar_H2_DrawInfoOverlay(void)
 
 	for (i = 0; i < 8; i++)
 	{
+		const char *fullname;
+
 		if (cl.puzzle_pieces[i][0] == 0)
 			continue;
 
@@ -863,8 +866,9 @@ static void Sbar_H2_DrawInfoOverlay(void)
 		q_snprintf(puzPath, sizeof(puzPath), "gfx/puzzle/%s.lmp", cl.puzzle_pieces[i]);
 		Draw_Pic(80, y, Draw_CachePic(puzPath));
 
-		// Draw puzzle piece name
-		Draw_String(120, y + 8, cl.puzzle_pieces[i]);
+		// Draw puzzle piece name (use full name from puzzles.txt if available)
+		fullname = CL_FindPuzzleString(cl.puzzle_pieces[i]);
+		Draw_String(120, y + 8, fullname ? fullname : cl.puzzle_pieces[i]);
 
 		y += 36;
 		piece++;

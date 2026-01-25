@@ -130,7 +130,7 @@ Offset is filled in to contain the adjustment that must be added to the
 testing object's origin to get a point to use with the returned hull.
 ================
 */
-hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
+hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset, edict_t *move_ent)
 {
 	qmodel_t	*model;
 	vec3_t		size;
@@ -154,17 +154,30 @@ hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 
 		if (hexen2_mode)
 		{
-			// Hexen II hull selection: point, pentacles, crouch, player, golem
-			if (size[0] < 3)
-				hull = &model->hulls[0];		// Point
-			else if (size[0] <= 8 && ((int)(EDICT_NUM(0)->v.spawnflags) & 1))
-				hull = &model->hulls[4];		// Pentacles (small items)
-			else if (size[0] <= 32 && size[2] <= 28)
-				hull = &model->hulls[3];		// Crouch
-			else if (size[0] <= 32)
-				hull = &model->hulls[1];		// Player
+			// Hexen II: Check if entity explicitly specifies which hull to use
+			if (move_ent && move_ent->v.hull)
+			{
+				int idx = (int)move_ent->v.hull - 1;
+				if (idx >= 0 && idx < MAX_MAP_HULLS)
+					hull = &model->hulls[idx];
+				else
+				{
+					Con_Warning ("Invalid hull %d requested\n", idx);
+					hull = &model->hulls[0];
+				}
+			}
 			else
-				hull = &model->hulls[5];		// Golem
+			{
+				// Size-based hull selection: point, crouch, player, golem
+				if (size[0] < 3)
+					hull = &model->hulls[0];		// Point
+				else if (size[0] <= 32 && size[2] <= 28)
+					hull = &model->hulls[3];		// Crouch (half player)
+				else if (size[0] <= 32)
+					hull = &model->hulls[1];		// Player
+				else
+					hull = &model->hulls[5];		// Golem
+			}
 		}
 		else
 		{
@@ -799,7 +812,7 @@ Handles selection or creation of a clipping hull, and offseting (and
 eventually rotation) of the end points
 ==================
 */
-trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
+trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, edict_t *move_ent)
 {
 	trace_t		trace;
 	vec3_t		offset;
@@ -813,7 +826,7 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t max
 	VectorCopy (end, trace.endpos);
 
 // get the clipping hull
-	hull = SV_HullForEntity (ent, mins, maxs, offset);
+	hull = SV_HullForEntity (ent, mins, maxs, offset, move_ent);
 
 	VectorSubtract (start, offset, start_l);
 	VectorSubtract (end, offset, end_l);
@@ -885,9 +898,9 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 		}
 
 		if ((int)touch->v.flags & FL_MONSTER)
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2, clip->maxs2, clip->end);
+			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins2, clip->maxs2, clip->end, clip->passedict);
 		else
-			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins, clip->maxs, clip->end);
+			trace = SV_ClipMoveToEntity (touch, clip->start, clip->mins, clip->maxs, clip->end, clip->passedict);
 		if (trace.allsolid || trace.startsolid ||
 		trace.fraction < clip->trace.fraction)
 		{
@@ -958,7 +971,7 @@ trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, e
 	memset ( &clip, 0, sizeof ( moveclip_t ) );
 
 // clip to world
-	clip.trace = SV_ClipMoveToEntity ( qcvm->edicts, start, mins, maxs, end );
+	clip.trace = SV_ClipMoveToEntity ( qcvm->edicts, start, mins, maxs, end, passedict );
 
 	clip.start = start;
 	clip.end = end;

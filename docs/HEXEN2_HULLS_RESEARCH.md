@@ -125,18 +125,22 @@ Already includes `.hull` field in H2 progdefs.
 
 ## Implementation Status
 
-**IMPLEMENTED** - The following changes have been made:
+**FULLY IMPLEMENTED** - Current status (verified 2026-01-24):
 
+### Done
 1. `bspfile.h`: MAX_MAP_HULLS increased from 4 to 8
-2. `gl_model.c`: H2 hulls 2-5 initialized when `hexen2_mode` is true
-3. `world.c`: H2 hull selection logic added to `SV_HullForEntity`
+2. `gl_model.c`: All 8 hulls loaded from BSP if present (lines 2549-2553)
+3. BSP format fully compatible with H2 maps
+4. `world.c`: H2 hull selection logic in `SV_HullForEntity`:
+   - Entity `.hull` field used for explicit hull selection (checked first)
+   - Crouch hull (hull 3) selected when size[2] <= 28
+   - Golem hull (hull 5) selected for large entities
+   - Point hull (hull 0) for small entities
+5. `SV_ClipMoveToEntity` and callers pass `move_ent` for hull selection
 
-### Remaining Work
-
-- The `.hull` entity field is not yet used for explicit hull selection
-  (would require passing move_ent to SV_HullForEntity)
-- Runtime detection of BSP hull count not implemented
-  (all BSPs assumed to support 8 hulls)
+### Notes
+- Pentacles hull (hull 4) not used in size-based selection (matches uhexen2 behavior)
+- Runtime detection of BSP hull count not implemented (not needed - H2 BSPs have 8 hulls)
 
 ## References
 

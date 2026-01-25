@@ -1460,7 +1460,10 @@ void Host_Init (void)
 
 	if (cls.state != ca_dedicated)
 	{
-		Cbuf_InsertText ("exec quake.rc\n");
+		if (hexen2_mode)
+			Cbuf_InsertText ("exec hexen.rc\n");
+		else
+			Cbuf_InsertText ("exec quake.rc\n");
 	// johnfitz -- in case the vid mode was locked during vid_init, we can unlock it now.
 		// note: two leading newlines because the command buffer swallows one of them.
 		Cbuf_AddText ("\n\nvid_unlock\n");

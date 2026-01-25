@@ -13,7 +13,7 @@
 
         ironwail = pkgs.stdenv.mkDerivation {
           pname = "ironwail";
-          version = "0.8.2-hexen2";
+          version = "0.8.1-hexen2";
 
           src = ./.;
 

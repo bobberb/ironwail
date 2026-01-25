@@ -571,6 +571,35 @@ static void S_StopAllSoundsC (void)
 	S_StopAllSounds (true);
 }
 
+/*
+=================
+S_UpdateSoundPos
+
+Update the position of a currently playing sound.
+Used by Hexen II for moving sound sources (svc_sound_update_pos).
+=================
+*/
+void S_UpdateSoundPos (int entnum, int entchannel, vec3_t origin)
+{
+	int		ch_idx;
+	channel_t	*ch;
+
+	if (!sound_started)
+		return;
+
+	/* Search for matching channel */
+	for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
+	{
+		ch = &snd_channels[ch_idx];
+		if (ch->sfx && ch->entnum == entnum && ch->entchannel == entchannel)
+		{
+			VectorCopy(origin, ch->origin);
+			SND_Spatialize(ch);
+			return;
+		}
+	}
+}
+
 void S_ClearBuffer (void)
 {
 	int		clear;

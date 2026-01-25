@@ -2607,7 +2607,10 @@ void COM_SwitchGame (const char *paths)
 
 	VID_Lock ();
 	Cbuf_AddText ("unaliasall\n");
-	Cbuf_AddText ("exec quake.rc\n");
+	if (hexen2_mode)
+		Cbuf_AddText ("exec hexen.rc\n");
+	else
+		Cbuf_AddText ("exec quake.rc\n");
 	Cbuf_AddText ("vid_unlock\n");
 }
 

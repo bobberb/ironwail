@@ -346,6 +346,9 @@ qpic_t *Draw_PicFromWad (const char *name)
 	return Draw_PicFromWad2 (name, TEXPREF_ALPHA | TEXPREF_PAD | TEXPREF_NOPICMIP);
 }
 
+/* forward declaration */
+qpic_t *Draw_MakePic (const char *name, int width, int height, byte *data);
+
 /*
 ================
 Draw_CachePic
@@ -412,7 +415,38 @@ qpic_t	*Draw_TryCachePic (const char *path, unsigned int texflags)
 
 qpic_t	*Draw_CachePic (const char *path)
 {
-	qpic_t *pic = Draw_TryCachePic(path, TEXPREF_ALPHA | TEXPREF_PAD | TEXPREF_NOPICMIP | TEXPREF_CLAMP);
+	qpic_t *pic;
+	char h2path[MAX_QPATH];
+
+	pic = Draw_TryCachePic(path, TEXPREF_ALPHA | TEXPREF_PAD | TEXPREF_NOPICMIP | TEXPREF_CLAMP);
+
+	/* Hexen II uses different paths for many graphics */
+	if (!pic && hexen2_mode)
+	{
+		/* Try gfx/menu/ prefix for H2 */
+		if (!strncmp(path, "gfx/", 4) && strncmp(path, "gfx/menu/", 9))
+		{
+			q_snprintf(h2path, sizeof(h2path), "gfx/menu/%s", path + 4);
+			pic = Draw_TryCachePic(h2path, TEXPREF_ALPHA | TEXPREF_PAD | TEXPREF_NOPICMIP | TEXPREF_CLAMP);
+		}
+
+		/* If still not found, some Q1 graphics don't exist in H2 - create placeholder */
+		if (!pic)
+		{
+			static byte placeholder_data[64*64];
+			static qboolean placeholder_init = false;
+
+			if (!placeholder_init)
+			{
+				memset(placeholder_data, 0, sizeof(placeholder_data));  /* transparent */
+				placeholder_init = true;
+			}
+
+			Con_DPrintf("Draw_CachePic: %s not found (H2 mode), using placeholder\n", path);
+			pic = Draw_MakePic(path, 64, 64, placeholder_data);
+		}
+	}
+
 	if (!pic)
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 	return pic;
@@ -459,22 +493,81 @@ void Draw_LoadPics (void)
 	lumpinfo_t	*info;
 	byte		*data;
 	int			i, row, col;
+	unsigned int path_id;
 
-	data = (byte *) W_GetLumpName ("conchars", &info);
-	if (!data)
-		Sys_Error ("Draw_LoadPics: couldn't load conchars");
-	if (info->disksize < 128*128)
-		Sys_Error ("Draw_LoadPics: truncated conchars");
-
-	custom_conchars = (COM_HashBlock (data, 128*218) != 0xc7e2a10a);
-
-	for (i = 0; i < 256; i++)
+	if (hexen2_mode)
 	{
-		row = i / 16;
-		col = i % 16;
-		Draw_FillClampTexels (data + row*(16*8*8) + col*8, 8, 8, 16*8,
-			char_texture_data + row*(16*10*10) + col*10, 16*10);
+		/*
+		 * Hexen II conchars.lmp is raw 256x128 pixels, no header.
+		 * Layout: 32 chars per row (256/8), 16 rows (128/8) = 512 chars
+		 * We need to convert to Quake's 16x16 layout (128x128) for first 256 chars.
+		 */
+		int h2_filesize;
+		byte *h2_data;
+
+		h2_data = (byte *) COM_LoadHunkFile ("gfx/menu/conchars.lmp", &path_id);
+		if (!h2_data)
+			Sys_Error ("Draw_LoadPics: couldn't load gfx/menu/conchars.lmp");
+
+		h2_filesize = com_filesize;
+		if (h2_filesize < 256*128)
+			Sys_Error ("Draw_LoadPics: truncated conchars.lmp (%d bytes, expected %d)", h2_filesize, 256*128);
+
+		/* Convert 0 to 255 for transparency (H2 uses 0 as transparent) */
+		for (i = 0; i < 256*128; i++)
+		{
+			if (h2_data[i] == 0)
+				h2_data[i] = 255;
+		}
+
+		/*
+		 * H2: 32 chars/row, 8x8 each, stride=256
+		 * Q1: 16 chars/row, 8x8 each, stride=128
+		 * Copy first 256 characters (16 rows of 16 chars) from H2 layout
+		 */
+		for (i = 0; i < 256; i++)
+		{
+			int h2_row = i / 32;  /* H2 has 32 chars per row */
+			int h2_col = i % 32;
+			int q1_row = i / 16;  /* Q1 expects 16 chars per row */
+			int q1_col = i % 16;
+			int y;
+
+			for (y = 0; y < 8; y++)
+			{
+				byte *src = h2_data + (h2_row * 8 + y) * 256 + h2_col * 8;
+				byte *dst = char_texture_data + (q1_row * 10 + y + 1) * (16*10) + q1_col * 10 + 1;
+				memcpy(dst, src, 8);
+			}
+		}
+
+		/* Fill the border pixels with transparent */
+		for (i = 0; i < 16*10*16*10; i++)
+		{
+			if (char_texture_data[i] == 0)
+				char_texture_data[i] = 255;
+		}
+
+		custom_conchars = true;
 	}
+	else
+	{
+		data = (byte *) W_GetLumpName ("conchars", &info);
+		if (!data)
+			Sys_Error ("Draw_LoadPics: couldn't load conchars");
+		if (info->disksize < 128*128)
+			Sys_Error ("Draw_LoadPics: truncated conchars");
+		custom_conchars = (COM_HashBlock (data, 128*218) != 0xc7e2a10a);
+
+		for (i = 0; i < 256; i++)
+		{
+			row = i / 16;
+			col = i % 16;
+			Draw_FillClampTexels (data + row*(16*8*8) + col*8, 8, 8, 16*8,
+				char_texture_data + row*(16*10*10) + col*10, 16*10);
+		}
+	}
+
 	char_texture = TexMgr_LoadImage (NULL, WADFILENAME":conchars", 16*10, 16*10, SRC_INDEXED, char_texture_data,
 		"", (src_offset_t) char_texture_data, TEXPREF_ALPHA | TEXPREF_NEAREST | TEXPREF_NOPICMIP | TEXPREF_CONCHARS);
 
@@ -900,7 +993,10 @@ void Draw_ConsoleBackground (void)
 	qpic_t *pic;
 	float alpha, luma;
 
-	pic = Draw_CachePic ("gfx/conback.lmp");
+	if (hexen2_mode)
+		pic = Draw_CachePic ("gfx/menu/conback.lmp");
+	else
+		pic = Draw_CachePic ("gfx/conback.lmp");
 	pic->width = vid.conwidth;
 	pic->height = vid.conheight;
 
