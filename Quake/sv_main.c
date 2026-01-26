@@ -1157,7 +1157,12 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (val)
 		items = (int)ENT_FLOAT(ent, items) | ((int)val->_float << 23);
 	else
-		items = (int)ENT_FLOAT(ent, items) | ((int)pr_global_struct->serverflags << 28);
+	{
+		int serverflags = (hexen2_mode && h2_globals.ofs_serverflags >= 0)
+			? (int)qcvm->globals[h2_globals.ofs_serverflags]
+			: (int)pr_global_struct->serverflags;
+		items = (int)ENT_FLOAT(ent, items) | (serverflags << 28);
+	}
 
 	bits |= SU_ITEMS;
 
@@ -1826,7 +1831,9 @@ void SV_SaveSpawnparms (void)
 {
 	int		i, j;
 
-	svs.serverflags = pr_global_struct->serverflags;
+	svs.serverflags = (hexen2_mode && h2_globals.ofs_serverflags >= 0)
+		? (int)qcvm->globals[h2_globals.ofs_serverflags]
+		: pr_global_struct->serverflags;
 
 	for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
 	{
