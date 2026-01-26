@@ -417,15 +417,27 @@ M_H2_Init
 Initialize Hexen II menu system and load graphics
 ================
 */
-void M_H2_Init(void)
+static qboolean h2_gfx_loaded = false;
+
+/*
+================
+M_H2_LoadGraphics
+
+Load H2 menu graphics - called lazily on first menu draw
+Must be called after video init
+================
+*/
+static void M_H2_LoadGraphics(void)
 {
 	int i;
 	char name[64];
 
-	if (!hexen2_mode)
+	if (h2_gfx_loaded)
 		return;
 
-	// Build bigfont kerning table
+	h2_gfx_loaded = true;
+
+	// Build bigfont kerning table (also loads bigfont2.lmp)
 	M_H2_BuildBigCharWidth();
 
 	// Load plaque
@@ -467,6 +479,12 @@ void M_H2_Init(void)
 		h2_help[i] = Draw_TryCachePic(name,
 			TEXPREF_ALPHA | TEXPREF_PAD | TEXPREF_NOPICMIP);
 	}
+}
+
+void M_H2_Init(void)
+{
+	// Nothing to do here - graphics are loaded lazily in M_H2_LoadGraphics()
+	// which is called from M_H2_Draw() after video system is initialized
 }
 
 /*
@@ -971,6 +989,9 @@ Main draw dispatcher for Hexen II menus
 */
 void M_H2_Draw(void)
 {
+	// Lazy-load graphics on first draw (after video init)
+	M_H2_LoadGraphics();
+
 	switch (m_state)
 	{
 	case m_main:

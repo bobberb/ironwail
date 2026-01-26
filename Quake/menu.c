@@ -224,11 +224,22 @@ qboolean M_ForcedQuitMessage (float *alpha);
 
 static void M_ThrottledSound (const char *sound)
 {
-	if (strcmp (m_lastsound, sound) == 0 && realtime - m_lastsoundtime < ui_sound_throttle.value)
+	const char *actual_sound = sound;
+	char h2_sound[MAX_QPATH];
+
+	// Translate Q1 menu sounds to H2 paths when in Hexen II mode
+	if (hexen2_mode && !strncmp(sound, "misc/menu", 9))
+	{
+		// misc/menu1.wav -> raven/menu1.wav, etc.
+		q_snprintf(h2_sound, sizeof(h2_sound), "raven/menu%s", sound + 9);
+		actual_sound = h2_sound;
+	}
+
+	if (strcmp (m_lastsound, actual_sound) == 0 && realtime - m_lastsoundtime < ui_sound_throttle.value)
 		return;
-	q_strlcpy (m_lastsound, sound, sizeof (m_lastsound));
+	q_strlcpy (m_lastsound, actual_sound, sizeof (m_lastsound));
 	m_lastsoundtime = realtime;
-	S_LocalSound (sound);
+	S_LocalSound (actual_sound);
 }
 
 static void M_MouseSound (const char *sound)
