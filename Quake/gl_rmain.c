@@ -1363,18 +1363,18 @@ static void R_EmitEdictLink (const edict_t *from, const edict_t *to, showbboxfla
 	if (!flags)
 		return;
 
-	VectorCopy (from->v.origin, vec_from);
-	if (!VectorCompare (from->v.mins, from->v.maxs))
+	VectorCopy (ENT_ORIGIN(from), vec_from);
+	if (!VectorCompare (ENT_MINS(from), ENT_MAXS(from)))
 	{
-		VectorMA (vec_from, 0.5f, from->v.mins, vec_from);
-		VectorMA (vec_from, 0.5f, from->v.maxs, vec_from);
+		VectorMA (vec_from, 0.5f, ENT_MINS(from), vec_from);
+		VectorMA (vec_from, 0.5f, ENT_MAXS(from), vec_from);
 	}
 
-	VectorCopy (to->v.origin, vec_to);
-	if (!VectorCompare (to->v.mins, to->v.maxs))
+	VectorCopy (ENT_ORIGIN(to), vec_to);
+	if (!VectorCompare (ENT_MINS(to), ENT_MAXS(to)))
 	{
-		VectorMA (vec_to, 0.5f, to->v.mins, vec_to);
-		VectorMA (vec_to, 0.5f, to->v.maxs, vec_to);
+		VectorMA (vec_to, 0.5f, ENT_MINS(to), vec_to);
+		VectorMA (vec_to, 0.5f, ENT_MAXS(to), vec_to);
 	}
 
 	if (flags == SHOWBBOX_LINK_BOTH)
@@ -1407,8 +1407,8 @@ static qboolean R_ShowBoundingBoxesFilter (edict_t *ed)
 	if (r_showbboxes_filter_byindex)
 		q_snprintf (entnum, sizeof (entnum), "%d", NUM_FOR_EDICT (ed));
 
-	if (ed->v.classname)
-		classname = PR_GetString (ed->v.classname);
+	if (ENT_CLASSNAME_T(ed))
+		classname = PR_GetString (ENT_CLASSNAME_T(ed));
 
 	for (filter_p = r_showbboxes_filter_strings; *filter_p; filter_p += strlen (filter_p) + 1)
 	{
@@ -1510,7 +1510,7 @@ static void R_ShowBoundingBoxes (void)
 	if (mode >= 2 || mode == 0)
 	{
 		vec3_t org;
-		VectorAdd (sv_player->v.origin, sv_player->v.view_ofs, org);
+		VectorAdd (ENT_ORIGIN(sv_player), ENT_VIEW_OFS(sv_player), org);
 		pvs = SV_FatPVS (org, sv.worldmodel);
 	}
 	else
@@ -1527,18 +1527,18 @@ static void R_ShowBoundingBoxes (void)
 		if (ed == sv_player || ed->free)
 			continue; // don't draw player's own bbox or freed edicts
 
-		if (r_showbboxes_think.value && (ed->v.nextthink <= 0) == (r_showbboxes_think.value > 0))
+		if (r_showbboxes_think.value && (ENT_NEXTTHINK(ed) <= 0) == (r_showbboxes_think.value > 0))
 			continue;
 
-		if (r_showbboxes_health.value && (ed->v.health <= 0) == (r_showbboxes_health.value > 0))
+		if (r_showbboxes_health.value && (ENT_HEALTH(ed) <= 0) == (r_showbboxes_health.value > 0))
 			continue;
 
 		// Compute bounding box (16 units wide for point entities)
-		extend = VectorCompare (ed->v.mins, ed->v.maxs) ? 8.f : 0.f;
+		extend = VectorCompare (ENT_MINS(ed), ENT_MAXS(ed)) ? 8.f : 0.f;
 		for (j = 0; j < 3; j++)
 		{
-			mins[j] = ed->v.origin[j] + ed->v.mins[j] - extend;
-			maxs[j] = ed->v.origin[j] + ed->v.maxs[j] + extend;
+			mins[j] = ENT_ORIGIN(ed)[j] + ENT_MINS(ed)[j] - extend;
+			maxs[j] = ENT_ORIGIN(ed)[j] + ENT_MAXS(ed)[j] + extend;
 		}
 
 		// Frustum culling
@@ -1555,7 +1555,7 @@ static void R_ShowBoundingBoxes (void)
 			qboolean inpvs =
 				ed->num_leafs ?
 					SV_EdictInPVS (ed, pvs) :
-					SV_BoxInPVS (ed->v.absmin, ed->v.absmax, pvs, sv.worldmodel->nodes)
+					SV_BoxInPVS (ENT_ABSMIN(ed), ENT_ABSMAX(ed), pvs, sv.worldmodel->nodes)
 			;
 			if (!inpvs)
 				continue;
@@ -1597,8 +1597,8 @@ static void R_ShowBoundingBoxes (void)
 		// (either entity field references or target/targetname matches)
 		if ((int)r_showbboxes_links.value & SHOWBBOX_LINK_INCOMING || r_showbboxes_targets.value)
 		{
-			const char *focus_target = PR_GetString (focused->v.target);
-			const char *focus_targetname = PR_GetString (focused->v.targetname);
+			const char *focus_target = PR_GetString (ENT_FLOAT(focused, target));
+			const char *focus_targetname = PR_GetString (ENT_FLOAT(focused, targetname));
 
 			for (i=1, ed=NEXT_EDICT(qcvm->edicts) ; i<qcvm->num_edicts ; i++, ed=NEXT_EDICT(ed))
 			{
@@ -1608,8 +1608,8 @@ static void R_ShowBoundingBoxes (void)
 				// Check target/targetname matches
 				if (r_showbboxes_targets.value && (*focus_target || *focus_targetname))
 				{
-					const char *target = PR_GetString (ed->v.target);
-					const char *targetname = PR_GetString (ed->v.targetname);
+					const char *target = PR_GetString (ENT_FLOAT(ed, target));
+					const char *targetname = PR_GetString (ENT_FLOAT(ed, targetname));
 
 					if (*focus_targetname && !strcmp (focus_targetname, target))
 						R_AddHighlightedEntity (ed, SHOWBBOX_LINK_INCOMING);
@@ -1648,7 +1648,7 @@ static void R_ShowBoundingBoxes (void)
 			color = 0xaaaaaaaa;
 		else if (r_showbboxes.value > 0.f)
 		{
-			int modelindex = (int)ed->v.modelindex;
+			int modelindex = (int)ENT_MODELINDEX(ed);
 			color = 0x7f800080;
 			if (modelindex >= 0 && modelindex < MAX_MODELS && sv.models[modelindex])
 			{
@@ -1661,7 +1661,7 @@ static void R_ShowBoundingBoxes (void)
 						break;
 				}
 			}
-			if (ed->v.health > 0)
+			if (ENT_HEALTH(ed) > 0)
 				color = 0x7f0000ff;
 		}
 		else if (r_showbboxes.value < 0.f)
@@ -1669,16 +1669,16 @@ static void R_ShowBoundingBoxes (void)
 		else
 			color = 0x5f7f7f7f;
 
-		if (VectorCompare (ed->v.mins, ed->v.maxs))
+		if (VectorCompare (ENT_MINS(ed), ENT_MAXS(ed)))
 		{
 			//point entity
-			R_EmitWirePoint (ed->v.origin, color);
+			R_EmitWirePoint (ENT_ORIGIN(ed), color);
 		}
 		else
 		{
 			//box entity
-			VectorAdd (ed->v.mins, ed->v.origin, mins);
-			VectorAdd (ed->v.maxs, ed->v.origin, maxs);
+			VectorAdd (ENT_MINS(ed), ENT_ORIGIN(ed), mins);
+			VectorAdd (ENT_MAXS(ed), ENT_ORIGIN(ed), maxs);
 			R_EmitWireBox (mins, maxs, color);
 		}
 	}

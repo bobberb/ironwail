@@ -1617,7 +1617,7 @@ static void Host_Status_f (void)
 		}
 		else
 			hours = 0;
-		print_fn ("#%-2u %-16.16s  %3i  %2i:%02i:%02i\n", j+1, client->name, (int)client->edict->v.frags, hours, minutes, seconds);
+		print_fn ("#%-2u %-16.16s  %3i  %2i:%02i:%02i\n", j+1, client->name, (int)ENT_FLOAT(client->edict, frags), hours, minutes, seconds);
 		print_fn ("   %s\n", NET_QSocketGetAddressString(client->netconnection));
 	}
 }
@@ -1644,8 +1644,8 @@ static void Host_God_f (void)
 	switch (Cmd_Argc())
 	{
 	case 1:
-		sv_player->v.flags = (int)sv_player->v.flags ^ FL_GODMODE;
-		if (!((int)sv_player->v.flags & FL_GODMODE) )
+		ENT_FLAGS(sv_player) = (int)ENT_FLAGS(sv_player) ^ FL_GODMODE;
+		if (!((int)ENT_FLAGS(sv_player) & FL_GODMODE) )
 			SV_ClientPrintf ("godmode OFF\n");
 		else
 			SV_ClientPrintf ("godmode ON\n");
@@ -1653,12 +1653,12 @@ static void Host_God_f (void)
 	case 2:
 		if (Q_atof(Cmd_Argv(1)))
 		{
-			sv_player->v.flags = (int)sv_player->v.flags | FL_GODMODE;
+			ENT_FLAGS(sv_player) = (int)ENT_FLAGS(sv_player) | FL_GODMODE;
 			SV_ClientPrintf ("godmode ON\n");
 		}
 		else
 		{
-			sv_player->v.flags = (int)sv_player->v.flags & ~FL_GODMODE;
+			ENT_FLAGS(sv_player) = (int)ENT_FLAGS(sv_player) & ~FL_GODMODE;
 			SV_ClientPrintf ("godmode OFF\n");
 		}
 		break;
@@ -1689,8 +1689,8 @@ static void Host_Notarget_f (void)
 	switch (Cmd_Argc())
 	{
 	case 1:
-		sv_player->v.flags = (int)sv_player->v.flags ^ FL_NOTARGET;
-		if (!((int)sv_player->v.flags & FL_NOTARGET) )
+		ENT_FLAGS(sv_player) = (int)ENT_FLAGS(sv_player) ^ FL_NOTARGET;
+		if (!((int)ENT_FLAGS(sv_player) & FL_NOTARGET) )
 			SV_ClientPrintf ("notarget OFF\n");
 		else
 			SV_ClientPrintf ("notarget ON\n");
@@ -1698,12 +1698,12 @@ static void Host_Notarget_f (void)
 	case 2:
 		if (Q_atof(Cmd_Argv(1)))
 		{
-			sv_player->v.flags = (int)sv_player->v.flags | FL_NOTARGET;
+			ENT_FLAGS(sv_player) = (int)ENT_FLAGS(sv_player) | FL_NOTARGET;
 			SV_ClientPrintf ("notarget ON\n");
 		}
 		else
 		{
-			sv_player->v.flags = (int)sv_player->v.flags & ~FL_NOTARGET;
+			ENT_FLAGS(sv_player) = (int)ENT_FLAGS(sv_player) & ~FL_NOTARGET;
 			SV_ClientPrintf ("notarget OFF\n");
 		}
 		break;
@@ -1736,16 +1736,16 @@ static void Host_Noclip_f (void)
 	switch (Cmd_Argc())
 	{
 	case 1:
-		if (sv_player->v.movetype != MOVETYPE_NOCLIP)
+		if (ENT_MOVETYPE(sv_player) != MOVETYPE_NOCLIP)
 		{
 			noclip_anglehack = true;
-			sv_player->v.movetype = MOVETYPE_NOCLIP;
+			ENT_MOVETYPE(sv_player) = MOVETYPE_NOCLIP;
 			SV_ClientPrintf ("noclip ON\n");
 		}
 		else
 		{
 			noclip_anglehack = false;
-			sv_player->v.movetype = MOVETYPE_WALK;
+			ENT_MOVETYPE(sv_player) = MOVETYPE_WALK;
 			SV_ClientPrintf ("noclip OFF\n");
 		}
 		break;
@@ -1753,13 +1753,13 @@ static void Host_Noclip_f (void)
 		if (Q_atof(Cmd_Argv(1)))
 		{
 			noclip_anglehack = true;
-			sv_player->v.movetype = MOVETYPE_NOCLIP;
+			ENT_MOVETYPE(sv_player) = MOVETYPE_NOCLIP;
 			SV_ClientPrintf ("noclip ON\n");
 		}
 		else
 		{
 			noclip_anglehack = false;
-			sv_player->v.movetype = MOVETYPE_WALK;
+			ENT_MOVETYPE(sv_player) = MOVETYPE_WALK;
 			SV_ClientPrintf ("noclip OFF\n");
 		}
 		break;
@@ -1807,37 +1807,37 @@ static void Host_SetPos_f(void)
 		SV_ClientPrintf("   setpos <x> <y> <z> <pitch> <yaw> <roll>\n");
 		SV_ClientPrintf("current values:\n");
 		SV_ClientPrintf("   %i %i %i %i %i %i\n",
-			Q_rint (sv_player->v.origin[0]),
-			Q_rint (sv_player->v.origin[1]),
-			Q_rint (sv_player->v.origin[2]),
-			Q_rint (sv_player->v.v_angle[0]),
-			Q_rint (sv_player->v.v_angle[1]),
-			Q_rint (sv_player->v.v_angle[2]));
+			Q_rint (ENT_ORIGIN(sv_player)[0]),
+			Q_rint (ENT_ORIGIN(sv_player)[1]),
+			Q_rint (ENT_ORIGIN(sv_player)[2]),
+			Q_rint (ENT_V_ANGLE(sv_player)[0]),
+			Q_rint (ENT_V_ANGLE(sv_player)[1]),
+			Q_rint (ENT_V_ANGLE(sv_player)[2]));
 		return;
 	}
 
-	if (sv_player->v.movetype != MOVETYPE_NOCLIP)
+	if (ENT_MOVETYPE(sv_player) != MOVETYPE_NOCLIP)
 	{
 		noclip_anglehack = true;
-		sv_player->v.movetype = MOVETYPE_NOCLIP;
+		ENT_MOVETYPE(sv_player) = MOVETYPE_NOCLIP;
 		SV_ClientPrintf ("noclip ON\n");
 	}
 
 	//make sure they're not going to whizz away from it
-	sv_player->v.velocity[0] = 0;
-	sv_player->v.velocity[1] = 0;
-	sv_player->v.velocity[2] = 0;
+	ENT_VELOCITY(sv_player)[0] = 0;
+	ENT_VELOCITY(sv_player)[1] = 0;
+	ENT_VELOCITY(sv_player)[2] = 0;
 
-	sv_player->v.origin[0] = args[0];
-	sv_player->v.origin[1] = args[1];
-	sv_player->v.origin[2] = args[2];
+	ENT_ORIGIN(sv_player)[0] = args[0];
+	ENT_ORIGIN(sv_player)[1] = args[1];
+	ENT_ORIGIN(sv_player)[2] = args[2];
 
 	if (numargs == 6)
 	{
-		sv_player->v.angles[0] = args[3];
-		sv_player->v.angles[1] = args[4];
-		sv_player->v.angles[2] = args[5];
-		sv_player->v.fixangle = 1;
+		ENT_ANGLES(sv_player)[0] = args[3];
+		ENT_ANGLES(sv_player)[1] = args[4];
+		ENT_ANGLES(sv_player)[2] = args[5];
+		ENT_FLOAT(sv_player, fixangle) = 1;
 	}
 
 	SV_LinkEdict (sv_player, false);
@@ -1865,26 +1865,26 @@ static void Host_Fly_f (void)
 	switch (Cmd_Argc())
 	{
 	case 1:
-		if (sv_player->v.movetype != MOVETYPE_FLY)
+		if (ENT_MOVETYPE(sv_player) != MOVETYPE_FLY)
 		{
-			sv_player->v.movetype = MOVETYPE_FLY;
+			ENT_MOVETYPE(sv_player) = MOVETYPE_FLY;
 			SV_ClientPrintf ("flymode ON\n");
 		}
 		else
 		{
-			sv_player->v.movetype = MOVETYPE_WALK;
+			ENT_MOVETYPE(sv_player) = MOVETYPE_WALK;
 			SV_ClientPrintf ("flymode OFF\n");
 		}
 		break;
 	case 2:
 		if (Q_atof(Cmd_Argv(1)))
 		{
-			sv_player->v.movetype = MOVETYPE_FLY;
+			ENT_MOVETYPE(sv_player) = MOVETYPE_FLY;
 			SV_ClientPrintf ("flymode ON\n");
 		}
 		else
 		{
-			sv_player->v.movetype = MOVETYPE_WALK;
+			ENT_MOVETYPE(sv_player) = MOVETYPE_WALK;
 			SV_ClientPrintf ("flymode OFF\n");
 		}
 		break;
@@ -2061,7 +2061,7 @@ static qboolean Host_AutoLoad (void)
 			return false;
 		}
 	}
-	else if (sv_autoload.value < 3.f && sv_player->v.health > 0.f)
+	else if (sv_autoload.value < 3.f && ENT_HEALTH(sv_player) > 0.f)
 		return false;
 
 	sv.autoloading = true;
@@ -2422,7 +2422,7 @@ static void Host_Savegame_f (void)
 
 	for (i=0 ; i<svs.maxclients ; i++)
 	{
-		if (svs.clients[i].active && (svs.clients[i].edict->v.health <= 0) )
+		if (svs.clients[i].active && (ENT_HEALTH(svs.clients[i].edict) <= 0) )
 		{
 			Con_Printf ("Can't savegame with a dead player\n");
 			return;
@@ -2747,7 +2747,7 @@ static void Host_Name_f (void)
 			Con_Printf ("%s renamed to %s\n", host_client->name, newName);
 	}
 	Q_strcpy (host_client->name, newName);
-	host_client->edict->v.netname = PR_SetEngineString(host_client->name);
+	ENT_NETNAME_T(host_client->edict) = PR_SetEngineString(host_client->name);
 
 // send notification to all clients
 	MSG_WriteByte (&sv.reliable_datagram, svc_updatename);
@@ -2821,7 +2821,7 @@ static void Host_Say(qboolean teamonly)
 	{
 		if (!client || !client->active || !client->spawned)
 			continue;
-		if (teamplay.value && teamonly && client->edict->v.team != save->edict->v.team)
+		if (teamplay.value && teamonly && ENT_FLOAT(client->edict, team) != ENT_FLOAT(save->edict, team))
 			continue;
 		host_client = client;
 		SV_ClientPrintf("%s", text);
@@ -2949,7 +2949,7 @@ static void Host_Color_f(void)
 	}
 
 	host_client->colors = playercolor;
-	host_client->edict->v.team = bottom + 1;
+	ENT_FLOAT(host_client->edict, team) = bottom + 1;
 
 // send notification to all clients
 	MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
@@ -2970,7 +2970,7 @@ static void Host_Kill_f (void)
 		return;
 	}
 
-	if (sv_player->v.health <= 0)
+	if (ENT_HEALTH(sv_player) <= 0)
 	{
 		SV_ClientPrintf ("Can't suicide -- already dead!\n");
 		return;
@@ -3008,11 +3008,11 @@ static void Host_Pause_f (void)
 
 		if (sv.paused)
 		{
-			SV_BroadcastPrintf ("%s paused the game\n", PR_GetString(sv_player->v.netname));
+			SV_BroadcastPrintf ("%s paused the game\n", PR_GetString(ENT_NETNAME_T(sv_player)));
 		}
 		else
 		{
-			SV_BroadcastPrintf ("%s unpaused the game\n",PR_GetString(sv_player->v.netname));
+			SV_BroadcastPrintf ("%s unpaused the game\n",PR_GetString(ENT_NETNAME_T(sv_player)));
 		}
 
 	// send notification to all clients
@@ -3081,9 +3081,9 @@ static void Host_Spawn_f (void)
 		ent = host_client->edict;
 
 		memset (&ent->v, 0, qcvm->progs->entityfields * 4);
-		ent->v.colormap = NUM_FOR_EDICT(ent);
-		ent->v.team = (host_client->colors & 15) + 1;
-		ent->v.netname = PR_SetEngineString(host_client->name);
+		ENT_FLOAT(ent, colormap) = NUM_FOR_EDICT(ent);
+		ENT_FLOAT(ent, team) = (host_client->colors & 15) + 1;
+		ENT_NETNAME_T(ent) = PR_SetEngineString(host_client->name);
 
 		// copy spawn parms out of the client_t
 		for (i=0 ; i< NUM_SPAWN_PARMS ; i++)
@@ -3156,9 +3156,9 @@ static void Host_Spawn_f (void)
 	MSG_WriteByte (&host_client->message, svc_setangle);
 	for (i = 0; i < 2; i++)
 		if (sv.loadgame)
-			MSG_WriteAngle (&host_client->message, ent->v.v_angle[i], sv.protocolflags );
+			MSG_WriteAngle (&host_client->message, ENT_V_ANGLE(ent)[i], sv.protocolflags );
 		else
-			MSG_WriteAngle (&host_client->message, ent->v.angles[i], sv.protocolflags );
+			MSG_WriteAngle (&host_client->message, ENT_ANGLES(ent)[i], sv.protocolflags );
 	MSG_WriteAngle (&host_client->message, 0, sv.protocolflags );
 
 	SV_WriteClientdataToMessage (sv_player, &host_client->message);
@@ -3299,6 +3299,13 @@ static void Host_Give_f (void)
 
 	if (pr_global_struct->deathmatch)
 		return;
+
+	// H2 has completely different item/weapon/ammo system - skip give command
+	if (hexen2_mode)
+	{
+		Con_Printf ("give: not supported in Hexen II mode\n");
+		return;
+	}
 
 	t = Cmd_Argv(1);
 	v = atoi (Cmd_Argv(2));
