@@ -235,6 +235,13 @@ FIXME: walk all entities and NULL out references to this entity
 */
 void ED_Free (edict_t *ed)
 {
+	// Never free worldspawn (entity 0) - it would corrupt the game state
+	if (ed == qcvm->edicts)
+	{
+		Sys_Printf("ED_Free: refusing to free worldspawn (entity 0)\n");
+		return;
+	}
+
 	SV_UnlinkEdict (ed);		// unlink from world bsp
 	ED_AddToFreeList (ed);
 
@@ -408,6 +415,7 @@ void H2_SetupGlobals (void)
 	h2_globals.ofs_deathmatch = -1;
 	h2_globals.ofs_coop = -1;
 	h2_globals.ofs_teamplay = -1;
+	h2_globals.ofs_cl_playerclass = -1;
 	h2_globals.ofs_serverflags = -1;
 	h2_globals.ofs_total_secrets = -1;
 	h2_globals.ofs_total_monsters = -1;
@@ -547,6 +555,7 @@ void H2_SetupGlobals (void)
 		h2_globals.ofs_deathmatch = ED_FindGlobalOffset("deathmatch");
 		h2_globals.ofs_coop = ED_FindGlobalOffset("coop");
 		h2_globals.ofs_teamplay = ED_FindGlobalOffset("teamplay");
+		h2_globals.ofs_cl_playerclass = ED_FindGlobalOffset("cl_playerclass");
 		h2_globals.ofs_serverflags = ED_FindGlobalOffset("serverflags");
 		h2_globals.ofs_total_secrets = ED_FindGlobalOffset("total_secrets");
 		h2_globals.ofs_total_monsters = ED_FindGlobalOffset("total_monsters");
@@ -568,6 +577,14 @@ void H2_SetupGlobals (void)
 
 		Con_DPrintf("H2_SetupGlobals: function offsets: StartFrame=%d PlayerPreThink=%d PlayerPostThink=%d\n",
 			h2_globals.ofs_StartFrame, h2_globals.ofs_PlayerPreThink, h2_globals.ofs_PlayerPostThink);
+
+		// Initialize cl_playerclass to 1 (Paladin) if it exists - this is required for v1.12 progs
+		// to avoid "You must choose a playerclass!" errors during entity spawning
+		if (h2_globals.ofs_cl_playerclass >= 0)
+		{
+			qcvm->globals[h2_globals.ofs_cl_playerclass] = 1.0f;  // 1 = Paladin
+			Con_DPrintf("H2_SetupGlobals: initialized cl_playerclass to 1 (Paladin)\n");
+		}
 	}
 
 	Con_DPrintf("H2_SetupGlobals: Entity field offsets:\n");
@@ -654,6 +671,19 @@ PR_ValueString
 Returns a string describing *data in a type specific manner
 =============
 */
+// Helper to safely get a string, returning placeholder for invalid offsets
+static const char *PR_GetStringSafe (int num)
+{
+	if (num >= 0 && num < qcvm->stringssize)
+		return qcvm->strings + num;
+	else if (num < 0 && num >= -qcvm->numknownstrings)
+	{
+		if (qcvm->knownstrings[-1 - num])
+			return qcvm->knownstrings[-1 - num];
+	}
+	return "<BAD STRING>";
+}
+
 static const char *PR_ValueString (int type, eval_t *val)
 {
 	static char	line[512];
@@ -668,20 +698,36 @@ static const char *PR_ValueString (int type, eval_t *val)
 	switch (type)
 	{
 	case ev_string:
-		q_snprintf (line, sizeof(line), "%s", PR_GetString(val->string));
+		q_snprintf (line, sizeof(line), "%s", PR_GetStringSafe(val->string));
 		break;
 	case ev_entity:
+		// Validate entity offset before dereferencing
+		if (val->edict < 0 || val->edict >= qcvm->num_edicts * qcvm->edict_size)
+		{
+			q_snprintf (line, sizeof(line), "<BAD ENTITY %d>", val->edict);
+			break;
+		}
 		ed = PROG_TO_EDICT(val->edict);
-		str = PR_GetString(ed->v.classname);
-		q_snprintf (line, sizeof(line), *str ? "entity %i (%s)" : "entity %i", NUM_FOR_EDICT(ed), PR_GetString(ed->v.classname));
+		str = PR_GetStringSafe(ed->v.classname);
+		q_snprintf (line, sizeof(line), *str ? "entity %i (%s)" : "entity %i", NUM_FOR_EDICT(ed), str);
 		break;
 	case ev_function:
+		if (val->function < 0 || val->function >= qcvm->progs->numfunctions)
+		{
+			q_snprintf (line, sizeof(line), "<BAD FUNCTION %d>()", val->function);
+			break;
+		}
 		f = qcvm->functions + val->function;
-		q_snprintf (line, sizeof(line), "%s()", PR_GetString(f->s_name));
+		q_snprintf (line, sizeof(line), "%s()", PR_GetStringSafe(f->s_name));
 		break;
 	case ev_field:
 		def = ED_FieldAtOfs ( val->_int );
-		q_snprintf (line, sizeof(line), ".%s", PR_GetString(def->s_name));
+		if (!def)
+		{
+			q_snprintf (line, sizeof(line), ".<BAD FIELD %d>", val->_int);
+			break;
+		}
+		q_snprintf (line, sizeof(line), ".%s", PR_GetStringSafe(def->s_name));
 		break;
 	case ev_void:
 		q_snprintf (line, sizeof(line), "void");
@@ -914,6 +960,10 @@ qboolean ED_IsRelevantField (edict_t *ed, ddef_t *d)
 	int			type;
 	int			i;
 
+	// Validate s_name before calling PR_GetString
+	if (d->s_name < 0 || d->s_name >= qcvm->stringssize)
+		return false; // Skip fields with invalid names
+
 	name = PR_GetString (d->s_name);
 	l = strlen (name);
 	if (l > 1 && name[l - 2] == '_')
@@ -1114,6 +1164,35 @@ void ED_Print (edict_t *ed)
 		d = &qcvm->fielddefs[i];
 		if (!ED_IsRelevantField (ed, d))
 			continue;
+
+		// Debug: check for bad entity field values before printing
+		if (hexen2_mode && (d->type & ~DEF_SAVEGLOBAL) == ev_entity)
+		{
+			int ofs = d->ofs * 4;
+			eval_t *val = (eval_t *)((char *)&ed->v + ofs);
+			if (val->edict < 0 || val->edict > qcvm->num_edicts * qcvm->edict_size)
+			{
+				Con_SafePrintf ("ED_Print: BAD ENTITY FIELD '%s' (ofs=%d) = %d (0x%x)\n",
+					PR_GetString(d->s_name), d->ofs, val->edict, val->edict);
+				continue; // Skip this field to avoid crash
+			}
+		}
+
+		// Check for bad string field values before printing
+		if (hexen2_mode && (d->type & ~DEF_SAVEGLOBAL) == ev_string)
+		{
+			int ofs = d->ofs * 4;
+			eval_t *val = (eval_t *)((char *)&ed->v + ofs);
+			int str_ofs = val->string;
+			// Valid string offsets: 0 to stringssize-1 (positive) or -1 to -numknownstrings (negative)
+			if (str_ofs != 0 && !((str_ofs > 0 && str_ofs < qcvm->stringssize) ||
+			                      (str_ofs < 0 && str_ofs >= -qcvm->numknownstrings)))
+			{
+				Con_SafePrintf ("ED_Print: BAD STRING FIELD '%s' (ofs=%d) = %d (0x%x)\n",
+					PR_GetString(d->s_name), d->ofs, str_ofs, str_ofs);
+				continue; // Skip this field to avoid crash
+			}
+		}
 
 		q_snprintf (field, sizeof (field), "%-14s %s\n", PR_GetString (d->s_name), ED_FieldValueString (ed, d)); // johnfitz -- was Con_Printf
 		l = strlen (field);
@@ -2389,11 +2468,16 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 {
 	int			i;
 
+	Sys_Printf("PR_LoadProgs: attempting to load '%s' (fatal=%d)\n", filename, fatal);
 	PR_ClearProgs(qcvm);	//just in case.
 
 	qcvm->progs = (dprograms_t *)COM_LoadHunkFile (filename, NULL);
 	if (!qcvm->progs)
+	{
+		Sys_Printf("PR_LoadProgs: failed to load '%s'\n", filename);
 		return false;
+	}
+	Sys_Printf("PR_LoadProgs: loaded '%s' OK, size=%" SDL_PRIs64 "\n", filename, com_filesize);
 	Con_DPrintf ("Programs occupy %" SDL_PRIs64 "K.\n", com_filesize/1024);
 
 	qcvm->crc = CRC_Block (qcvm->progs, com_filesize);

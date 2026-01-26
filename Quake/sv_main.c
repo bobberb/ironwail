@@ -2134,15 +2134,29 @@ void SV_SpawnServer (const char *server)
 	ent->v.solid = SOLID_BSP;
 	ent->v.movetype = MOVETYPE_PUSH;
 
-	if (coop.value)
-		pr_global_struct->coop = coop.value;
+	// Set game mode globals - use dynamic offsets in H2 mode to avoid corrupting globals
+	if (hexen2_mode && h2_globals.ofs_coop >= 0 && h2_globals.ofs_deathmatch >= 0)
+	{
+		if (coop.value)
+			qcvm->globals[h2_globals.ofs_coop] = coop.value;
+		else
+			qcvm->globals[h2_globals.ofs_deathmatch] = deathmatch.value;
+	}
 	else
-		pr_global_struct->deathmatch = deathmatch.value;
+	{
+		if (coop.value)
+			pr_global_struct->coop = coop.value;
+		else
+			pr_global_struct->deathmatch = deathmatch.value;
+	}
 
-	pr_global_struct->mapname = PR_SetEngineString(sv.name);
+	pr_global_struct->mapname = PR_SetEngineString(sv.name);  // mapname offset is same in Q1/H2
 
 // serverflags are for cross level information (sigils)
-	pr_global_struct->serverflags = svs.serverflags;
+	if (hexen2_mode && h2_globals.ofs_serverflags >= 0)
+		qcvm->globals[h2_globals.ofs_serverflags] = svs.serverflags;
+	else
+		pr_global_struct->serverflags = svs.serverflags;
 
 	Sys_Printf("SV_SpawnServer: about to call ED_LoadFromFile\n");
 	fflush(stdout); fflush(stderr);

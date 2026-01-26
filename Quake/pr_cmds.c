@@ -151,9 +151,23 @@ static void PF_objerror (void)
 	s = PF_VarString(0);
 	Con_Printf ("======OBJECT ERROR in %s:\n%s\n",
 			PR_GetString(qcvm->xfunction->s_name), s);
+	/* Debug: print self value before trying to convert to edict */
+	Con_Printf("objerror: pr_global_struct->self=%d, globals[28]=%d\n",
+		pr_global_struct->self, *(int *)&qcvm->globals[28]);
+	Con_Printf("objerror: qcvm->edicts=%p, num_edicts=%d, edict_size=%d\n",
+		(void*)qcvm->edicts, qcvm->num_edicts, qcvm->edict_size);
+	if (pr_global_struct->self < 0 || pr_global_struct->self > qcvm->num_edicts * qcvm->edict_size) {
+		Con_Printf("objerror: self value looks invalid, skipping edict print\n");
+		return;
+	}
 	ed = PROG_TO_EDICT(pr_global_struct->self);
+	Con_Printf("objerror: ed=%p (should be edicts+%d=%p)\n",
+		(void*)ed, pr_global_struct->self, (void*)((byte*)qcvm->edicts + pr_global_struct->self));
+	Con_Printf("objerror: calling ED_Print...\n");
 	ED_Print (ed);
+	Con_Printf("objerror: calling ED_Free...\n");
 	ED_Free (ed);
+	Con_Printf("objerror: done\n");
 
 	//Host_Error ("Program error"); //johnfitz -- by design, this should not be fatal
 }
@@ -1313,9 +1327,22 @@ static void PF_lightstyle (void)
 	const char	*val;
 	client_t	*client;
 	int	j;
+	string_t	str_ofs;
 
 	style = G_FLOAT(OFS_PARM0);
-	val = G_STRING(OFS_PARM1);
+
+	// Validate string offset before calling PR_GetString (H2 globalvars_t mismatch can cause garbage)
+	str_ofs = *(string_t *)&qcvm->globals[OFS_PARM1];
+	if (str_ofs != 0 && !((str_ofs > 0 && str_ofs < qcvm->stringssize) ||
+	                      (str_ofs < 0 && str_ofs >= -qcvm->numknownstrings)))
+	{
+		Con_Printf("PF_lightstyle: BAD string offset %d (0x%x) for style %d, stringssize=%d\n", str_ofs, str_ofs, style, qcvm->stringssize);
+		val = "";  // Use empty string instead of crashing
+	}
+	else
+	{
+		val = G_STRING(OFS_PARM1);
+	}
 
 // bounds check to avoid clobbering sv struct
 	if (style < 0 || style >= MAX_LIGHTSTYLES)

@@ -1122,11 +1122,22 @@ static void CL_LoadCSProgs (void)
 			if (qcvm->extglobals.maxclients)
 				*qcvm->extglobals.maxclients = cl.maxclients;
 			pr_global_struct->time = cl.time;
-			pr_global_struct->mapname = PR_SetEngineString (cl.mapname);
-			pr_global_struct->total_monsters = cl.stats[STAT_TOTALMONSTERS];
-			pr_global_struct->total_secrets = cl.stats[STAT_TOTALSECRETS];
-			pr_global_struct->deathmatch = cl.gametype;
-			pr_global_struct->coop = (cl.gametype == GAME_COOP) && cl.maxclients != 1;
+			pr_global_struct->mapname = PR_SetEngineString (cl.mapname);  // mapname offset is same in Q1/H2
+			// Use dynamic offsets for globals that differ between Q1 and H2
+			if (hexen2_mode && h2_globals.ofs_total_monsters >= 0)
+			{
+				qcvm->globals[h2_globals.ofs_total_monsters] = cl.stats[STAT_TOTALMONSTERS];
+				qcvm->globals[h2_globals.ofs_total_secrets] = cl.stats[STAT_TOTALSECRETS];
+				qcvm->globals[h2_globals.ofs_deathmatch] = cl.gametype;
+				qcvm->globals[h2_globals.ofs_coop] = (cl.gametype == GAME_COOP) && cl.maxclients != 1;
+			}
+			else
+			{
+				pr_global_struct->total_monsters = cl.stats[STAT_TOTALMONSTERS];
+				pr_global_struct->total_secrets = cl.stats[STAT_TOTALSECRETS];
+				pr_global_struct->deathmatch = cl.gametype;
+				pr_global_struct->coop = (cl.gametype == GAME_COOP) && cl.maxclients != 1;
+			}
 			if (qcvm->extglobals.player_localnum)
 				*qcvm->extglobals.player_localnum = cl.viewentity - 1; // this is a guess, but is important for scoreboards.
 

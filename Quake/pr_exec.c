@@ -726,19 +726,13 @@ void PR_ExecuteProgram (func_t fnum)
 		if (!OPA->function)
 			PR_RunError("NULL function");
 		newf = &qcvm->functions[OPA->function];
-		/* H2 calling convention for builtins:
-		 * v1.11 (CRC 38488): ALL calls use HexenC convention (params at st->b/c)
-		 * v1.12 (CRC 26905): Only BUILTIN calls use HexenC convention
-		 *                    QC function calls use standard Quake convention (params in OFS_PARM0)
+		/* H2 calling convention (from uhexen2):
+		 * ALWAYS copy params from st->b/c to OFS_PARM0/1 for CALL1/CALL2.
+		 * Both v1.11 and v1.12 progs were compiled with HexenC and expect this.
 		 */
-		/* H2 calling convention:
-		 * v1.11 (CRC 38488): Uses HexenC calling convention - copy params from st->b/c
-		 * v1.12 (CRC 26905): Uses standard Quake calling convention - params pre-set
-		 *                    (The v1.12 progs was likely compiled with a Quake-compatible compiler)
-		 */
-		if (hexen2_mode && qcvm->progs && qcvm->progs->crc == 38488)
+		if (hexen2_mode)
 		{
-			/* v1.11 only: Copy params from st->b/c to OFS_PARM0/1 */
+			/* H2 calling convention: copy params from st->b/c to OFS_PARM0/1 */
 			if (st->op >= OP_CALL1)
 			{
 				qcvm->globals[OFS_PARM0] = OPB->vector[0];
@@ -861,7 +855,32 @@ void PR_ExecuteProgram (func_t fnum)
 	case OP_FETCH_GBL_E:
 	case OP_FETCH_GBL_FNC:
 	  {
-		int i = (int)OPB->_float;
+		float idx_f = OPB->_float;
+		/* DEBUG: Always print in H2 mode to track execution */
+		if (hexen2_mode)
+		{
+			Con_Printf("FETCH_GBL_DEBUG: hexen2_mode=%d, idx_f=%f (NaN=%d)\n",
+				hexen2_mode, idx_f, idx_f != idx_f);
+			fflush(stdout);
+		}
+		/* Check for NaN before casting to int - NaN becomes negative when cast */
+		if (hexen2_mode)
+		{
+			if (idx_f != idx_f)  /* NaN check: NaN != NaN */
+			{
+				Sys_Printf("FETCH_GBL: NaN index detected! st->a=%u, st->b=%u, idx_f=%f\n",
+					(unsigned short)st->a, (unsigned short)st->b, idx_f);
+				Sys_Printf("  globals[st->b=%u] = %f (0x%x)\n",
+					(unsigned short)st->b, qcvm->globals[(unsigned short)st->b],
+					(unsigned int)qcvm->globals[(unsigned short)st->b]);
+				if (qcvm->xfunction)
+					Sys_Printf("  in function: %s\n", PR_GetString(qcvm->xfunction->s_name));
+				/* Treat NaN as index 0 to avoid crash, but warn */
+				PR_RunError("FETCH_GBL: NaN index (global %u has invalid value)",
+					(unsigned short)st->b);
+			}
+		}
+		int i = (int)idx_f;
 		if (i < 0 || i > G_INT((unsigned short)st->a - 1))
 		{
 			qcvm->xstatement = st - qcvm->statements;
@@ -873,7 +892,21 @@ void PR_ExecuteProgram (func_t fnum)
 		break;
 	case OP_FETCH_GBL_V:
 	  {
-		int i = (int)OPB->_float;
+		float idx_f = OPB->_float;
+		/* Check for NaN before casting to int - NaN becomes negative when cast */
+		if (hexen2_mode && (idx_f != idx_f))  /* NaN check: NaN != NaN */
+		{
+			Sys_Printf("FETCH_GBL_V: NaN index detected! st->a=%u, st->b=%u, idx_f=%f\n",
+				(unsigned short)st->a, (unsigned short)st->b, idx_f);
+			Sys_Printf("  globals[st->b=%u] = %f (0x%x)\n",
+				(unsigned short)st->b, qcvm->globals[(unsigned short)st->b],
+				(unsigned int)qcvm->globals[(unsigned short)st->b]);
+			if (qcvm->xfunction)
+				Sys_Printf("  in function: %s\n", PR_GetString(qcvm->xfunction->s_name));
+			PR_RunError("FETCH_GBL_V: NaN index (global %u has invalid value)",
+				(unsigned short)st->b);
+		}
+		int i = (int)idx_f;
 		if (i < 0 || i > G_INT((unsigned short)st->a - 1))
 		{
 			qcvm->xstatement = st - qcvm->statements;

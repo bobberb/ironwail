@@ -429,6 +429,7 @@ typedef struct
 	int		ofs_deathmatch;
 	int		ofs_coop;
 	int		ofs_teamplay;
+	int		ofs_cl_playerclass;	/* v1.12 only - player class global */
 	int		ofs_serverflags;
 	int		ofs_total_secrets;
 	int		ofs_total_monsters;
