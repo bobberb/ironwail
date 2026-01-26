@@ -3128,23 +3128,31 @@ static void Host_Spawn_f (void)
 	}
 
 //
-// send some stats
+// send some stats - use runtime offsets for H2 mode
 //
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_TOTALSECRETS);
-	MSG_WriteLong (&host_client->message, pr_global_struct->total_secrets);
+	MSG_WriteLong (&host_client->message, (hexen2_mode && h2_globals.ofs_total_secrets >= 0)
+		? (int)qcvm->globals[h2_globals.ofs_total_secrets]
+		: pr_global_struct->total_secrets);
 
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_TOTALMONSTERS);
-	MSG_WriteLong (&host_client->message, pr_global_struct->total_monsters);
+	MSG_WriteLong (&host_client->message, (hexen2_mode && h2_globals.ofs_total_monsters >= 0)
+		? (int)qcvm->globals[h2_globals.ofs_total_monsters]
+		: pr_global_struct->total_monsters);
 
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_SECRETS);
-	MSG_WriteLong (&host_client->message, pr_global_struct->found_secrets);
+	MSG_WriteLong (&host_client->message, (hexen2_mode && h2_globals.ofs_found_secrets >= 0)
+		? (int)qcvm->globals[h2_globals.ofs_found_secrets]
+		: pr_global_struct->found_secrets);
 
 	MSG_WriteByte (&host_client->message, svc_updatestat);
 	MSG_WriteByte (&host_client->message, STAT_MONSTERS);
-	MSG_WriteLong (&host_client->message, pr_global_struct->killed_monsters);
+	MSG_WriteLong (&host_client->message, (hexen2_mode && h2_globals.ofs_killed_monsters >= 0)
+		? (int)qcvm->globals[h2_globals.ofs_killed_monsters]
+		: pr_global_struct->killed_monsters);
 
 //
 // send a fixangle

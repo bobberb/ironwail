@@ -859,10 +859,13 @@ static void Host_CheckAutosave (void)
 
 	if (cls.signon == SIGNONS)
 	{
-		// Track new secrets
-		if (pr_global_struct->found_secrets != sv.autosave.prev_secrets)
+		// Track new secrets - use runtime offsets for H2 mode
+		float found_secrets = (hexen2_mode && h2_globals.ofs_found_secrets >= 0)
+			? qcvm->globals[h2_globals.ofs_found_secrets]
+			: pr_global_struct->found_secrets;
+		if (found_secrets != sv.autosave.prev_secrets)
 		{
-			sv.autosave.prev_secrets = pr_global_struct->found_secrets;
+			sv.autosave.prev_secrets = found_secrets;
 			sv.autosave.secret_boost = 1.f;
 		}
 		else
