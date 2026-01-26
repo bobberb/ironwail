@@ -128,7 +128,7 @@ static void R_ShowbboxesFilter_Completion_f (const char *partial)
 		for (i = 0; i < (int) VEC_SIZE (bbox_linked); i++)
 		{
 			ed = bbox_linked[i];
-			Con_AddToTabList (va ("#%d", NUM_FOR_EDICT (ed)), partial, PR_GetString (ed->v.classname));
+			Con_AddToTabList (va ("#%d", NUM_FOR_EDICT (ed)), partial, PR_GetString (ENT_CLASSNAME_T(ed)));
 		}
 	}
 	else
@@ -136,9 +136,9 @@ static void R_ShowbboxesFilter_Completion_f (const char *partial)
 		for (i = 1, ed = NEXT_EDICT (qcvm->edicts); i < qcvm->num_edicts; i++, ed = NEXT_EDICT (ed))
 		{
 			const char *name;
-			if (ed == sv_player || ed->free || !ed->v.classname)
+			if (ed == sv_player || ed->free || !ENT_CLASSNAME_T(ed))
 				continue;
-			name = PR_GetString (ed->v.classname);
+			name = PR_GetString (ENT_CLASSNAME_T(ed));
 			if (*name)
 				Con_AddToTabList (name, partial, "#");
 		}

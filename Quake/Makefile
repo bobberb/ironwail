@@ -262,6 +262,7 @@ OBJS = strlcat.o \
 	menu.o \
 	menu_hexen2.o \
 	sbar.o \
+	sbar_hexen2.o \
 	view.o \
 	wad.o \
 	cmd.o \

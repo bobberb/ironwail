@@ -708,7 +708,7 @@ static const char *PR_ValueString (int type, eval_t *val)
 			break;
 		}
 		ed = PROG_TO_EDICT(val->edict);
-		str = PR_GetStringSafe(ed->v.classname);
+		str = PR_GetStringSafe(ENT_CLASSNAME_T(ed));
 		q_snprintf (line, sizeof(line), *str ? "entity %i (%s)" : "entity %i", NUM_FOR_EDICT(ed), str);
 		break;
 	case ev_function:
@@ -1335,7 +1335,7 @@ static void ED_PrintEdict_Completion_f (const char *partial)
 	for (i = 0; i < (int) VEC_SIZE (bbox_linked); i++)
 	{
 		edict_t *ed = bbox_linked[i];
-		Con_AddToTabList (va ("%d", NUM_FOR_EDICT (ed)), partial, PR_GetString (ed->v.classname));
+		Con_AddToTabList (va ("%d", NUM_FOR_EDICT (ed)), partial, PR_GetString (ENT_CLASSNAME_T(ed)));
 	}
 	PR_PopQCVM (oldqcvm);
 }
@@ -1364,11 +1364,11 @@ static void ED_Count (void)
 		if (ent->free)
 			continue;
 		active++;
-		if (ent->v.solid)
+		if (ENT_SOLID(ent))
 			solid++;
-		if (ent->v.model)
+		if (ENT_MODEL_T(ent))
 			models++;
-		if (ent->v.movetype == MOVETYPE_STEP)
+		if (ENT_MOVETYPE(ent) == MOVETYPE_STEP)
 			step++;
 	}
 
@@ -1732,11 +1732,11 @@ ED_IsSkillSelector
 static qboolean ED_IsSkillSelector (const edict_t *ent)
 {
 	int skill;
-	const char *classname = PR_GetString (ent->v.classname);
+	const char *classname = PR_GetString (ENT_CLASSNAME_T(ent));
 
 	if (strcmp (classname, "trigger_setskill") == 0 || strcmp (classname, "target_setskill") == 0)
 		return true;
-	if (strcmp (classname, "info_command") == 0 && (int)ent->v.message != 0 && sscanf (PR_GetString (ent->v.message), "skill %d", &skill) == 1)
+	if (strcmp (classname, "info_command") == 0 && (int)ENT_STRING_T(ent, message) != 0 && sscanf (PR_GetString (ENT_STRING_T(ent, message)), "skill %d", &skill) == 1)
 		return true;
 
 	return false;
@@ -1783,7 +1783,7 @@ void ED_LoadFromFile (const char *data)
 			ent = ED_Alloc ();
 		data = ED_ParseEdict (data, ent);
 
-		if (!ent->v.classname)
+		if (!ENT_CLASSNAME_T(ent))
 		{
 			Con_SafePrintf ("No classname for:\n"); //johnfitz -- was Con_Printf
 			ED_Print (ent);
@@ -1791,11 +1791,11 @@ void ED_LoadFromFile (const char *data)
 			continue;
 		}
 
-		classname = PR_GetString (ent->v.classname);
+		classname = PR_GetString (ENT_CLASSNAME_T(ent));
 
 		if (sv.mapchecks.active)
 		{
-			int skillflags = (int)ent->v.spawnflags & (SPAWNFLAG_NOT_EASY|SPAWNFLAG_NOT_MEDIUM|SPAWNFLAG_NOT_HARD);
+			int skillflags = (int)ENT_FLOAT(ent, spawnflags) & (SPAWNFLAG_NOT_EASY|SPAWNFLAG_NOT_MEDIUM|SPAWNFLAG_NOT_HARD);
 			if (!(skillflags & SPAWNFLAG_NOT_EASY))
 				sv.mapchecks.skill_ents[0]++;
 			if (!(skillflags & SPAWNFLAG_NOT_MEDIUM))
@@ -1831,16 +1831,16 @@ void ED_LoadFromFile (const char *data)
 		// remove things from different skill levels or deathmatch
 		if (deathmatch.value)
 		{
-			if (((int)ent->v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
+			if (((int)ENT_FLOAT(ent, spawnflags) & SPAWNFLAG_NOT_DEATHMATCH))
 			{
 				ED_Free (ent);
 				inhibit++;
 				continue;
 			}
 		}
-		else if ((current_skill == 0 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY))
-				|| (current_skill == 1 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM))
-				|| (current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)) )
+		else if ((current_skill == 0 && ((int)ENT_FLOAT(ent, spawnflags) & SPAWNFLAG_NOT_EASY))
+				|| (current_skill == 1 && ((int)ENT_FLOAT(ent, spawnflags) & SPAWNFLAG_NOT_MEDIUM))
+				|| (current_skill >= 2 && ((int)ENT_FLOAT(ent, spawnflags) & SPAWNFLAG_NOT_HARD)) )
 		{
 			ED_Free (ent);
 			inhibit++;

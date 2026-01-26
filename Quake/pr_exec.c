@@ -663,15 +663,6 @@ void PR_ExecuteProgram (func_t fnum)
 				qcvm->xstatement = st - qcvm->statements;
 				PR_RunError("assignment to world entity");
 			}
-			// Debug: check if we're writing to OFS_PARM0
-			if ((unsigned short)st->c == OFS_PARM0 / 4 || (unsigned short)st->c == OFS_PARM1 / 4)
-			{
-				Con_Printf("OP_ADDRESS: writing to globals[%d] (c=%d), result=%d (0x%x)\n",
-					(unsigned short)st->c, (unsigned short)st->c,
-					(byte *)((int *)&ed->v + OPB->_int) - (byte *)qcvm->edicts,
-					(byte *)((int *)&ed->v + OPB->_int) - (byte *)qcvm->edicts);
-				fflush(stdout);
-			}
 			OPC->_int = (byte *)((int *)&ed->v + OPB->_int) - (byte *)qcvm->edicts;
 		}
 		break;

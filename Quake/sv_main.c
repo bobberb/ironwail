@@ -443,7 +443,7 @@ void SV_StartSound (edict_t *entity, int channel, const char *sample, int volume
 	//johnfitz
 
 	for (i = 0; i < 3; i++)
-		MSG_WriteCoord (&sv.datagram, entity->v.origin[i]+0.5*(entity->v.mins[i]+entity->v.maxs[i]), sv.protocolflags);
+		MSG_WriteCoord (&sv.datagram, ENT_ORIGIN(entity)[i]+0.5*(ENT_MINS(entity)[i]+ENT_MAXS(entity)[i]), sv.protocolflags);
 }
 
 /*
@@ -532,7 +532,7 @@ void SV_SendServerinfo (client_t *client)
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
 
-	MSG_WriteString (&client->message, PR_GetString(qcvm->edicts->v.message));
+	MSG_WriteString (&client->message, PR_GetString(ENT_FLOAT(qcvm->edicts, message)));
 
 	//johnfitz -- only send the first 256 model and sound precaches if protocol is 15
 	for (i = 1, s = sv.model_precache+1; *s; s++,i++)
@@ -550,8 +550,8 @@ void SV_SendServerinfo (client_t *client)
 	MSG_WriteByte (&client->message, svc_cdtrack);
 	if (!hexen2_mode)
 	{
-		MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
-		MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
+		MSG_WriteByte (&client->message, ENT_FLOAT(qcvm->edicts, sounds));
+		MSG_WriteByte (&client->message, ENT_FLOAT(qcvm->edicts, sounds));
 	}
 	else
 	{
@@ -1446,7 +1446,7 @@ void SV_UpdateToReliableMessages (void)
 // check for changes to be sent over the reliable streams
 	for (i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
 	{
-		if (host_client->old_frags != host_client->edict->v.frags)
+		if (host_client->old_frags != ENT_FLOAT(host_client->edict, frags))
 		{
 			for (j=0, client = svs.clients ; j<svs.maxclients ; j++, client++)
 			{
@@ -1454,10 +1454,10 @@ void SV_UpdateToReliableMessages (void)
 					continue;
 				MSG_WriteByte (&client->message, svc_updatefrags);
 				MSG_WriteByte (&client->message, i);
-				MSG_WriteShort (&client->message, host_client->edict->v.frags);
+				MSG_WriteShort (&client->message, ENT_FLOAT(host_client->edict, frags));
 			}
 
-			host_client->old_frags = host_client->edict->v.frags;
+			host_client->old_frags = ENT_FLOAT(host_client->edict, frags);
 		}
 	}
 
@@ -1985,14 +1985,8 @@ static void SV_PrintMapChecklist (void)
 	//
 	// music track
 	//
-	if (!hexen2_mode)
-		track = (int)qcvm->edicts->v.sounds;
-	else
-	{
-		// H2 uses soundtype - access via runtime offset
-		track = (h2_globals.fields.sounds >= 0) ?
-			(int)((float *)&qcvm->edicts->v)[h2_globals.fields.sounds] : 0;
-	}
+	// Use offset-based access - sounds field is "soundtype" in H2, looked up at progs load
+	track = (int)ENT_FLOAT(qcvm->edicts, sounds);
 	if (track == 0)
 		SV_PrintMapCheck (hexen2_mode ? MAPCHECK_OK : MAPCHECK_FAILED, "music track (worldspawn \"%s\" field)", hexen2_mode ? "soundtype" : "sounds");
 	else if (track < 2 || track > 255) 
@@ -2003,7 +1997,7 @@ static void SV_PrintMapChecklist (void)
 	//
 	// map title
 	//
-	Mod_SanitizeMapDescription (buf, sizeof (buf), PR_GetString ((int)qcvm->edicts->v.message));
+	Mod_SanitizeMapDescription (buf, sizeof (buf), PR_GetString ((int)ENT_FLOAT(qcvm->edicts, message)));
 	if (buf[0])
 		SV_PrintMapCheck (MAPCHECK_OK, "map title (%s)", buf);
 	else

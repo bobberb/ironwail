@@ -1220,12 +1220,12 @@ SCR_GetEntityBottom
 */
 static void SCR_GetEntityBottom (const edict_t *ed, vec3_t pos)
 {
-	pos[0] = ed->v.origin[0] + (ed->v.mins[0] + ed->v.maxs[0]) * 0.5f;
-	pos[1] = ed->v.origin[1] + (ed->v.mins[1] + ed->v.maxs[1]) * 0.5f;
-	pos[2] = ed->v.origin[2] + ed->v.mins[2];
+	pos[0] = ENT_ORIGIN(ed)[0] + (ENT_MINS(ed)[0] + ENT_MAXS(ed)[0]) * 0.5f;
+	pos[1] = ENT_ORIGIN(ed)[1] + (ENT_MINS(ed)[1] + ENT_MAXS(ed)[1]) * 0.5f;
+	pos[2] = ENT_ORIGIN(ed)[2] + ENT_MINS(ed)[2];
 
 	// If it's a point entity, move anchor point down by 8 units to avoid overlapping debug visualization
-	if (VectorCompare (ed->v.mins, ed->v.maxs))
+	if (VectorCompare (ENT_MINS(ed), ENT_MAXS(ed)))
 		pos[2] -= 8.f;
 }
 
@@ -1236,15 +1236,15 @@ SCR_GetEntityCenter
 */
 static void SCR_GetEntityCenter (const edict_t *ed, vec3_t pos)
 {
-	if (!VectorCompare (ed->v.mins, ed->v.maxs))
+	if (!VectorCompare (ENT_MINS(ed), ENT_MAXS(ed)))
 	{
-		pos[0] = ed->v.origin[0] + (ed->v.mins[0] + ed->v.maxs[0]) * 0.5f;
-		pos[1] = ed->v.origin[1] + (ed->v.mins[1] + ed->v.maxs[1]) * 0.5f;
-		pos[2] = ed->v.origin[2] + (ed->v.mins[2] + ed->v.maxs[2]) * 0.5f;
+		pos[0] = ENT_ORIGIN(ed)[0] + (ENT_MINS(ed)[0] + ENT_MAXS(ed)[0]) * 0.5f;
+		pos[1] = ENT_ORIGIN(ed)[1] + (ENT_MINS(ed)[1] + ENT_MAXS(ed)[1]) * 0.5f;
+		pos[2] = ENT_ORIGIN(ed)[2] + (ENT_MINS(ed)[2] + ENT_MAXS(ed)[2]) * 0.5f;
 	}
 	else
 	{
-		VectorCopy (ed->v.origin, pos);
+		VectorCopy (ENT_ORIGIN(ed), pos);
 	}
 }
 
@@ -1426,10 +1426,10 @@ void SCR_DrawEdictInfo (void)
 		VEC_CLEAR (scr_edictoverlaystrings);
 		MultiString_Append (&scr_edictoverlaystrings, "");
 		MultiString_Append (&scr_edictoverlaystrings, va ("edict %d", NUM_FOR_EDICT (ed)));
-		if (ed->v.classname)
+		if (ENT_CLASSNAME_T(ed))
 		{
 			MultiString_Append (&scr_edictoverlaystrings, "");
-			MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ed->v.classname));
+			MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ENT_CLASSNAME_T(ed)));
 		}
 
 		// Set background color based on link type
@@ -1468,7 +1468,7 @@ void SCR_DrawEdictInfo (void)
 		MultiString_Append (&scr_edictoverlaystrings, va ("%d", NUM_FOR_EDICT (ed)));
 		COM_TintString ("classname", tinted, sizeof (tinted));
 		MultiString_Append (&scr_edictoverlaystrings, tinted);
-		MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ed->v.classname));
+		MultiString_Append (&scr_edictoverlaystrings, PR_GetString (ENT_CLASSNAME_T(ed)));
 
 		// Add all relevant fields, excluding classname (already added to the header)
 		for (i = 1; i < qcvm->progs->numfielddefs; i++)
