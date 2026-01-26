@@ -924,6 +924,11 @@ void SV_Physics_Pusher (edict_t *ent)
 	if (thinktime > oldltime && thinktime <= ENT_LTIME(ent))
 	{
 		ENT_NEXTTHINK(ent) = 0;
+		if (!ENT_THINK(ent))
+		{
+			Con_DPrintf("SV_Physics_Pusher: entity %d has NULL think\n", NUM_FOR_EDICT(ent));
+			return;
+		}
 		pr_global_struct->time = qcvm->time;
 		pr_global_struct->self = EDICT_TO_PROG(ent);
 		pr_global_struct->other = EDICT_TO_PROG(qcvm->edicts);
@@ -1238,7 +1243,8 @@ void SV_Physics_Client (edict_t	*ent, int num)
 //
 	pr_global_struct->time = qcvm->time;
 	pr_global_struct->self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (GLOBAL_FUNC(PlayerPreThink));
+	if (GLOBAL_FUNC(PlayerPreThink))
+		PR_ExecuteProgram (GLOBAL_FUNC(PlayerPreThink));
 
 //
 // do a move
@@ -1295,7 +1301,8 @@ void SV_Physics_Client (edict_t	*ent, int num)
 
 	pr_global_struct->time = qcvm->time;
 	pr_global_struct->self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (GLOBAL_FUNC(PlayerPostThink));
+	if (GLOBAL_FUNC(PlayerPostThink))
+		PR_ExecuteProgram (GLOBAL_FUNC(PlayerPostThink));
 
 	forceunderwater = !wasunderwater && ENT_WATERLEVEL(ent) >= 3;
 	if (forceunderwater != ent->forcewater)

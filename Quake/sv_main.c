@@ -619,7 +619,8 @@ void SV_ConnectClient (int clientnum)
 	else
 	{
 	// call the progs to get default spawn parms for the new client
-		PR_ExecuteProgram (GLOBAL_FUNC(SetNewParms));
+		if (GLOBAL_FUNC(SetNewParms))
+			PR_ExecuteProgram (GLOBAL_FUNC(SetNewParms));
 		for (i=0 ; i<NUM_SPAWN_PARMS ; i++)
 		{
 			if (hexen2_mode && h2_globals.ofs_parm1 >= 0)
@@ -1847,7 +1848,8 @@ void SV_SaveSpawnparms (void)
 
 	// call the progs to get default spawn parms for the new client
 		pr_global_struct->self = EDICT_TO_PROG(host_client->edict);
-		PR_ExecuteProgram (GLOBAL_FUNC(SetChangeParms));
+		if (GLOBAL_FUNC(SetChangeParms))
+			PR_ExecuteProgram (GLOBAL_FUNC(SetChangeParms));
 		for (j=0 ; j<NUM_SPAWN_PARMS ; j++)
 		{
 			if (hexen2_mode && h2_globals.ofs_parm1 >= 0)
