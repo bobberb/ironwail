@@ -1182,7 +1182,11 @@ static void PF_precache_model (void)
 	if (sv.state != ss_loading)
 		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
 
+	int str_ofs = G_INT(OFS_PARM0);
 	s = G_STRING(OFS_PARM0);
+	Sys_Printf("PF_precache_model: OFS_PARM0=%d (0x%x), str_ofs=%d, s=%s\n",
+		OFS_PARM0, OFS_PARM0, str_ofs, s && s[0] > ' ' ? s : "(bad)");
+	fflush(stdout);
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 	PR_CheckEmptyString (s);
 

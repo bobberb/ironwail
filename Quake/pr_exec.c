@@ -717,27 +717,7 @@ void PR_ExecuteProgram (func_t fnum)
 	case OP_CALL4:
 	case OP_CALL3:
 	case OP_CALL2:
-		/* H2 calling convention: Copy second arg from st->c to OFS_PARM1
-		 * Both v1.11 and v1.12 use this convention.
-		 */
-		if (hexen2_mode)
-		{
-			qcvm->globals[OFS_PARM1] = OPC->vector[0];
-			qcvm->globals[OFS_PARM1 + 1] = OPC->vector[1];
-			qcvm->globals[OFS_PARM1 + 2] = OPC->vector[2];
-		}
-		/* fall through */
 	case OP_CALL1:
-		/* H2 calling convention: Copy first arg from st->b to OFS_PARM0
-		 * Both v1.11 and v1.12 use this convention.
-		 */
-		if (hexen2_mode)
-		{
-			qcvm->globals[OFS_PARM0] = OPB->vector[0];
-			qcvm->globals[OFS_PARM0 + 1] = OPB->vector[1];
-			qcvm->globals[OFS_PARM0 + 2] = OPB->vector[2];
-		}
-		/* fall through */
 	case OP_CALL0:
 		qcvm->xfunction->profile += profile - startprofile;
 		startprofile = profile;
@@ -746,6 +726,32 @@ void PR_ExecuteProgram (func_t fnum)
 		if (!OPA->function)
 			PR_RunError("NULL function");
 		newf = &qcvm->functions[OPA->function];
+		/* H2 calling convention for builtins:
+		 * v1.11 (CRC 38488): ALL calls use HexenC convention (params at st->b/c)
+		 * v1.12 (CRC 26905): Only BUILTIN calls use HexenC convention
+		 *                    QC function calls use standard Quake convention (params in OFS_PARM0)
+		 */
+		/* H2 calling convention:
+		 * v1.11 (CRC 38488): Uses HexenC calling convention - copy params from st->b/c
+		 * v1.12 (CRC 26905): Uses standard Quake calling convention - params pre-set
+		 *                    (The v1.12 progs was likely compiled with a Quake-compatible compiler)
+		 */
+		if (hexen2_mode && qcvm->progs && qcvm->progs->crc == 38488)
+		{
+			/* v1.11 only: Copy params from st->b/c to OFS_PARM0/1 */
+			if (st->op >= OP_CALL1)
+			{
+				qcvm->globals[OFS_PARM0] = OPB->vector[0];
+				qcvm->globals[OFS_PARM0 + 1] = OPB->vector[1];
+				qcvm->globals[OFS_PARM0 + 2] = OPB->vector[2];
+			}
+			if (st->op >= OP_CALL2)
+			{
+				qcvm->globals[OFS_PARM1] = OPC->vector[0];
+				qcvm->globals[OFS_PARM1 + 1] = OPC->vector[1];
+				qcvm->globals[OFS_PARM1 + 2] = OPC->vector[2];
+			}
+		}
 		if (newf->first_statement < 0)
 		{ // Built-in function
 			int i = -newf->first_statement;

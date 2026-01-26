@@ -2764,6 +2764,10 @@ const char *PR_GetString (int num)
 	}
 	else
 	{
+		/* Debug: print stack trace */
+		if (qcvm->xfunction)
+			Sys_Printf("PR_GetString bad offset %d in function: %s\n", num,
+				PR_GetString(qcvm->xfunction->s_name));
 		Host_Error("PR_GetString: invalid string offset %d\n", num);
 		return "";
 	}

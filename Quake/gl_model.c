@@ -439,11 +439,7 @@ qmodel_t *Mod_ForName (const char *name, qboolean crash)
 {
 	qmodel_t	*mod;
 
-	Sys_Printf("Mod_ForName: entry, name=%s, crash=%d\n", name, crash);
-	fflush(stdout); fflush(stderr);
 	mod = Mod_FindName (name);
-	Sys_Printf("Mod_ForName: after Mod_FindName, mod=%p\n", mod);
-	fflush(stdout); fflush(stderr);
 
 	return Mod_LoadModel (mod, crash);
 }

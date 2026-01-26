@@ -1592,7 +1592,11 @@ void SV_CreateBaseline (void)
 		if (entnum > 0 && entnum <= svs.maxclients)
 		{
 			svent->baseline.colormap = entnum;
-			svent->baseline.modelindex = SV_ModelIndex("progs/player.mdl");
+			/* H2 uses class-specific player models set by progs, not progs/player.mdl */
+			if (!hexen2_mode)
+				svent->baseline.modelindex = SV_ModelIndex("progs/player.mdl");
+			else
+				svent->baseline.modelindex = 0;  /* Will be set by progs */
 			svent->baseline.alpha = ENTALPHA_DEFAULT; //johnfitz -- alpha support
 			svent->baseline.scale = ENTSCALE_DEFAULT;
 		}
@@ -2097,24 +2101,34 @@ void SV_SpawnServer (const char *server)
 // clear world interaction links
 //
 	SV_ClearWorld ();
+	Sys_Printf("SV_SpawnServer: SV_ClearWorld done\n");
+	fflush(stdout); fflush(stderr);
 
 	sv.sound_precache[0] = dummy;
 	sv.model_precache[0] = dummy;
 	sv.model_precache[1] = sv.modelname;
+	Sys_Printf("SV_SpawnServer: loading %d submodels\n", sv.worldmodel->numsubmodels);
+	fflush(stdout); fflush(stderr);
 	for (i=1 ; i<sv.worldmodel->numsubmodels ; i++)
 	{
 		sv.model_precache[1+i] = localmodels[i];
 		sv.models[i+1] = Mod_ForName (localmodels[i], false);
 	}
+	Sys_Printf("SV_SpawnServer: submodels loaded\n");
+	fflush(stdout); fflush(stderr);
 
 //
 // load the rest of the entities
 //
+	Sys_Printf("SV_SpawnServer: about to get EDICT_NUM(0)\n");
+	fflush(stdout); fflush(stderr);
 	ent = EDICT_NUM(0);
 	Sys_Printf("SV_SpawnServer: EDICT_NUM(0)=%p, &ent->v=%p, entityfields=%d\n",
 		ent, &ent->v, qcvm->progs->entityfields);
+	fflush(stdout); fflush(stderr);
 	memset (&ent->v, 0, qcvm->progs->entityfields * 4);
 	Sys_Printf("SV_SpawnServer: after memset, setting model\n");
+	fflush(stdout); fflush(stderr);
 	ent->v.model = PR_SetEngineString(sv.worldmodel->name);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
@@ -2130,7 +2144,11 @@ void SV_SpawnServer (const char *server)
 // serverflags are for cross level information (sigils)
 	pr_global_struct->serverflags = svs.serverflags;
 
+	Sys_Printf("SV_SpawnServer: about to call ED_LoadFromFile\n");
+	fflush(stdout); fflush(stderr);
 	ED_LoadFromFile (sv.worldmodel->entities);
+	Sys_Printf("SV_SpawnServer: ED_LoadFromFile done\n");
+	fflush(stdout); fflush(stderr);
 
 	sv.active = true;
 
@@ -2139,11 +2157,19 @@ void SV_SpawnServer (const char *server)
 
 // run two frames to allow everything to settle
 	host_frametime = 0.1;
+	Sys_Printf("SV_SpawnServer: about to run first SV_Physics\n");
+	fflush(stdout); fflush(stderr);
 	SV_Physics ();
+	Sys_Printf("SV_SpawnServer: first SV_Physics done, running second\n");
+	fflush(stdout); fflush(stderr);
 	SV_Physics ();
+	Sys_Printf("SV_SpawnServer: both SV_Physics done\n");
+	fflush(stdout); fflush(stderr);
 
 // create a baseline for more efficient communications
 	SV_CreateBaseline ();
+	Sys_Printf("SV_SpawnServer: SV_CreateBaseline done\n");
+	fflush(stdout); fflush(stderr);
 
 	//johnfitz -- warn if signon buffer larger than standard server can handle
 	for (i = 0, signonsize = 0; i < sv.num_signon_buffers; i++)
@@ -2160,6 +2186,8 @@ void SV_SpawnServer (const char *server)
 			SV_SendServerinfo (host_client);
 
 	Con_DPrintf ("Server spawned.\n");
+	Sys_Printf("SV_SpawnServer: complete! map=%s\n", sv.name);
+	fflush(stdout); fflush(stderr);
 
 	if (sv.mapchecks.active)
 		SV_PrintMapChecklist ();
