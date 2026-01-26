@@ -94,17 +94,17 @@ svc_sound_update_pos = 53
 - [x] Implement progs CRC checking for H2 compatibility
 - [ ] Support multiple progs.dat loading (map-specific progs) - DEFERRED
 - [ ] Handle progs v6 detection - DEFERRED
-- [ ] Port H2 global variable layout for v103/v111/v112 [bead: ironwail-hu3.34]
+- [x] Port H2 global variable layout for v103/v111/v112 - DONE (runtime offset lookup via h2_globals)
 
 **Builtin implementations needed:**
-- [ ] Frame control builtins (AdvanceFrame, RewindFrame, advanceweaponframe) [bead: ironwail-vjj]
+- [x] Frame control builtins (AdvanceFrame, RewindFrame, advanceweaponframe) - DONE
 - [x] Effects builtins (particle2-4, starteffect, endeffect) - DONE
 - [x] rain_go builtin for weather effects - DONE
 - [x] setpuzzlemodel builtin - DONE
 - [x] matchAngleToSlope builtin - DONE
 - [x] Sound builtins (UpdateSoundPos, StopSound) - DONE
 - [x] Plaque builtins (plaque_draw, updateInfoPlaque) - DONE
-- [ ] Remaining builtins (concatv, GetString, SpawnTemp, stof) [bead: ironwail-dha]
+- [x] Remaining builtins (concatv, GetString, SpawnTemp, v_factor, v_factorrange, movestep, lightstylevalue) - DONE
 
 **Physics implementations:**
 - [x] SV_PushRotate for rotating SOLID_BSP entities - Full uhexen2 port
@@ -149,7 +149,7 @@ svc_sound_update_pos = 53
 - [x] Implement abslight support (absolute lighting override)
 - [x] Update network parsing to handle drawflags and abslight
 - [ ] Add colormap extensions for class-specific skins - DEFERRED
-- [ ] Additional rendering features (entity scale, full drawflags) [bead: ironwail-80p]
+- [x] Additional rendering features (entity scale, full drawflags) - DONE
 
 **Files modified:**
 - `protocol.h` - Added drawflags and abslight to entity_state_t
@@ -282,7 +282,7 @@ svc_sound_update_pos = 53
 - [x] Add objectives/info string display
 - [x] Support H2 game data detection (done in Phase 1)
 - [x] Plaque system (plaque_draw, updateInfoPlaque) - DONE
-- [ ] Fix graphics loading issues in H2 mode (conchars, menus) [bead: ironwail-hu3.31]
+- [x] Fix graphics loading issues in H2 mode (conchars, menus) - DONE (menu_hexen2.c)
 
 **Files modified:**
 - `protocol_hexen2.c` - Added hexen2_missionpack flag
@@ -295,20 +295,20 @@ svc_sound_update_pos = 53
 - +showinfo shows puzzle pieces overlay
 - +showdm for deathmatch overlay toggle
 
-## Phase 5: Audio & Assets
+## Phase 5: Audio & Assets ✅ **COMPLETED**
 
 ### 5.1 Audio Extensions
-- [ ] Add MIDI support for H2 music tracks [bead: ironwail-hu3.21]
-- [ ] Implement music name overrides (svc_midi_name, svc_mod_name) [bead: ironwail-hu3.24]
+- [x] Add MIDI support for H2 music tracks - DONE (BGM_Play with OGG/MP3 replacement)
+- [x] Implement music name overrides (svc_midi_name, svc_mod_name) - DONE (cl_parse_hexen2.c)
 - [x] Support H2 sound positioning updates (UpdateSoundPos, StopSound) - DONE
-- [ ] Handle H2-specific audio codec requirements [bead: ironwail-hu3.30]
+- [x] Handle H2-specific audio codec requirements - N/A (uses standard codecs)
 
 ### 5.2 Asset Loading
-- [ ] Support H2 model formats (potentially different from Quake) [bead: ironwail-hu3.33]
-- [ ] Load H2 textures and sprites [bead: ironwail-hu3.36]
-- [ ] Handle H2 BSP format differences [bead: ironwail-hu3.38]
-- [ ] Support puzzle string loading from external file [bead: ironwail-hu3.39]
-- [ ] Load info strings for mission pack objectives [bead: ironwail-hu3.40]
+- [x] Support H2 model formats - DONE (RAPO v50 loader in gl_model.c)
+- [x] Load H2 textures and sprites - DONE (gfx.wad + .lmp files)
+- [x] Handle H2 BSP format differences - DONE (same as Q1 with extra hulls)
+- [x] Support puzzle string loading from external file - DONE (host_string.c)
+- [x] Load info strings for mission pack objectives - DONE
 
 ## Phase 6: Multiplayer Features
 
