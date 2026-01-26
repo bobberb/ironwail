@@ -159,6 +159,12 @@ Fix requires runtime offset lookup for H2 globals or separate globalvars_t switc
 | Ring status | [x] | `hexen2/sbar.c` | `sbar_hexen2.c` |
 | Puzzle display | [x] | `hexen2/sbar.c` | `sbar_hexen2.c` |
 | Inventory commands | [x] | `hexen2/cl_input.c` | `sbar.c` |
+| H2 menu system | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
+| Bigfont rendering | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
+| Animated title scroll | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
+| Class selection | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
+| Difficulty selection | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
+| Portals expansion detect | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
 
 ---
 
@@ -193,7 +199,7 @@ Fix requires runtime offset lookup for H2 globals or separate globalvars_t switc
 
 ### Critical (game won't run properly)
 1. **Global variable layout mismatch** (`ironwail-hu3.34`) - Different H2 versions have different globalvars_t
-2. **Graphics loading issues** (`ironwail-hu3.31`) - conchars, menus not loading in H2 mode
+2. ~~**Graphics loading issues** (`ironwail-hu3.31`) - conchars, menus not loading in H2 mode~~ ✅ Menu system implemented
 
 ### High Priority (basic gameplay)
 1. **Frame control builtins** (`ironwail-vjj`) - AdvanceFrame, RewindFrame needed for animations
@@ -260,6 +266,7 @@ hexen2/snd_dma.c        - Sound system
 - `sv_effect_hexen2.h` / `sv_effect_hexen2.c` - Server effect system with save/load
 - `sv_inventory_hexen2.c` - Server-side inventory sync (SC1/SC2 protocol)
 - `sbar_hexen2.h` / `sbar_hexen2.c` - H2 HUD
+- `menu_hexen2.h` / `menu_hexen2.c` - H2 menu system (bigfont, class/difficulty select)
 - `pr_cmds_hexen2.h` / `pr_cmds_hexen2.inc` - H2 builtins
 - `progdefs.h2` - H2 entity/global structures
 
@@ -279,10 +286,12 @@ hexen2/snd_dma.c        - Sound system
 - `r_part.c` - H2 particles/trails
 - `view.c` - H2 view effects
 - `sbar.c` - H2 HUD redirect
+- `menu.h` - Added m_class, m_difficulty states
+- `menu.c` - H2 menu dispatch, M_H2_Init call
 - `client.h` - H2 client state
 - `render.h` - drawflags/abslight
 - `glquake.h` - H2 particle/trail types
-- `Makefile` - Added sv_effect_hexen2.o, sv_inventory_hexen2.o
+- `Makefile` - Added sv_effect_hexen2.o, sv_inventory_hexen2.o, menu_hexen2.o
 
 ---
 
