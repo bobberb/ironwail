@@ -711,57 +711,303 @@ void SV_SaveEffects(FILE *f)
 
 /*
 ===============
+SV_LoadEffects_ParseFloat
+
+Helper to parse a float from string buffer
+===============
+*/
+static float SV_LoadEffects_ParseFloat(const char **data)
+{
+	const char *p = *data;
+	char buf[64];
+	int i = 0;
+
+	// Skip whitespace
+	while (*p == ' ' || *p == '\t')
+		p++;
+
+	// Copy number
+	while (*p && *p != ' ' && *p != '\t' && *p != '\n' && i < 63)
+		buf[i++] = *p++;
+	buf[i] = '\0';
+
+	*data = p;
+	return (float)atof(buf);
+}
+
+/*
+===============
+SV_LoadEffects_ParseInt
+
+Helper to parse an int from string buffer
+===============
+*/
+static int SV_LoadEffects_ParseInt(const char **data)
+{
+	const char *p = *data;
+	char buf[64];
+	int i = 0;
+
+	// Skip whitespace
+	while (*p == ' ' || *p == '\t')
+		p++;
+
+	// Copy number
+	while (*p && *p != ' ' && *p != '\t' && *p != '\n' && i < 63)
+		buf[i++] = *p++;
+	buf[i] = '\0';
+
+	*data = p;
+	return atoi(buf);
+}
+
+/*
+===============
+SV_LoadEffects_SkipLine
+
+Skip to next line
+===============
+*/
+static const char *SV_LoadEffects_SkipLine(const char *data)
+{
+	while (*data && *data != '\n')
+		data++;
+	if (*data == '\n')
+		data++;
+	return data;
+}
+
+/*
+===============
 SV_LoadEffects
 
 Load effects from save game data.
-Note: Full implementation requires converting from FILE*-based parsing to
-string buffer parsing. For now, effects are cleared but not loaded.
-TODO: Implement string buffer parsing for full save/load support.
 ===============
 */
 const char *SV_LoadEffects(const char *data)
 {
+	int count, i, idx, type;
+	float expire_time;
+	const char *p;
+
 	SV_ClearEffects();
 
 	if (!hexen2_mode || !data)
 		return data;
 
-	// TODO: Implement string buffer parsing
-	// For now, skip past the effects section if present
-	// Effects will be recreated by QuakeC on level restore
+	// Parse "Effects: N"
+	if (strncmp(data, "Effects:", 8) != 0)
+		return data;
 
-	// Try to skip the "Effects: N" line and subsequent effect data
-	// This is a simplified skip - effects won't be restored
-	if (strncmp(data, "Effects:", 8) == 0)
-	{
-		// Skip to end of effects section (until we hit EOF or another section)
-		const char *p = data;
-		while (*p && *p != '\0')
-		{
-			// Skip lines until we find one that doesn't start with "Effect:" or "Effects:"
-			if (strncmp(p, "Effect:", 7) != 0 && strncmp(p, "Effects:", 8) != 0)
-			{
-				// Check if this line starts with a number or other known pattern
-				// For now, just skip all lines that look like effect data
-				if (*p >= '0' && *p <= '9')
-				{
-					// Skip this line
-					while (*p && *p != '\n')
-						p++;
-					if (*p == '\n')
-						p++;
-					continue;
-				}
-				break;
-			}
-			// Skip this line
-			while (*p && *p != '\n')
-				p++;
-			if (*p == '\n')
-				p++;
-		}
+	p = data + 8;
+	count = SV_LoadEffects_ParseInt(&p);
+	p = SV_LoadEffects_SkipLine(p);
+
+	if (count <= 0)
 		return p;
+
+	// Parse each effect
+	for (i = 0; i < count && *p; i++)
+	{
+		// Parse "Effect: <idx> <type> <expire_time>:"
+		if (strncmp(p, "Effect:", 7) != 0)
+			break;
+
+		p += 7;
+		idx = SV_LoadEffects_ParseInt(&p);
+		type = SV_LoadEffects_ParseInt(&p);
+		expire_time = SV_LoadEffects_ParseFloat(&p);
+
+		// Skip the ':'
+		while (*p == ' ' || *p == ':')
+			p++;
+
+		if (idx < 0 || idx >= MAX_EFFECTS)
+		{
+			p = SV_LoadEffects_SkipLine(p);
+			continue;
+		}
+
+		sv_Effects[idx].type = type;
+		sv_Effects[idx].expire_time = expire_time;
+
+		switch (type)
+		{
+		case CE_RAIN:
+			sv_Effects[idx].ef.Rain.min_org[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.min_org[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.min_org[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.max_org[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.max_org[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.max_org[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.e_size[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.e_size[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.e_size[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.dir[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.dir[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.dir[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.color = SV_LoadEffects_ParseInt(&p);
+			sv_Effects[idx].ef.Rain.count = SV_LoadEffects_ParseInt(&p);
+			sv_Effects[idx].ef.Rain.wait = SV_LoadEffects_ParseFloat(&p);
+			break;
+
+		case CE_SNOW:
+			sv_Effects[idx].ef.Rain.min_org[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.min_org[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.min_org[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.max_org[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.max_org[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.max_org[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.flags = SV_LoadEffects_ParseInt(&p);
+			sv_Effects[idx].ef.Rain.dir[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.dir[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.dir[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Rain.count = SV_LoadEffects_ParseInt(&p);
+			break;
+
+		case CE_FOUNTAIN:
+			sv_Effects[idx].ef.Fountain.pos[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Fountain.pos[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Fountain.pos[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Fountain.angle[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Fountain.angle[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Fountain.angle[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Fountain.movedir[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Fountain.movedir[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Fountain.movedir[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Fountain.color = SV_LoadEffects_ParseInt(&p);
+			sv_Effects[idx].ef.Fountain.cnt = SV_LoadEffects_ParseInt(&p);
+			break;
+
+		case CE_QUAKE:
+			sv_Effects[idx].ef.Quake.origin[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Quake.origin[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Quake.origin[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Quake.radius = SV_LoadEffects_ParseFloat(&p);
+			break;
+
+		case CE_WHITE_SMOKE:
+		case CE_GREEN_SMOKE:
+		case CE_GREY_SMOKE:
+		case CE_RED_SMOKE:
+		case CE_SLOW_WHITE_SMOKE:
+		case CE_TELESMK1:
+		case CE_TELESMK2:
+		case CE_GHOST:
+		case CE_REDCLOUD:
+		case CE_ACID_MUZZFL:
+		case CE_FLAMESTREAM:
+		case CE_FLAMEWALL:
+		case CE_FLAMEWALL2:
+		case CE_ONFIRE:
+			sv_Effects[idx].ef.Smoke.origin[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Smoke.origin[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Smoke.origin[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Smoke.velocity[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Smoke.velocity[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Smoke.velocity[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Smoke.framelength = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Smoke.frame = SV_LoadEffects_ParseFloat(&p);
+			break;
+
+		case CE_SM_WHITE_FLASH:
+		case CE_YELLOWRED_FLASH:
+		case CE_BLUESPARK:
+		case CE_YELLOWSPARK:
+		case CE_SM_CIRCLE_EXP:
+		case CE_BG_CIRCLE_EXP:
+		case CE_SM_EXPLOSION:
+		case CE_LG_EXPLOSION:
+		case CE_FLOOR_EXPLOSION:
+		case CE_FLOOR_EXPLOSION3:
+		case CE_BLUE_EXPLOSION:
+		case CE_REDSPARK:
+		case CE_GREENSPARK:
+		case CE_ICEHIT:
+		case CE_MEDUSA_HIT:
+		case CE_MEZZO_REFLECT:
+		case CE_FLOOR_EXPLOSION2:
+		case CE_XBOW_EXPLOSION:
+		case CE_NEW_EXPLOSION:
+		case CE_MAGIC_MISSILE_EXPLOSION:
+		case CE_BONE_EXPLOSION:
+		case CE_BLDRN_EXPL:
+		case CE_BRN_BOUNCE:
+		case CE_LSHOCK:
+		case CE_ACID_HIT:
+		case CE_ACID_SPLAT:
+		case CE_ACID_EXPL:
+		case CE_LBALL_EXPL:
+		case CE_FIREWALL_SMALL:
+		case CE_FIREWALL_MEDIUM:
+		case CE_FIREWALL_LARGE:
+		case CE_FBOOM:
+		case CE_BOMB:
+		case CE_WHITE_FLASH:
+		case CE_BLUE_FLASH:
+		case CE_SM_BLUE_FLASH:
+		case CE_RED_FLASH:
+			sv_Effects[idx].ef.Smoke.origin[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Smoke.origin[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Smoke.origin[2] = SV_LoadEffects_ParseFloat(&p);
+			break;
+
+		case CE_RIDER_DEATH:
+			sv_Effects[idx].ef.RD.origin[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.RD.origin[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.RD.origin[2] = SV_LoadEffects_ParseFloat(&p);
+			break;
+
+		case CE_GRAVITYWELL:
+			sv_Effects[idx].ef.RD.origin[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.RD.origin[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.RD.origin[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.RD.color = SV_LoadEffects_ParseInt(&p);
+			sv_Effects[idx].ef.RD.lifetime = SV_LoadEffects_ParseFloat(&p);
+			break;
+
+		case CE_TELEPORTERPUFFS:
+		case CE_TELEPORTERBODY:
+			sv_Effects[idx].ef.Teleporter.origin[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Teleporter.origin[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Teleporter.origin[2] = SV_LoadEffects_ParseFloat(&p);
+			break;
+
+		case CE_BONESHARD:
+		case CE_BONESHRAPNEL:
+			sv_Effects[idx].ef.Missile.origin[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.origin[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.origin[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.velocity[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.velocity[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.velocity[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.angle[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.angle[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.angle[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.avelocity[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.avelocity[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Missile.avelocity[2] = SV_LoadEffects_ParseFloat(&p);
+			break;
+
+		case CE_CHUNK:
+			sv_Effects[idx].ef.Chunk.origin[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Chunk.origin[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Chunk.origin[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Chunk.type = (unsigned char)SV_LoadEffects_ParseInt(&p);
+			sv_Effects[idx].ef.Chunk.srcVel[0] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Chunk.srcVel[1] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Chunk.srcVel[2] = SV_LoadEffects_ParseFloat(&p);
+			sv_Effects[idx].ef.Chunk.numChunks = (unsigned char)SV_LoadEffects_ParseInt(&p);
+			break;
+
+		default:
+			// Unknown effect type - clear it
+			sv_Effects[idx].type = 0;
+			break;
+		}
+
+		p = SV_LoadEffects_SkipLine(p);
 	}
 
-	return data;
+	return p;
 }
