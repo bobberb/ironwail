@@ -2009,36 +2009,17 @@ void SV_SpawnServer (const char *server)
 	}
 	else sv.protocolflags = 0;
 
-	Sys_Printf("SV_SpawnServer: Starting, server=%s\n", server);
 	PR_SwitchQCVM(vm);
 // load progs to get entity field count
-	Sys_Printf("SV_SpawnServer: About to call PR_LoadProgs\n");
 	PR_LoadProgs ("progs.dat", true);
-	Sys_Printf("SV_SpawnServer: PR_LoadProgs returned, edict_size=%d, hexen2_mode=%d\n",
-		qcvm->edict_size, hexen2_mode);
-	fflush(stdout); fflush(stderr);
 
 // allocate server memory
 	/* Host_ClearMemory() called above already cleared the whole sv structure */
-	Sys_Printf("SV_SpawnServer: About to allocate edicts\n");
-	fflush(stdout); fflush(stderr);
 	qcvm->max_edicts = CLAMP (MIN_EDICTS,(int)max_edicts.value,MAX_EDICTS); //johnfitz -- max_edicts cvar
 	qcvm->edicts = (edict_t *) malloc (qcvm->max_edicts*qcvm->edict_size); // ericw -- sv.edicts switched to use malloc()
-	Sys_Printf("SV_SpawnServer: Allocated edicts at %p\n", qcvm->edicts);
-	fflush(stdout); fflush(stderr);
 	if (!qcvm->edicts)
-	{
-		Sys_Printf("SV_SpawnServer: malloc failed!\n");
-		fflush(stdout); fflush(stderr);
 		Sys_Error ("SV_SpawnServer: out of memory (%d edicts x %d bytes)", qcvm->max_edicts, qcvm->edict_size);
-	}
-	Sys_Printf("SV_SpawnServer: edicts allocated successfully\n");
-	fflush(stdout); fflush(stderr);
-	Sys_Printf("SV_SpawnServer: About to ClearLink\n");
-	fflush(stdout); fflush(stderr);
 	ClearLink (&qcvm->free_edicts);
-	Sys_Printf("SV_SpawnServer: ClearLink done\n");
-	fflush(stdout); fflush(stderr);
 
 	sv.datagram.maxsize = sizeof(sv.datagram_buf);
 	sv.datagram.cursize = 0;
@@ -2052,43 +2033,22 @@ void SV_SpawnServer (const char *server)
 
 // leave slots at start for clients only
 	qcvm->num_edicts = svs.maxclients+1;
-	Sys_Printf("SV_SpawnServer: About to memset edicts (num_edicts=%d, edict_size=%d)\n",
-		qcvm->num_edicts, qcvm->edict_size);
-	fflush(stdout); fflush(stderr);
 	memset(qcvm->edicts, 0, qcvm->num_edicts*qcvm->edict_size); // ericw -- sv.edicts switched to use malloc()
-	Sys_Printf("SV_SpawnServer: memset done\n");
-	fflush(stdout); fflush(stderr);
 	for (i=0 ; i<svs.maxclients ; i++)
 	{
-		Sys_Printf("SV_SpawnServer: client %d\n", i);
-		fflush(stdout); fflush(stderr);
 		ent = EDICT_NUM(i+1);
-		Sys_Printf("SV_SpawnServer: EDICT_NUM(%d)=%p\n", i+1, ent);
-		fflush(stdout); fflush(stderr);
 		svs.clients[i].edict = ent;
-		Sys_Printf("SV_SpawnServer: client %d done\n", i);
-		fflush(stdout); fflush(stderr);
 	}
-	Sys_Printf("SV_SpawnServer: all clients done\n");
-	fflush(stdout); fflush(stderr);
 
 	sv.state = ss_loading;
 	sv.paused = false;
 	sv.nomonsters = (nomonsters.value != 0.f);
-	Sys_Printf("SV_SpawnServer: state set, about to set time\n");
-	fflush(stdout); fflush(stderr);
 
 	qcvm->time = 1.0;
 
-	Sys_Printf("SV_SpawnServer: about to copy server name\n");
-	fflush(stdout); fflush(stderr);
 	q_strlcpy (sv.name, server, sizeof(sv.name));
 	q_snprintf (sv.modelname, sizeof(sv.modelname), "maps/%s.bsp", server);
-	Sys_Printf("SV_SpawnServer: about to load worldmodel, modelname=%s\n", sv.modelname);
-	fflush(stdout); fflush(stderr);
 	sv.worldmodel = Mod_ForName (sv.modelname, false);
-	Sys_Printf("SV_SpawnServer: worldmodel loaded=%p\n", sv.worldmodel);
-	fflush(stdout); fflush(stderr);
 	if (!sv.worldmodel)
 	{
 		Con_Printf ("Couldn't spawn server %s\n", sv.modelname);
@@ -2101,34 +2061,21 @@ void SV_SpawnServer (const char *server)
 // clear world interaction links
 //
 	SV_ClearWorld ();
-	Sys_Printf("SV_SpawnServer: SV_ClearWorld done\n");
-	fflush(stdout); fflush(stderr);
 
 	sv.sound_precache[0] = dummy;
 	sv.model_precache[0] = dummy;
 	sv.model_precache[1] = sv.modelname;
-	Sys_Printf("SV_SpawnServer: loading %d submodels\n", sv.worldmodel->numsubmodels);
-	fflush(stdout); fflush(stderr);
 	for (i=1 ; i<sv.worldmodel->numsubmodels ; i++)
 	{
 		sv.model_precache[1+i] = localmodels[i];
 		sv.models[i+1] = Mod_ForName (localmodels[i], false);
 	}
-	Sys_Printf("SV_SpawnServer: submodels loaded\n");
-	fflush(stdout); fflush(stderr);
 
 //
 // load the rest of the entities
 //
-	Sys_Printf("SV_SpawnServer: about to get EDICT_NUM(0)\n");
-	fflush(stdout); fflush(stderr);
 	ent = EDICT_NUM(0);
-	Sys_Printf("SV_SpawnServer: EDICT_NUM(0)=%p, &ent->v=%p, entityfields=%d\n",
-		ent, &ent->v, qcvm->progs->entityfields);
-	fflush(stdout); fflush(stderr);
 	memset (&ent->v, 0, qcvm->progs->entityfields * 4);
-	Sys_Printf("SV_SpawnServer: after memset, setting model\n");
-	fflush(stdout); fflush(stderr);
 	ent->v.model = PR_SetEngineString(sv.worldmodel->name);
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
@@ -2158,11 +2105,7 @@ void SV_SpawnServer (const char *server)
 	else
 		pr_global_struct->serverflags = svs.serverflags;
 
-	Sys_Printf("SV_SpawnServer: about to call ED_LoadFromFile\n");
-	fflush(stdout); fflush(stderr);
 	ED_LoadFromFile (sv.worldmodel->entities);
-	Sys_Printf("SV_SpawnServer: ED_LoadFromFile done\n");
-	fflush(stdout); fflush(stderr);
 
 	sv.active = true;
 
@@ -2171,19 +2114,11 @@ void SV_SpawnServer (const char *server)
 
 // run two frames to allow everything to settle
 	host_frametime = 0.1;
-	Sys_Printf("SV_SpawnServer: about to run first SV_Physics\n");
-	fflush(stdout); fflush(stderr);
 	SV_Physics ();
-	Sys_Printf("SV_SpawnServer: first SV_Physics done, running second\n");
-	fflush(stdout); fflush(stderr);
 	SV_Physics ();
-	Sys_Printf("SV_SpawnServer: both SV_Physics done\n");
-	fflush(stdout); fflush(stderr);
 
 // create a baseline for more efficient communications
 	SV_CreateBaseline ();
-	Sys_Printf("SV_SpawnServer: SV_CreateBaseline done\n");
-	fflush(stdout); fflush(stderr);
 
 	//johnfitz -- warn if signon buffer larger than standard server can handle
 	for (i = 0, signonsize = 0; i < sv.num_signon_buffers; i++)
@@ -2200,8 +2135,6 @@ void SV_SpawnServer (const char *server)
 			SV_SendServerinfo (host_client);
 
 	Con_DPrintf ("Server spawned.\n");
-	Sys_Printf("SV_SpawnServer: complete! map=%s\n", sv.name);
-	fflush(stdout); fflush(stderr);
 
 	if (sv.mapchecks.active)
 		SV_PrintMapChecklist ();

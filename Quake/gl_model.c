@@ -1751,17 +1751,7 @@ static void Mod_CheckWaterVis(void)
 	mleaf_t		*leaf, *other;
 	msurface_t * surf;
 	int i, j, k;
-
-	Sys_Printf("Mod_CheckWaterVis: entry\n");
-	fflush(stdout); fflush(stderr);
-
-	Sys_Printf("Mod_CheckWaterVis: loadmodel=%p, loadmodel->submodels=%p\n", loadmodel, loadmodel->submodels);
-	fflush(stdout); fflush(stderr);
-
 	int numclusters = loadmodel->submodels[0].visleafs;
-	Sys_Printf("Mod_CheckWaterVis: numclusters=%d\n", numclusters);
-	fflush(stdout); fflush(stderr);
-
 	int contentfound = 0;
 	int contenttransparent = 0;
 	int contenttype;
@@ -2259,20 +2249,27 @@ static void Mod_LoadSubmodels (lump_t *l)
 	int			i, j, count;
 	int			is_quake_format;
 
-	// Detect format based on size
-	// Check Hexen II format first (8 hulls), then Quake format (4 hulls)
-	// Hexen II BSP files have 8 hulls per submodel, but some old files may use 4
-	if (l->filelen % sizeof(dmodel_t) == 0)
+	// Detect format based on hexen2_mode flag and size validation
+	// Quake format: 64 bytes per submodel (4 hulls)
+	// Hexen II format: 80 bytes per submodel (8 hulls)
+	// Cannot rely on size alone since sizes may be divisible by both (e.g., 320 bytes = 5 Q1 or 4 H2)
+	if (hexen2_mode)
 	{
-		is_quake_format = 0;  // Hexen II format (or newer)
-	}
-	else if (l->filelen % sizeof(dmodelq_t) == 0)
-	{
-		is_quake_format = 1;  // Quake format
+		if (l->filelen % sizeof(dmodel_t) == 0)
+			is_quake_format = 0;  // H2 format (8 hulls)
+		else if (l->filelen % sizeof(dmodelq_t) == 0)
+			is_quake_format = 1;  // Q1 format (4 hulls) - some old H2 maps may use this
+		else
+			Sys_Error("Mod_LoadSubmodels: unknown submodel format (filelen=%d)", l->filelen);
 	}
 	else
 	{
-		Sys_Error("Mod_LoadSubmodels: unknown submodel format (filelen=%d)", l->filelen);
+		if (l->filelen % sizeof(dmodelq_t) == 0)
+			is_quake_format = 1;  // Quake format (4 hulls)
+		else if (l->filelen % sizeof(dmodel_t) == 0)
+			is_quake_format = 0;  // Some Q1 mods might use 8 hull format
+		else
+			Sys_Error("Mod_LoadSubmodels: unknown submodel format (filelen=%d)", l->filelen);
 	}
 
 	if (is_quake_format) {

@@ -856,13 +856,6 @@ void PR_ExecuteProgram (func_t fnum)
 	case OP_FETCH_GBL_FNC:
 	  {
 		float idx_f = OPB->_float;
-		/* DEBUG: Always print in H2 mode to track execution */
-		if (hexen2_mode)
-		{
-			Con_Printf("FETCH_GBL_DEBUG: hexen2_mode=%d, idx_f=%f (NaN=%d)\n",
-				hexen2_mode, idx_f, idx_f != idx_f);
-			fflush(stdout);
-		}
 		/* Check for NaN before casting to int - NaN becomes negative when cast */
 		if (hexen2_mode)
 		{
