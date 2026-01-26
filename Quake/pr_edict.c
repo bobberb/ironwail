@@ -2497,18 +2497,18 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 {
 	int			i;
 
-	Sys_Printf("PR_LoadProgs: attempting to load '%s' (fatal=%d)\n", filename, fatal);
+	Con_DPrintf("PR_LoadProgs: attempting to load '%s' (fatal=%d)\n", filename, fatal);
 	PR_ClearProgs(qcvm);	//just in case.
 
 	qcvm->progs = (dprograms_t *)COM_LoadHunkFile (filename, NULL);
 	if (!qcvm->progs)
 	{
-		Sys_Printf("PR_LoadProgs: failed to load '%s'\n", filename);
+		Con_DPrintf("PR_LoadProgs: failed to load '%s'\n", filename);
 		if (fatal)
 			Host_Error ("PR_LoadProgs: couldn't load %s", filename);
 		return false;
 	}
-	Sys_Printf("PR_LoadProgs: loaded '%s' OK, size=%" SDL_PRIs64 "\n", filename, com_filesize);
+	Con_DPrintf("PR_LoadProgs: loaded '%s' OK, size=%" SDL_PRIs64 "\n", filename, com_filesize);
 	Con_DPrintf ("Programs occupy %" SDL_PRIs64 "K.\n", com_filesize/1024);
 
 	qcvm->crc = CRC_Block (qcvm->progs, com_filesize);
@@ -2635,7 +2635,7 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 
 	qcvm->globals = (float *)((byte *)qcvm->progs + qcvm->progs->ofs_globals);
 	pr_global_struct = (globalvars_t*)qcvm->globals;
-	Sys_Printf("PR_LoadProgs: globals=%p, pr_global_struct=%p, CRC=%u\n",
+	Con_DPrintf("PR_LoadProgs: globals=%p, pr_global_struct=%p, CRC=%u\n",
 		qcvm->globals, pr_global_struct, qcvm->progs->crc);
 
 	// byte swap the lumps
@@ -2685,9 +2685,9 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 #undef QCEXTFIELD
 
 	qcvm->edict_size = qcvm->progs->entityfields * 4 + sizeof(edict_t) - sizeof(entvars_t);
-	Sys_Printf("PR_LoadProgs: entityfields=%d, sizeof(edict_t)=%zu, sizeof(entvars_t)=%zu, edict_size=%d\n",
+	Con_DPrintf("PR_LoadProgs: entityfields=%d, sizeof(edict_t)=%zu, sizeof(entvars_t)=%zu, edict_size=%d\n",
 		qcvm->progs->entityfields, sizeof(edict_t), sizeof(entvars_t), qcvm->edict_size);
-	Sys_Printf("PR_LoadProgs: numglobals=%d, numstatements=%d\n",
+	Con_DPrintf("PR_LoadProgs: numglobals=%d, numstatements=%d\n",
 		qcvm->progs->numglobals, qcvm->progs->numstatements);
 	// round off to next highest whole word address (esp for Alpha)
 	// this ensures that pointers in the engine data area are always
