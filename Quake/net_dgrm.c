@@ -90,7 +90,7 @@ static void NET_Ban_f (void)
 	}
 	else
 	{
-		if (pr_global_struct->deathmatch)
+		if (deathmatch.value)
 			return;
 		print_fn = SV_ClientPrintf;
 	}

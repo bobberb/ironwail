@@ -1472,6 +1472,7 @@ static void PF_aim (void)
 {
 	edict_t	*ent, *check, *bestent;
 	vec3_t	start, dir, end, bestdir;
+	vec3_t	v_forward;	/* local copy for H2 compatibility */
 	int		i, j;
 	trace_t	tr;
 	float	dist, bestdist;
@@ -1481,17 +1482,23 @@ static void PF_aim (void)
 	speed = G_FLOAT(OFS_PARM1);
 	(void) speed; /* variable set but not used */
 
+	/* Get v_forward - use runtime offset for H2 mode */
+	if (hexen2_mode && h2_globals.ofs_v_forward >= 0)
+		H2_GLOBAL_VEC(h2_globals.ofs_v_forward, v_forward);
+	else
+		VectorCopy(pr_global_struct->v_forward, v_forward);
+
 	VectorCopy (ENT_ORIGIN(ent), start);
 	start[2] += 20;
 
 // try sending a trace straight
-	VectorCopy (pr_global_struct->v_forward, dir);
+	VectorCopy (v_forward, dir);
 	VectorMA (start, 2048, dir, end);
 	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
 	if (tr.ent && ENT_TAKEDAMAGE(tr.ent) == DAMAGE_AIM
 		&& (!teamplay.value || ENT_FLOAT(ent, team) <= 0 || ENT_FLOAT(ent, team) != ENT_FLOAT(tr.ent, team)) )
 	{
-		VectorCopy (pr_global_struct->v_forward, G_VECTOR(OFS_RETURN));
+		VectorCopy (v_forward, G_VECTOR(OFS_RETURN));
 		return;
 	}
 
@@ -1513,7 +1520,7 @@ static void PF_aim (void)
 			end[j] = ENT_ORIGIN(check)[j] + 0.5 * (ENT_MINS(check)[j] + ENT_MAXS(check)[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
-		dist = DotProduct (dir, pr_global_struct->v_forward);
+		dist = DotProduct (dir, v_forward);
 		if (dist < bestdist)
 			continue;	// to far to turn
 		tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
@@ -1527,8 +1534,8 @@ static void PF_aim (void)
 	if (bestent)
 	{
 		VectorSubtract (ENT_ORIGIN(bestent), ENT_ORIGIN(ent), dir);
-		dist = DotProduct (dir, pr_global_struct->v_forward);
-		VectorScale (pr_global_struct->v_forward, dist, end);
+		dist = DotProduct (dir, v_forward);
+		VectorScale (v_forward, dist, end);
 		end[2] = dir[2];
 		VectorNormalize (end);
 		VectorCopy (end, G_VECTOR(OFS_RETURN));
@@ -1604,7 +1611,10 @@ static sizebuf_t *WriteDest (void)
 		return &sv.datagram;
 
 	case MSG_ONE:
-		ent = PROG_TO_EDICT(pr_global_struct->msg_entity);
+		if (hexen2_mode && h2_globals.ofs_msg_entity >= 0)
+			ent = PROG_TO_EDICT((int)qcvm->globals[h2_globals.ofs_msg_entity]);
+		else
+			ent = PROG_TO_EDICT(pr_global_struct->msg_entity);
 		entnum = NUM_FOR_EDICT(ent);
 		if (entnum < 1 || entnum > svs.maxclients)
 			PR_RunError ("WriteDest: not a client");
@@ -2472,24 +2482,40 @@ static void PF_bound(void)
 }
 static void PF_vectorvectors(void)
 {
-	VectorCopy(G_VECTOR(OFS_PARM0), pr_global_struct->v_forward);
-	VectorNormalize(pr_global_struct->v_forward);
-	if (!pr_global_struct->v_forward[0] && !pr_global_struct->v_forward[1])
+	vec3_t v_forward, v_right, v_up;
+
+	VectorCopy(G_VECTOR(OFS_PARM0), v_forward);
+	VectorNormalize(v_forward);
+	if (!v_forward[0] && !v_forward[1])
 	{
-		if (pr_global_struct->v_forward[2])
-			pr_global_struct->v_right[1] = -1;
+		if (v_forward[2])
+			v_right[1] = -1;
 		else
-			pr_global_struct->v_right[1] = 0;
-		pr_global_struct->v_right[0] = pr_global_struct->v_right[2] = 0;
+			v_right[1] = 0;
+		v_right[0] = v_right[2] = 0;
 	}
 	else
 	{
-		pr_global_struct->v_right[0] = pr_global_struct->v_forward[1];
-		pr_global_struct->v_right[1] = -pr_global_struct->v_forward[0];
-		pr_global_struct->v_right[2] = 0;
-		VectorNormalize(pr_global_struct->v_right);
+		v_right[0] = v_forward[1];
+		v_right[1] = -v_forward[0];
+		v_right[2] = 0;
+		VectorNormalize(v_right);
 	}
-	CrossProduct(pr_global_struct->v_right, pr_global_struct->v_forward, pr_global_struct->v_up);
+	CrossProduct(v_right, v_forward, v_up);
+
+	/* Write results to globals - use runtime offsets for H2 mode */
+	if (hexen2_mode && h2_globals.ofs_v_forward >= 0)
+	{
+		H2_SET_GLOBAL_VEC(h2_globals.ofs_v_forward, v_forward);
+		H2_SET_GLOBAL_VEC(h2_globals.ofs_v_right, v_right);
+		H2_SET_GLOBAL_VEC(h2_globals.ofs_v_up, v_up);
+	}
+	else
+	{
+		VectorCopy(v_forward, pr_global_struct->v_forward);
+		VectorCopy(v_right, pr_global_struct->v_right);
+		VectorCopy(v_up, pr_global_struct->v_up);
+	}
 }
 
 //string stuff

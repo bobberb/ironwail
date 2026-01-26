@@ -1637,7 +1637,7 @@ static void Host_God_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch)
+	if (deathmatch.value)
 		return;
 
 	//johnfitz -- allow user to explicitly set god mode to on or off
@@ -1682,7 +1682,7 @@ static void Host_Notarget_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch)
+	if (deathmatch.value)
 		return;
 
 	//johnfitz -- allow user to explicitly set notarget to on or off
@@ -1729,7 +1729,7 @@ static void Host_Noclip_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch)
+	if (deathmatch.value)
 		return;
 
 	//johnfitz -- allow user to explicitly set noclip to on or off
@@ -1788,7 +1788,7 @@ static void Host_SetPos_f(void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch)
+	if (deathmatch.value)
 		return;
 
 	for (i = 1, numargs = 0; i < Cmd_Argc (); i++)
@@ -1858,7 +1858,7 @@ static void Host_Fly_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch)
+	if (deathmatch.value)
 		return;
 
 	//johnfitz -- allow user to explicitly set noclip to on or off
@@ -3209,7 +3209,7 @@ static void Host_Kick_f (void)
 			return;
 		}
 	}
-	else if (pr_global_struct->deathmatch)
+	else if (deathmatch.value)
 		return;
 
 	save = host_client;
@@ -3297,7 +3297,7 @@ static void Host_Give_f (void)
 		return;
 	}
 
-	if (pr_global_struct->deathmatch)
+	if (deathmatch.value)
 		return;
 
 	// H2 has completely different item/weapon/ammo system - skip give command
