@@ -653,16 +653,27 @@ void PR_ExecuteProgram (func_t fnum)
 		break;
 
 	case OP_ADDRESS:
-		ed = PROG_TO_EDICT(OPA->edict);
-#ifdef PARANOID
-		NUM_FOR_EDICT(ed);	// Make sure it's in range
-#endif
-		if (ed == (edict_t *)qcvm->edicts && sv.state == ss_active)
 		{
-			qcvm->xstatement = st - qcvm->statements;
-			PR_RunError("assignment to world entity");
+			ed = PROG_TO_EDICT(OPA->edict);
+#ifdef PARANOID
+			NUM_FOR_EDICT(ed);	// Make sure it's in range
+#endif
+			if (ed == (edict_t *)qcvm->edicts && sv.state == ss_active)
+			{
+				qcvm->xstatement = st - qcvm->statements;
+				PR_RunError("assignment to world entity");
+			}
+			// Debug: check if we're writing to OFS_PARM0
+			if ((unsigned short)st->c == OFS_PARM0 / 4 || (unsigned short)st->c == OFS_PARM1 / 4)
+			{
+				Con_Printf("OP_ADDRESS: writing to globals[%d] (c=%d), result=%d (0x%x)\n",
+					(unsigned short)st->c, (unsigned short)st->c,
+					(byte *)((int *)&ed->v + OPB->_int) - (byte *)qcvm->edicts,
+					(byte *)((int *)&ed->v + OPB->_int) - (byte *)qcvm->edicts);
+				fflush(stdout);
+			}
+			OPC->_int = (byte *)((int *)&ed->v + OPB->_int) - (byte *)qcvm->edicts;
 		}
-		OPC->_int = (byte *)((int *)&ed->v + OPB->_int) - (byte *)qcvm->edicts;
 		break;
 
 	case OP_LOAD_F:
@@ -684,17 +695,7 @@ void PR_ExecuteProgram (func_t fnum)
 
 	case OP_LOAD_V:
 		{
-			/* Debug: print value before PROG_TO_EDICT */
-			int entofs_before = OPA->edict;
 			ed = PROG_TO_EDICT(OPA->edict);
-			if (hexen2_mode)
-			{
-				Con_Printf("OP_LOAD_V: entofs=%d ed=%p edicts=%p func=%s\n",
-					entofs_before, (void*)ed, (void*)qcvm->edicts,
-					qcvm->xfunction ? PR_GetString(qcvm->xfunction->s_name) : "?");
-				Con_Printf("  Calling NUM_FOR_EDICT with ed=%p...\n", (void*)ed);
-			}
-			NUM_FOR_EDICT(ed);	// Make sure it's in range
 		}
 		ptr = (eval_t *)((int *)&ed->v + OPB->_int);
 		OPC->vector[0] = ptr->vector[0];
@@ -726,9 +727,6 @@ void PR_ExecuteProgram (func_t fnum)
 		/* H2: Copy second arg from st->c to OFS_PARM1 */
 		if (hexen2_mode)
 		{
-			/* Debug: check bounds */
-			if ((unsigned short)st->c >= qcvm->progs->numglobals)
-				Con_Printf("CALL: st->c=%d out of bounds (numglobals=%d)\n", (unsigned short)st->c, qcvm->progs->numglobals);
 			qcvm->globals[OFS_PARM1] = OPC->vector[0];
 			qcvm->globals[OFS_PARM1 + 1] = OPC->vector[1];
 			qcvm->globals[OFS_PARM1 + 2] = OPC->vector[2];
@@ -738,9 +736,6 @@ void PR_ExecuteProgram (func_t fnum)
 		/* H2: Copy first arg from st->b to OFS_PARM0 */
 		if (hexen2_mode)
 		{
-			/* Debug: check bounds */
-			if ((unsigned short)st->b >= qcvm->progs->numglobals)
-				Con_Printf("CALL: st->b=%d out of bounds (numglobals=%d)\n", (unsigned short)st->b, qcvm->progs->numglobals);
 			qcvm->globals[OFS_PARM0] = OPB->vector[0];
 			qcvm->globals[OFS_PARM0 + 1] = OPB->vector[1];
 			qcvm->globals[OFS_PARM0 + 2] = OPB->vector[2];

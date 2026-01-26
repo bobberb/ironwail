@@ -1906,6 +1906,7 @@ static void PR_InitBuiltins (void)
 	dfunction_t	*func;
 	const char	*name;
 	int			i, j;
+	extern qboolean hexen2_mode;
 
 	for (i = 0; i < MAX_BUILTINS; i++)
 		qcvm->builtins[i] = PF_Fixme;
@@ -1916,6 +1917,38 @@ static void PR_InitBuiltins (void)
 		builtin_t func = (qcvm == &sv.qcvm) ? def->ssqcfunc : def->csqcfunc;
 		if (!def->number)
 			def->number = i--;
+
+		// Fix builtin numbers for Quake mode (not Hexen II)
+		// Quake uses different numbers for certain builtins:
+		// centerprint: 73 (Quake) vs 74 (H2)
+		// ambientsound: 74 (Quake) vs 75 (H2)
+		// precache_model2: 75 (Quake) vs 76 (H2)
+		// precache_sound2: 76 (Quake) vs 77 (H2)
+		// precache_file2: 77 (Quake) vs 78 (H2)
+		// setspawnparms: 78 (Quake) vs 79 (H2)
+		if (!hexen2_mode && def->number >= 73 && def->number <= 79)
+		{
+			// These are the affected builtins in H2 numbering
+			// Adjust to Quake numbering by subtracting 1
+			static const char *quake_adjustments[] = {
+				"centerprint",     // 73 (Q) vs 74 (H2)
+				"ambientsound",    // 74 (Q) vs 75 (H2)
+				"precache_model2",  // 75 (Q) vs 76 (H2)
+				"precache_sound2",  // 76 (Q) vs 77 (H2)
+				"precache_file2",   // 77 (Q) vs 78 (H2)
+				"setspawnparms",    // 78 (Q) vs 79 (H2)
+				NULL
+			};
+			for (int k = 0; quake_adjustments[k]; k++)
+			{
+				if (!strcmp(def->name, quake_adjustments[k]))
+				{
+					def->number--;
+					break;
+				}
+			}
+		}
+
 		if (func)
 		{
 			qcvm->builtins[def->number] = func;

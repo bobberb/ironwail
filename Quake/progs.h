@@ -372,6 +372,22 @@ int SAVE_NUM_FOR_EDICT (savedata_t *save, edict_t *e);
 #define	NEXT_EDICT(e)		((edict_t *)( (byte *)e + qcvm->edict_size))
 
 #define	EDICT_TO_PROG(e)	(int)((byte *)e - (byte *)qcvm->edicts)
+
+// Debug versions to help track entity pointer issues
+#ifdef DEBUG_ENTITY_POINTERS
+#define	PROG_TO_EDICT_DBG(e)	((edict_t *)(PROG_TO_EDICT_DBG_HELPER(e, __FILE__, __LINE__))
+
+static inline edict_t *PROG_TO_EDICT_DBG_HELPER(int e, const char *file, int line)
+{
+	edict_t *result = (edict_t *)((byte *)qcvm->edicts + e);
+	if (e < 0 || e / qcvm->edict_size >= qcvm->num_edicts)
+	{
+		Con_Printf("PROG_TO_EDICT: e=%d (%d * 1088 = %d), num_edicts=%d, from %s:%d\n",
+			e, e / 1088, e / qcvm->edict_size, qcvm->num_edicts, file, line);
+	}
+	return result;
+}
+#endif
 #define PROG_TO_EDICT(e)	((edict_t *)((byte *)qcvm->edicts + e))
 #define SAVE_PROG_TO_EDICT(s, e)	((edict_t *)((byte *)s->edicts + e))
 
