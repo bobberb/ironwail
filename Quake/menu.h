@@ -31,6 +31,8 @@ enum m_state_e {
 	m_save,
 	m_maps,
 	m_skill,
+	m_class,		// H2: class selection
+	m_difficulty,	// H2: difficulty selection
 	m_multiplayer,
 	m_setup,
 	m_net,
@@ -75,7 +77,12 @@ void M_RefreshMods (void);
 void M_OnModInstall (const char *name);
 
 void M_Menu_Main_f (void);
+void M_Menu_SinglePlayer_f (void);
+void M_Menu_Load_f (void);
+void M_Menu_Save_f (void);
+void M_Menu_MultiPlayer_f (void);
 void M_Menu_Options_f (void);
+void M_Menu_Mods_f (void);
 void M_Menu_Quit_f (void);
 
 void M_Print (int cx, int cy, const char *str);

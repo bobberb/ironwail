@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "bgmusic.h"
 #include "q_ctype.h"
+#include "menu_hexen2.h"
 
 #include <time.h>
 
@@ -7092,6 +7093,10 @@ void M_Init (void)
 	Cvar_RegisterVariable (&ui_mouse_sound);
 	Cvar_RegisterVariable (&ui_sound_throttle);
 	Cvar_RegisterVariable (&ui_search_timeout);
+
+	// Initialize Hexen II menus if in H2 mode
+	if (hexen2_mode)
+		M_H2_Init();
 }
 
 static void M_UpdateBounds (void)
@@ -7147,11 +7152,25 @@ void M_Draw (void)
 		break;
 
 	case m_main:
-		M_Main_Draw ();
+		if (hexen2_mode)
+			M_H2_Draw();
+		else
+			M_Main_Draw ();
 		break;
 
 	case m_singleplayer:
-		M_SinglePlayer_Draw ();
+		if (hexen2_mode)
+			M_H2_Draw();
+		else
+			M_SinglePlayer_Draw ();
+		break;
+
+	case m_class:
+		M_H2_Draw();
+		break;
+
+	case m_difficulty:
+		M_H2_Draw();
 		break;
 
 	case m_load:
@@ -7203,7 +7222,10 @@ void M_Draw (void)
 		break;
 
 	case m_help:
-		M_Help_Draw ();
+		if (hexen2_mode)
+			M_H2_Draw();
+		else
+			M_Help_Draw ();
 		break;
 
 	case m_quit:
@@ -7269,11 +7291,25 @@ void M_Keydown (int key)
 		return;
 
 	case m_main:
-		M_Main_Key (key);
+		if (hexen2_mode)
+			M_H2_Keydown(key);
+		else
+			M_Main_Key (key);
 		return;
 
 	case m_singleplayer:
-		M_SinglePlayer_Key (key);
+		if (hexen2_mode)
+			M_H2_Keydown(key);
+		else
+			M_SinglePlayer_Key (key);
+		return;
+
+	case m_class:
+		M_H2_Keydown(key);
+		return;
+
+	case m_difficulty:
+		M_H2_Keydown(key);
 		return;
 
 	case m_load:
@@ -7325,7 +7361,10 @@ void M_Keydown (int key)
 		return;
 
 	case m_help:
-		M_Help_Key (key);
+		if (hexen2_mode)
+			M_H2_Keydown(key);
+		else
+			M_Help_Key (key);
 		return;
 
 	case m_quit:

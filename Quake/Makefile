@@ -260,6 +260,7 @@ OBJS = strlcat.o \
 	console.o \
 	keys.o \
 	menu.o \
+	menu_hexen2.o \
 	sbar.o \
 	view.o \
 	wad.o \
