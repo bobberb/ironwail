@@ -2171,34 +2171,32 @@ static void PR_InitBuiltins (void)
 	for (i = 0; i < MAX_BUILTINS; i++)
 		qcvm->builtins[i] = PF_Fixme;
 
-	// Fix builtin numbers for Quake mode and H2 v1.11
-	// Quake and H2 v1.11 (CRC 38488) use original numbering (uhexen2-style).
-	// H2 v1.12 (Portal of Praevus) uses +1 numbering for builtins 66-84.
-	// The offset affects builtins from RewindFrame (#66) through advanceweaponframe (#84).
-	qboolean use_quake_numbers = !hexen2_mode || (qcvm->progs && qcvm->progs->crc == 38488);
+	// Fix builtin numbers: our definitions in pr_cmds.c use +1 numbering (e.g., ambientsound=#75)
+	// but ALL progs versions (Quake, H2 v1.03, v1.11, v1.12) use the same builtin numbers
+	// matching uhexen2's table (e.g., ambientsound=#74). We adjust down by 1 for these builtins.
+	// Note: Despite earlier assumptions, v1.12 does NOT use different builtin numbers from v1.11.
+	qboolean use_quake_numbers = true;
 	static const char *quake_adjustments[] = {
-		// H2-specific builtins (66-72)
-		"RewindFrame",      // 65 (Q/H2v1.11) vs 66 (H2v1.12)
-		"setclass",         // 66 (Q/H2v1.11) vs 67 (H2v1.12)
-		"movetogoal",       // 67 (Q/H2v1.11) vs 68 (H2v1.12)
-		"precache_file",    // 68 (Q/H2v1.11) vs 69 (H2v1.12)
-		"makestatic",       // 69 (Q/H2v1.11) vs 70 (H2v1.12)
-		"changelevel",      // 70 (Q/H2v1.11) vs 71 (H2v1.12)
-		"lightstylevalue",  // 71 (Q/H2v1.11) vs 72 (H2v1.12)
-		// Standard Quake builtins with offset (73-79)
-		"cvar_set",         // 72 (Q/H2v1.11) vs 73 (H2v1.12)
-		"centerprint",      // 73 (Q/H2v1.11) vs 74 (H2v1.12)
-		"ambientsound",     // 74 (Q/H2v1.11) vs 75 (H2v1.12)
-		"precache_model2",  // 75 (Q/H2v1.11) vs 76 (H2v1.12)
-		"precache_sound2",  // 76 (Q/H2v1.11) vs 77 (H2v1.12)
-		"precache_file2",   // 77 (Q/H2v1.11) vs 78 (H2v1.12)
-		"setspawnparms",    // 78 (Q/H2v1.11) vs 79 (H2v1.12)
-		// H2-specific builtins (80-84)
-		"plaque_draw",      // 79 (Q/H2v1.11) vs 80 (H2v1.12)
-		"rain_go",          // 80 (Q/H2v1.11) vs 81 (H2v1.12)
-		"particleexplosion", // 81 (Q/H2v1.11) vs 82 (H2v1.12)
-		"movestep",         // 82 (Q/H2v1.11) vs 83 (H2v1.12)
-		"advanceweaponframe", // 83 (Q/H2v1.11) vs 84 (H2v1.12)
+		// Builtins 66-84 need -1 adjustment because pr_cmds.c defines them +1 higher
+		"RewindFrame",      // pr_cmds: 66 -> actual: 65
+		"setclass",         // pr_cmds: 67 -> actual: 66
+		"movetogoal",       // pr_cmds: 68 -> actual: 67
+		"precache_file",    // pr_cmds: 69 -> actual: 68
+		"makestatic",       // pr_cmds: 70 -> actual: 69
+		"changelevel",      // pr_cmds: 71 -> actual: 70
+		"lightstylevalue",  // pr_cmds: 72 -> actual: 71
+		"cvar_set",         // pr_cmds: 73 -> actual: 72
+		"centerprint",      // pr_cmds: 74 -> actual: 73
+		"ambientsound",     // pr_cmds: 75 -> actual: 74
+		"precache_model2",  // pr_cmds: 76 -> actual: 75
+		"precache_sound2",  // pr_cmds: 77 -> actual: 76
+		"precache_file2",   // pr_cmds: 78 -> actual: 77
+		"setspawnparms",    // pr_cmds: 79 -> actual: 78
+		"plaque_draw",      // pr_cmds: 80 -> actual: 79
+		"rain_go",          // pr_cmds: 81 -> actual: 80
+		"particleexplosion", // pr_cmds: 82 -> actual: 81
+		"movestep",         // pr_cmds: 83 -> actual: 82
+		"advanceweaponframe", // pr_cmds: 84 -> actual: 83
 		NULL
 	};
 
