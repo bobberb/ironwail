@@ -28,6 +28,108 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 server_t	sv;
 server_static_t	svs;
 
+/*
+================
+SV_GetProgsFilename
+
+For Hexen II: looks up maplist.txt to determine which progs file to load.
+The boss levels (meso9, romeric6, eidolon, etc.) require progs2.dat.
+Format of maplist.txt:
+  Line 1: <number of entries>
+  Lines 2+: <mapname> <progsfile>
+================
+*/
+static const char *SV_GetProgsFilename (const char *mapname)
+{
+	static char progname[MAX_QPATH];
+	byte *maplist_data;
+	char *line, *next;
+	int num_entries;
+	const char *result = "progs.dat";
+
+	// Only use maplist.txt in Hexen II mode
+	if (!hexen2_mode)
+		return "progs.dat";
+
+	// Try to load maplist.txt
+	maplist_data = COM_LoadMallocFile ("maplist.txt", NULL);
+	if (!maplist_data)
+		return "progs.dat";
+
+	// Parse first line: number of entries
+	line = (char *)maplist_data;
+	while (*line == ' ' || *line == '\t') line++;
+	num_entries = atoi(line);
+	if (num_entries <= 0)
+	{
+		free(maplist_data);
+		return "progs.dat";
+	}
+
+	// Skip to next line
+	while (*line && *line != '\n' && *line != '\r') line++;
+	while (*line == '\n' || *line == '\r') line++;
+
+	// Parse each entry
+	while (num_entries-- > 0 && *line)
+	{
+		char entry_map[MAX_QPATH];
+		char entry_progs[MAX_QPATH];
+		char *p;
+
+		// Skip leading whitespace
+		while (*line == ' ' || *line == '\t') line++;
+
+		// Find end of line
+		next = line;
+		while (*next && *next != '\n' && *next != '\r') next++;
+
+		// Copy line and null-terminate
+		{
+			size_t len = next - line;
+			char linebuf[256];
+			if (len >= sizeof(linebuf)) len = sizeof(linebuf) - 1;
+			memcpy(linebuf, line, len);
+			linebuf[len] = '\0';
+
+			// Trim trailing whitespace
+			p = linebuf + len - 1;
+			while (p >= linebuf && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n'))
+				*p-- = '\0';
+
+			// Parse: <mapname> <progsfile>
+			p = linebuf;
+			while (*p && *p != ' ' && *p != '\t') p++;
+			if (*p)
+			{
+				*p++ = '\0';
+				q_strlcpy(entry_map, linebuf, sizeof(entry_map));
+
+				// Skip whitespace between map and progs
+				while (*p == ' ' || *p == '\t') p++;
+				q_strlcpy(entry_progs, p, sizeof(entry_progs));
+
+				// Check if this is our map
+				if (!q_strcasecmp(entry_map, mapname))
+				{
+					q_strlcpy(progname, entry_progs, sizeof(progname));
+					Con_DPrintf("maplist.txt: map '%s' -> '%s'\n", mapname, progname);
+					result = progname;
+					goto done;
+				}
+			}
+		}
+
+		// Move to next line
+		line = next;
+		while (*line == '\n' || *line == '\r') line++;
+	}
+
+done:
+	free(maplist_data);
+	return result;
+}
+
 static char	localmodels[MAX_MODELS][8];	// inline model names for precache
 
 int		sv_protocol = PROTOCOL_RMQ; //johnfitz
@@ -2011,7 +2113,8 @@ void SV_SpawnServer (const char *server)
 
 	PR_SwitchQCVM(vm);
 // load progs to get entity field count
-	PR_LoadProgs ("progs.dat", true);
+// In Hexen II, some maps (boss levels) use a different progs file via maplist.txt
+	PR_LoadProgs (SV_GetProgsFilename(server), true);
 
 // allocate server memory
 	/* Host_ClearMemory() called above already cleared the whole sv structure */

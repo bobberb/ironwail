@@ -1864,6 +1864,37 @@ void ED_LoadFromFile (const char *data)
 
 		if (!func)
 		{
+			// In Hexen II, some entity types have empty spawn functions that get
+			// optimized out by HCC. These "data-only" entities just need to exist
+			// without any spawn initialization - they're referenced by other code
+			// using find() by classname.
+			if (hexen2_mode)
+			{
+				// Known data-only entity types from HexenC source
+				// (empty spawn functions that HCC optimizes out)
+				static const char *h2_dataonly_entities[] = {
+					"rider_path",		// Path waypoints for rider bosses (rider.hc)
+					"info_intermission",	// Camera positions for intermissions (client.hc)
+					NULL
+				};
+				qboolean is_dataonly = false;
+				const char **check;
+				for (check = h2_dataonly_entities; *check; check++)
+				{
+					if (!strcmp(classname, *check))
+					{
+						is_dataonly = true;
+						break;
+					}
+				}
+				if (is_dataonly)
+				{
+					// Keep the entity - no spawn function needed
+					Con_DPrintf ("H2: keeping data-only entity '%s'\n", classname);
+					continue;
+				}
+			}
+
 			Con_SafePrintf ("No spawn function for:\n"); //johnfitz -- was Con_Printf
 			ED_Print (ent);
 			ED_Free (ent);
@@ -2473,6 +2504,8 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 	if (!qcvm->progs)
 	{
 		Sys_Printf("PR_LoadProgs: failed to load '%s'\n", filename);
+		if (fatal)
+			Host_Error ("PR_LoadProgs: couldn't load %s", filename);
 		return false;
 	}
 	Sys_Printf("PR_LoadProgs: loaded '%s' OK, size=%" SDL_PRIs64 "\n", filename, com_filesize);
