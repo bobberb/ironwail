@@ -3087,7 +3087,12 @@ static void Host_Spawn_f (void)
 
 		// copy spawn parms out of the client_t
 		for (i=0 ; i< NUM_SPAWN_PARMS ; i++)
-			(&pr_global_struct->parm1)[i] = host_client->spawn_parms[i];
+		{
+			if (hexen2_mode && h2_globals.ofs_parm1 >= 0)
+				qcvm->globals[h2_globals.ofs_parm1 + i] = host_client->spawn_parms[i];
+			else
+				(&pr_global_struct->parm1)[i] = host_client->spawn_parms[i];
+		}
 		// call the spawn function
 		pr_global_struct->time = qcvm->time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);

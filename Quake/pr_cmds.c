@@ -1786,7 +1786,12 @@ static void PF_setspawnparms (void)
 	client = svs.clients + (i-1);
 
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
-		(&pr_global_struct->parm1)[i] = client->spawn_parms[i];
+	{
+		if (hexen2_mode && h2_globals.ofs_parm1 >= 0)
+			qcvm->globals[h2_globals.ofs_parm1 + i] = client->spawn_parms[i];
+		else
+			(&pr_global_struct->parm1)[i] = client->spawn_parms[i];
+	}
 }
 
 /*
