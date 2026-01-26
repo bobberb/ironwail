@@ -167,15 +167,15 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 
 ---
 
-## 5. AUDIO & ASSETS (Phase 5) - NOT STARTED
+## 5. AUDIO & ASSETS (Phase 5) - MOSTLY COMPLETE
 
 | Feature | Status | uhexen2 Source | Ironwail File |
 |---------|--------|----------------|---------------|
-| MIDI music | [ ] | `hexen2/bgmusic.c` | - |
-| svc_midi_name | [ ] | `hexen2/cl_parse.c:1842` | `cl_parse_hexen2.c` |
-| svc_mod_name | [ ] | `hexen2/cl_parse.c:1878` | `cl_parse_hexen2.c` |
-| Sound position updates | [ ] | `hexen2/snd_dma.c` | - |
-| 512 sound limit | [ ] | `hexen2/snd_dma.c` | - |
+| MIDI music (OGG/MP3 replacement) | [x] | `hexen2/bgmusic.c` | `bgmusic.c` (uses BGM_Play) |
+| svc_midi_name | [x] | `hexen2/cl_parse.c:1842` | `cl_parse_hexen2.c` |
+| svc_mod_name | [ ] | `hexen2/cl_parse.c:1878` | - |
+| Sound position updates | [x] | `hexen2/snd_dma.c` | `snd_dma.c`, `pr_cmds_hexen2.inc` |
+| 512 sound limit | [-] | `hexen2/snd_dma.c` | Not needed (Ironwail already supports more) |
 | H2 model formats | [x] | `hexen2/model.c` | `gl_model.c` (RAPO v50 loader) |
 | H2 texture loading | [x] | `hexen2/r_texture.c` | `gl_draw.c`, `wad.c` (gfx.wad + .lmp files) |
 | Puzzle strings | [x] | `hexen2/pr_edict.c` | `host_string.c` (strings.txt loading) |
