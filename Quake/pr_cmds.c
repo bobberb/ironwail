@@ -1156,6 +1156,8 @@ static void PF_precache_sound (void)
 		PR_RunError ("PF_Precache_*: Precache can only be done in spawn functions");
 
 	s = G_STRING(OFS_PARM0);
+	if (developer.value > 1)
+		Con_Printf("precache_sound: OFS_PARM0=%d, string='%s'\n", G_INT(OFS_PARM0), s ? s : "(null)");
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 	PR_CheckEmptyString (s);
 

@@ -681,13 +681,6 @@ void PR_ExecuteProgram (func_t fnum)
 	case OP_LOAD_ENT:
 	case OP_LOAD_S:
 	case OP_LOAD_FNC:
-		if (hexen2_mode)
-		{
-			int entofs = OPA->edict;
-			Con_Printf("OP_LOAD_*: entofs=%d (0x%x) st->a=%d op=%d func=%s\n",
-				entofs, (unsigned)entofs, (unsigned short)st->a, st->op,
-				qcvm->xfunction ? PR_GetString(qcvm->xfunction->s_name) : "?");
-		}
 		ed = PROG_TO_EDICT(OPA->edict);
 		NUM_FOR_EDICT(ed);	// Make sure it's in range
 		OPC->_int = ((eval_t *)((int *)&ed->v + OPB->_int))->_int;
@@ -724,7 +717,9 @@ void PR_ExecuteProgram (func_t fnum)
 	case OP_CALL4:
 	case OP_CALL3:
 	case OP_CALL2:
-		/* H2: Copy second arg from st->c to OFS_PARM1 */
+		/* H2 calling convention: Copy second arg from st->c to OFS_PARM1
+		 * Both v1.11 and v1.12 use this convention.
+		 */
 		if (hexen2_mode)
 		{
 			qcvm->globals[OFS_PARM1] = OPC->vector[0];
@@ -733,7 +728,9 @@ void PR_ExecuteProgram (func_t fnum)
 		}
 		/* fall through */
 	case OP_CALL1:
-		/* H2: Copy first arg from st->b to OFS_PARM0 */
+		/* H2 calling convention: Copy first arg from st->b to OFS_PARM0
+		 * Both v1.11 and v1.12 use this convention.
+		 */
 		if (hexen2_mode)
 		{
 			qcvm->globals[OFS_PARM0] = OPB->vector[0];

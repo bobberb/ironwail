@@ -140,7 +140,18 @@ qboolean SV_RunThink (edict_t *ent)
 	pr_global_struct->time = thinktime;
 	pr_global_struct->self = EDICT_TO_PROG(ent);
 	pr_global_struct->other = EDICT_TO_PROG(qcvm->edicts);
-	PR_ExecuteProgram (ENT_THINK(ent));
+	{
+		func_t think_func = ENT_THINK(ent);
+		if (!think_func)
+		{
+			int num = NUM_FOR_EDICT(ent);
+			const char *classname = PR_GetString(ENT_INT(ent, classname));
+			Con_Printf("SV_RunThink: entity %d (%s) has NULL think but nextthink=%f\n",
+				num, classname ? classname : "unknown", thinktime);
+			return true;  // Skip execution rather than crash
+		}
+		PR_ExecuteProgram (think_func);
+	}
 
 	return !ent->free;
 }
@@ -1227,7 +1238,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 //
 	pr_global_struct->time = qcvm->time;
 	pr_global_struct->self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (pr_global_struct->PlayerPreThink);
+	PR_ExecuteProgram (GLOBAL_FUNC(PlayerPreThink));
 
 //
 // do a move
@@ -1284,7 +1295,7 @@ void SV_Physics_Client (edict_t	*ent, int num)
 
 	pr_global_struct->time = qcvm->time;
 	pr_global_struct->self = EDICT_TO_PROG(ent);
-	PR_ExecuteProgram (pr_global_struct->PlayerPostThink);
+	PR_ExecuteProgram (GLOBAL_FUNC(PlayerPostThink));
 
 	forceunderwater = !wasunderwater && ENT_WATERLEVEL(ent) >= 3;
 	if (forceunderwater != ent->forcewater)
@@ -1326,6 +1337,36 @@ void SV_Physics_Noclip (edict_t *ent)
 	VectorMA (ENT_ORIGIN(ent), host_frametime, ENT_VELOCITY(ent), ENT_ORIGIN(ent));
 
 	SV_LinkEdict (ent, false);
+}
+
+/*
+=============
+SV_Physics_Follow
+
+Entities that are "stuck" to another entity (H2 MOVETYPE_FOLLOW)
+The entity's origin is set to aiment's origin + v_angle offset
+=============
+*/
+void SV_Physics_Follow (edict_t *ent)
+{
+	edict_t *aiment;
+
+	// regular thinking
+	if (!SV_RunThink (ent))
+		return;
+
+	// Get the entity we're following (aiment field)
+	aiment = PROG_TO_EDICT(ENT_AIMENT(ent));
+	if (aiment == qcvm->edicts)
+	{
+		// No valid aiment, just link and return
+		SV_LinkEdict (ent, true);
+		return;
+	}
+
+	// Set origin to aiment's origin plus our v_angle offset
+	VectorAdd (ENT_ORIGIN(aiment), ENT_V_ANGLE(ent), ENT_ORIGIN(ent));
+	SV_LinkEdict (ent, true);
 }
 
 /*
@@ -1398,9 +1439,10 @@ void SV_Physics_Toss (edict_t *ent)
 
 	SV_CheckVelocity (ent);
 
-// add gravity
+// add gravity (not for FLY, FLYMISSILE, or H2's BOUNCEMISSILE)
 	if (ENT_MOVETYPE(ent) != MOVETYPE_FLY
-	&& ENT_MOVETYPE(ent) != MOVETYPE_FLYMISSILE)
+	&& ENT_MOVETYPE(ent) != MOVETYPE_FLYMISSILE
+	&& !(hexen2_mode && ENT_MOVETYPE(ent) == MOVETYPE_BOUNCEMISSILE))
 		SV_AddGravity (ent);
 
 // move angles
@@ -1414,7 +1456,9 @@ void SV_Physics_Toss (edict_t *ent)
 	if (ent->free)
 		return;
 
-	if (ENT_MOVETYPE(ent) == MOVETYPE_BOUNCE)
+	// BOUNCE and H2's BOUNCEMISSILE use 1.5 backoff for bouncier reflections
+	if (ENT_MOVETYPE(ent) == MOVETYPE_BOUNCE ||
+	    (hexen2_mode && ENT_MOVETYPE(ent) == MOVETYPE_BOUNCEMISSILE))
 		backoff = 1.5;
 	else
 		backoff = 1;
@@ -1424,7 +1468,10 @@ void SV_Physics_Toss (edict_t *ent)
 // stop if on ground
 	if (trace.plane.normal[2] > 0.7)
 	{
-		if (ENT_VELOCITY(ent)[2] < 60 || ENT_MOVETYPE(ent) != MOVETYPE_BOUNCE)
+		// BOUNCE and BOUNCEMISSILE keep bouncing if velocity is high enough
+		qboolean is_bouncy = (ENT_MOVETYPE(ent) == MOVETYPE_BOUNCE ||
+		                      (hexen2_mode && ENT_MOVETYPE(ent) == MOVETYPE_BOUNCEMISSILE));
+		if (ENT_VELOCITY(ent)[2] < 60 || !is_bouncy)
 		{
 			ENT_FLAGS(ent) = (int)ENT_FLAGS(ent) | FL_ONGROUND;
 			ENT_GROUNDENTITY(ent) = EDICT_TO_PROG(trace.ent);
@@ -1509,7 +1556,11 @@ void SV_Physics (void)
 	pr_global_struct->self = EDICT_TO_PROG(qcvm->edicts);
 	pr_global_struct->other = EDICT_TO_PROG(qcvm->edicts);
 	pr_global_struct->time = qcvm->time;
-	PR_ExecuteProgram (pr_global_struct->StartFrame);
+	{
+		func_t func = GLOBAL_FUNC(StartFrame);
+		if (func)
+			PR_ExecuteProgram (func);
+	}
 
 //SV_CheckAllEnts ();
 
@@ -1562,12 +1613,17 @@ void SV_Physics (void)
 			SV_Physics_Noclip (ent);
 		else if (ENT_MOVETYPE(ent) == MOVETYPE_STEP)
 			SV_Physics_Step (ent);
+		else if (ENT_MOVETYPE(ent) == MOVETYPE_FOLLOW)
+			SV_Physics_Follow (ent);
 		else if (ENT_MOVETYPE(ent) == MOVETYPE_TOSS
-		|| ENT_MOVETYPE(ent) == MOVETYPE_GIB
+		|| ENT_MOVETYPE(ent) == MOVETYPE_GIB  // Q1: gib, H2: bouncemissile (same value 11)
 		|| ENT_MOVETYPE(ent) == MOVETYPE_BOUNCE
 		|| ENT_MOVETYPE(ent) == MOVETYPE_FLY
-		|| ENT_MOVETYPE(ent) == MOVETYPE_FLYMISSILE)
+		|| ENT_MOVETYPE(ent) == MOVETYPE_FLYMISSILE
+		|| ENT_MOVETYPE(ent) == MOVETYPE_SWIM)	// H2: swim (like fly but stays in water)
 			SV_Physics_Toss (ent);
+		else if (ENT_MOVETYPE(ent) == MOVETYPE_PUSHPULL)  // H2: push/pull
+			SV_Physics_Pusher (ent);  // Similar to push
 		else
 			Sys_Error ("SV_Physics: bad movetype %i", (int)ENT_MOVETYPE(ent));
 

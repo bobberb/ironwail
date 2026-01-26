@@ -180,7 +180,11 @@ typedef enum
 	MOVETYPE_NOCLIP				= 8,
 	MOVETYPE_FLYMISSILE			= 9,	// extra size to monsters
 	MOVETYPE_BOUNCE				= 10,
-	MOVETYPE_GIB				= 11,	// 2021 rerelease gibs
+	MOVETYPE_GIB				= 11,	// Q1 2021 rerelease gibs
+	MOVETYPE_BOUNCEMISSILE		= 11,	// H2: bounce without gravity (same value as GIB)
+	MOVETYPE_FOLLOW				= 12,	// H2: track movement of aiment
+	MOVETYPE_SWIM				= 13,	// H2: like fly, but stay in water
+	MOVETYPE_PUSHPULL			= 14,	// H2: push/pull entities
 } emovetype_t;
 
 // edict->solid values

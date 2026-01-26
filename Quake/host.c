@@ -521,7 +521,7 @@ void SV_DropClient (qboolean crash)
 			PR_SwitchQCVM(&sv.qcvm);
 			saveSelf = pr_global_struct->self;
 			pr_global_struct->self = EDICT_TO_PROG(host_client->edict);
-			PR_ExecuteProgram (pr_global_struct->ClientDisconnect);
+			PR_ExecuteProgram (GLOBAL_FUNC(ClientDisconnect));
 			pr_global_struct->self = saveSelf;
 			PR_SwitchQCVM(NULL);
 			PR_SwitchQCVM(oldvm);

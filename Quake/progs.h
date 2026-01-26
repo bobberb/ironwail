@@ -385,6 +385,7 @@ typedef struct
 	int		dmg_save;
 	int		dmg_inflictor;
 	int		owner;
+	int		aiment;			/* entity this one is attached to (for MOVETYPE_FOLLOW) */
 	int		movedir;		/* vec3 */
 	int		message;
 	int		sounds;			/* Q1: sounds, H2: soundtype */
@@ -434,6 +435,18 @@ typedef struct
 	int		ofs_found_secrets;
 	int		ofs_killed_monsters;
 	int		ofs_parm1;				/* first spawn parm, others follow */
+
+	/* Global function offsets - needed because H2 v1.11 has different layout than v1.12 */
+	int		ofs_main;
+	int		ofs_StartFrame;
+	int		ofs_PlayerPreThink;
+	int		ofs_PlayerPostThink;
+	int		ofs_ClientKill;
+	int		ofs_ClientConnect;
+	int		ofs_PutClientInServer;
+	int		ofs_ClientDisconnect;
+	int		ofs_SetNewParms;
+	int		ofs_SetChangeParms;
 } h2_globals_t;
 
 /* Accessor macros for H2 globals - use runtime offsets instead of struct */
@@ -441,6 +454,15 @@ typedef struct
 #define H2_GLOBAL_INT(ofs)			(((int *)qcvm->globals)[ofs])
 #define H2_GLOBAL_VEC(ofs, vec)		do { (vec)[0] = qcvm->globals[ofs]; (vec)[1] = qcvm->globals[(ofs)+1]; (vec)[2] = qcvm->globals[(ofs)+2]; } while(0)
 #define H2_SET_GLOBAL_VEC(ofs, vec)	do { qcvm->globals[ofs] = (vec)[0]; qcvm->globals[(ofs)+1] = (vec)[1]; qcvm->globals[(ofs)+2] = (vec)[2]; } while(0)
+
+/*
+ * Global function accessor macro - uses dynamic offset in hexen2_mode, pr_global_struct otherwise.
+ * This handles the different globalvars_t layouts between H2 v1.11 and v1.12.
+ */
+#define GLOBAL_FUNC(name) \
+	((hexen2_mode && h2_globals.ofs_##name >= 0) ? \
+		((func_t *)qcvm->globals)[h2_globals.ofs_##name] : \
+		pr_global_struct->name)
 
 extern THREAD_LOCAL h2_globals_t	h2_globals;
 
@@ -505,6 +527,7 @@ extern THREAD_LOCAL h2_globals_t	h2_globals;
 /* Entity reference fields (stored as int offsets into edict array) */
 #define ENT_GROUNDENTITY(ent)		ENT_INT(ent, groundentity)
 #define ENT_OWNER(ent)				ENT_INT(ent, owner)
+#define ENT_AIMENT(ent)				ENT_INT(ent, aiment)
 #define ENT_ENEMY(ent)				ENT_INT(ent, enemy)
 #define ENT_CHAIN(ent)				ENT_INT(ent, chain)
 #define ENT_GOALENTITY(ent)			ENT_INT(ent, goalentity)

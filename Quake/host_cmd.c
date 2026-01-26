@@ -2978,7 +2978,7 @@ static void Host_Kill_f (void)
 
 	pr_global_struct->time = qcvm->time;
 	pr_global_struct->self = EDICT_TO_PROG(sv_player);
-	PR_ExecuteProgram (pr_global_struct->ClientKill);
+	PR_ExecuteProgram (GLOBAL_FUNC(ClientKill));
 }
 
 /*
@@ -3091,12 +3091,12 @@ static void Host_Spawn_f (void)
 		// call the spawn function
 		pr_global_struct->time = qcvm->time;
 		pr_global_struct->self = EDICT_TO_PROG(sv_player);
-		PR_ExecuteProgram (pr_global_struct->ClientConnect);
+		PR_ExecuteProgram (GLOBAL_FUNC(ClientConnect));
 
 		if ((Sys_DoubleTime() - NET_QSocketGetTime(host_client->netconnection)) <= qcvm->time)
 			Sys_Printf ("%s entered the game\n", host_client->name);
 
-		PR_ExecuteProgram (pr_global_struct->PutClientInServer);
+		PR_ExecuteProgram (GLOBAL_FUNC(PutClientInServer));
 	}
 
 // send all current names, colors, and frag counts

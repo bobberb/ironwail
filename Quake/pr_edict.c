@@ -415,6 +415,18 @@ void H2_SetupGlobals (void)
 	h2_globals.ofs_killed_monsters = -1;
 	h2_globals.ofs_parm1 = -1;
 
+	// Initialize global function offsets to -1
+	h2_globals.ofs_main = -1;
+	h2_globals.ofs_StartFrame = -1;
+	h2_globals.ofs_PlayerPreThink = -1;
+	h2_globals.ofs_PlayerPostThink = -1;
+	h2_globals.ofs_ClientKill = -1;
+	h2_globals.ofs_ClientConnect = -1;
+	h2_globals.ofs_PutClientInServer = -1;
+	h2_globals.ofs_ClientDisconnect = -1;
+	h2_globals.ofs_SetNewParms = -1;
+	h2_globals.ofs_SetChangeParms = -1;
+
 	/*
 	 * Look up ALL entity field offsets from the loaded progs.
 	 * This works for both Q1 and H2 progs - the offsets will match
@@ -486,6 +498,7 @@ void H2_SetupGlobals (void)
 	f->dmg_save = ED_FindFieldOffset("dmg_save");
 	f->dmg_inflictor = ED_FindFieldOffset("dmg_inflictor");
 	f->owner = ED_FindFieldOffset("owner");
+	f->aiment = ED_FindFieldOffset("aiment");
 	f->movedir = ED_FindFieldOffset("movedir");
 	f->message = ED_FindFieldOffset("message");
 	f->noise = ED_FindFieldOffset("noise");
@@ -540,6 +553,21 @@ void H2_SetupGlobals (void)
 		h2_globals.ofs_found_secrets = ED_FindGlobalOffset("found_secrets");
 		h2_globals.ofs_killed_monsters = ED_FindGlobalOffset("killed_monsters");
 		h2_globals.ofs_parm1 = ED_FindGlobalOffset("parm1");
+
+		// Find global function offsets - critical for v1.11 vs v1.12 compatibility
+		h2_globals.ofs_main = ED_FindGlobalOffset("main");
+		h2_globals.ofs_StartFrame = ED_FindGlobalOffset("StartFrame");
+		h2_globals.ofs_PlayerPreThink = ED_FindGlobalOffset("PlayerPreThink");
+		h2_globals.ofs_PlayerPostThink = ED_FindGlobalOffset("PlayerPostThink");
+		h2_globals.ofs_ClientKill = ED_FindGlobalOffset("ClientKill");
+		h2_globals.ofs_ClientConnect = ED_FindGlobalOffset("ClientConnect");
+		h2_globals.ofs_PutClientInServer = ED_FindGlobalOffset("PutClientInServer");
+		h2_globals.ofs_ClientDisconnect = ED_FindGlobalOffset("ClientDisconnect");
+		h2_globals.ofs_SetNewParms = ED_FindGlobalOffset("SetNewParms");
+		h2_globals.ofs_SetChangeParms = ED_FindGlobalOffset("SetChangeParms");
+
+		Con_DPrintf("H2_SetupGlobals: function offsets: StartFrame=%d PlayerPreThink=%d PlayerPostThink=%d\n",
+			h2_globals.ofs_StartFrame, h2_globals.ofs_PlayerPreThink, h2_globals.ofs_PlayerPostThink);
 	}
 
 	Con_DPrintf("H2_SetupGlobals: Entity field offsets:\n");
@@ -547,6 +575,8 @@ void H2_SetupGlobals (void)
 		f->origin, f->velocity, f->angles, f->movetype, f->solid, f->flags);
 	Con_DPrintf("  nextthink=%d think=%d frame=%d ltime=%d groundentity=%d\n",
 		f->nextthink, f->think, f->frame, f->ltime, f->groundentity);
+	Con_DPrintf("  owner=%d aiment=%d enemy=%d chain=%d goalentity=%d\n",
+		f->owner, f->aiment, f->enemy, f->chain, f->goalentity);
 	if (hexen2_mode)
 	{
 		Con_DPrintf("  H2: playerclass=%d hull=%d lastruntime=%d scale=%d\n",
@@ -2062,39 +2092,55 @@ static void PR_InitBuiltins (void)
 	for (i = 0; i < MAX_BUILTINS; i++)
 		qcvm->builtins[i] = PF_Fixme;
 
+	// Fix builtin numbers for Quake mode and H2 v1.11
+	// Quake and H2 v1.11 (CRC 38488) use original numbering (uhexen2-style).
+	// H2 v1.12 (Portal of Praevus) uses +1 numbering for builtins 66-84.
+	// The offset affects builtins from RewindFrame (#66) through advanceweaponframe (#84).
+	qboolean use_quake_numbers = !hexen2_mode || (qcvm->progs && qcvm->progs->crc == 38488);
+	static const char *quake_adjustments[] = {
+		// H2-specific builtins (66-72)
+		"RewindFrame",      // 65 (Q/H2v1.11) vs 66 (H2v1.12)
+		"setclass",         // 66 (Q/H2v1.11) vs 67 (H2v1.12)
+		"movetogoal",       // 67 (Q/H2v1.11) vs 68 (H2v1.12)
+		"precache_file",    // 68 (Q/H2v1.11) vs 69 (H2v1.12)
+		"makestatic",       // 69 (Q/H2v1.11) vs 70 (H2v1.12)
+		"changelevel",      // 70 (Q/H2v1.11) vs 71 (H2v1.12)
+		"lightstylevalue",  // 71 (Q/H2v1.11) vs 72 (H2v1.12)
+		// Standard Quake builtins with offset (73-79)
+		"cvar_set",         // 72 (Q/H2v1.11) vs 73 (H2v1.12)
+		"centerprint",      // 73 (Q/H2v1.11) vs 74 (H2v1.12)
+		"ambientsound",     // 74 (Q/H2v1.11) vs 75 (H2v1.12)
+		"precache_model2",  // 75 (Q/H2v1.11) vs 76 (H2v1.12)
+		"precache_sound2",  // 76 (Q/H2v1.11) vs 77 (H2v1.12)
+		"precache_file2",   // 77 (Q/H2v1.11) vs 78 (H2v1.12)
+		"setspawnparms",    // 78 (Q/H2v1.11) vs 79 (H2v1.12)
+		// H2-specific builtins (80-84)
+		"plaque_draw",      // 79 (Q/H2v1.11) vs 80 (H2v1.12)
+		"rain_go",          // 80 (Q/H2v1.11) vs 81 (H2v1.12)
+		"particleexplosion", // 81 (Q/H2v1.11) vs 82 (H2v1.12)
+		"movestep",         // 82 (Q/H2v1.11) vs 83 (H2v1.12)
+		"advanceweaponframe", // 83 (Q/H2v1.11) vs 84 (H2v1.12)
+		NULL
+	};
+
 	for (i = MAX_BUILTINS - 2, j = 0; j < pr_numbuiltindefs; j++)
 	{
 		builtindef_t *def = &pr_builtindefs[j];
 		builtin_t func = (qcvm == &sv.qcvm) ? def->ssqcfunc : def->csqcfunc;
+		int effective_number;
+
 		if (!def->number)
 			def->number = i--;
 
-		// Fix builtin numbers for Quake mode (not Hexen II)
-		// Quake uses different numbers for certain builtins:
-		// centerprint: 73 (Quake) vs 74 (H2)
-		// ambientsound: 74 (Quake) vs 75 (H2)
-		// precache_model2: 75 (Quake) vs 76 (H2)
-		// precache_sound2: 76 (Quake) vs 77 (H2)
-		// precache_file2: 77 (Quake) vs 78 (H2)
-		// setspawnparms: 78 (Quake) vs 79 (H2)
-		if (!hexen2_mode && def->number >= 73 && def->number <= 79)
+		// Calculate effective builtin number (may be adjusted for Quake/H2v1.11)
+		effective_number = def->number;
+		if (use_quake_numbers && def->number >= 66 && def->number <= 84)
 		{
-			// These are the affected builtins in H2 numbering
-			// Adjust to Quake numbering by subtracting 1
-			static const char *quake_adjustments[] = {
-				"centerprint",     // 73 (Q) vs 74 (H2)
-				"ambientsound",    // 74 (Q) vs 75 (H2)
-				"precache_model2",  // 75 (Q) vs 76 (H2)
-				"precache_sound2",  // 76 (Q) vs 77 (H2)
-				"precache_file2",   // 77 (Q) vs 78 (H2)
-				"setspawnparms",    // 78 (Q) vs 79 (H2)
-				NULL
-			};
 			for (int k = 0; quake_adjustments[k]; k++)
 			{
 				if (!strcmp(def->name, quake_adjustments[k]))
 				{
-					def->number--;
+					effective_number = def->number - 1;
 					break;
 				}
 			}
@@ -2102,14 +2148,14 @@ static void PR_InitBuiltins (void)
 
 		if (func)
 		{
-			qcvm->builtins[def->number] = func;
-			qcvm->builtin_ext[def->number] = def->ext;
+			qcvm->builtins[effective_number] = func;
+			qcvm->builtin_ext[effective_number] = def->ext;
 		}
 	}
 
 	qcvm->numbuiltins = MAX_BUILTINS;
 
-	// remap progs functions with id 0
+	// remap progs functions with id 0 (functions that didn't specify a builtin number)
 	for (i = 0; i < qcvm->progs->numfunctions; i++)
 	{
 		func = &qcvm->functions[i];
@@ -2122,7 +2168,20 @@ static void PR_InitBuiltins (void)
 			builtindef_t *def = &pr_builtindefs[j];
 			if (!strcmp (name, def->name))
 			{
-				func->first_statement = -def->number;
+				// Calculate effective number (same adjustment as above)
+				int effective_number = def->number;
+				if (use_quake_numbers && def->number >= 66 && def->number <= 84)
+				{
+					for (int k = 0; quake_adjustments[k]; k++)
+					{
+						if (!strcmp(def->name, quake_adjustments[k]))
+						{
+							effective_number = def->number - 1;
+							break;
+						}
+					}
+				}
+				func->first_statement = -effective_number;
 				break;
 			}
 		}
@@ -2513,6 +2572,8 @@ qboolean PR_LoadProgs (const char *filename, qboolean fatal)
 	qcvm->edict_size = qcvm->progs->entityfields * 4 + sizeof(edict_t) - sizeof(entvars_t);
 	Sys_Printf("PR_LoadProgs: entityfields=%d, sizeof(edict_t)=%zu, sizeof(entvars_t)=%zu, edict_size=%d\n",
 		qcvm->progs->entityfields, sizeof(edict_t), sizeof(entvars_t), qcvm->edict_size);
+	Sys_Printf("PR_LoadProgs: numglobals=%d, numstatements=%d\n",
+		qcvm->progs->numglobals, qcvm->progs->numstatements);
 	// round off to next highest whole word address (esp for Alpha)
 	// this ensures that pointers in the engine data area are always
 	// properly aligned
