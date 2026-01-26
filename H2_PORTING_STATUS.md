@@ -197,11 +197,11 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 ## Current Blockers & Issues
 
 ### Critical (game won't run properly)
-1. **Global variable layout mismatch** (`ironwail-hu3.34`) - Different H2 versions have different globalvars_t
+1. ~~**Global variable layout mismatch** (`ironwail-8lg`) - Different H2 versions have different globalvars_t~~ ✅ COMPLETE (runtime offset lookup)
 2. ~~**Graphics loading issues** (`ironwail-hu3.31`) - conchars, menus not loading in H2 mode~~ ✅ Menu system implemented
 
 ### High Priority (basic gameplay)
-1. **Frame control builtins** (`ironwail-vjj`) - AdvanceFrame, RewindFrame needed for animations
+1. ~~**Frame control builtins** (`ironwail-vjj`) - AdvanceFrame, RewindFrame needed for animations~~ ✅ DONE
 2. ~~**Effects builtins** (`ironwail-104`) - particle2-4, starteffect, endeffect~~ ✅ DONE
 
 ### Medium Priority (full experience)
@@ -212,6 +212,7 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 
 ### Low Priority (polish)
 1. **Effects load from save** - Full string buffer parsing needed for load side
+2. **svc_mod_name** - UQE v1.13 extension for music files (rarely used)
 
 ---
 
