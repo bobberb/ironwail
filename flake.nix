@@ -54,11 +54,62 @@
         packages.default = ironwail;
         packages.ironwail = ironwail;
 
-        apps = flake-utils.lib.mkApp {
-          drv = pkgs.writeShellApplicationBin "ironwail-dedicated-test" {
+        # Quake mode - run with id1 game data
+        apps.quake = flake-utils.lib.mkApp {
+          drv = pkgs.writeShellApplication {
+            name = "ironwail-quake";
+            runtimeInputs = [];
             text = ''
-              #!/bin/sh
-              exec ${ironwail}/bin/ironwail -dedicated -nossi -nojoy -nomissing "$@"
+              GAME_DIR="''${GAME_DIR:-/tank/josh/Documents/Games/PcGames/Quake/Quake/paks}"
+              exec ${ironwail}/bin/ironwail -basedir "$GAME_DIR" "$@"
+            '';
+          };
+        };
+
+        # Quake dedicated server
+        apps.quake-dedicated = flake-utils.lib.mkApp {
+          drv = pkgs.writeShellApplication {
+            name = "ironwail-quake-dedicated";
+            runtimeInputs = [];
+            text = ''
+              GAME_DIR="''${GAME_DIR:-/tank/josh/Documents/Games/PcGames/Quake/Quake/paks}"
+              exec ${ironwail}/bin/ironwail -dedicated -nossi -nojoy -nomissing -basedir "$GAME_DIR" "$@"
+            '';
+          };
+        };
+
+        # Hexen II mode - run with data1 game data
+        apps.hexen2 = flake-utils.lib.mkApp {
+          drv = pkgs.writeShellApplication {
+            name = "ironwail-hexen2";
+            runtimeInputs = [];
+            text = ''
+              GAME_DIR="''${GAME_DIR:-/tank/josh/Documents/Games/PcGames/HeXen II}"
+              exec ${ironwail}/bin/ironwail -game data1 -basedir "$GAME_DIR" "$@"
+            '';
+          };
+        };
+
+        # Hexen II dedicated server
+        apps.hexen2-dedicated = flake-utils.lib.mkApp {
+          drv = pkgs.writeShellApplication {
+            name = "ironwail-hexen2-dedicated";
+            runtimeInputs = [];
+            text = ''
+              GAME_DIR="''${GAME_DIR:-/tank/josh/Documents/Games/PcGames/HeXen II}"
+              exec ${ironwail}/bin/ironwail -dedicated -nossi -nojoy -nomissing -game data1 -basedir "$GAME_DIR" "$@"
+            '';
+          };
+        };
+
+        # Legacy test app (now quake-dedicated)
+        apps.default = flake-utils.lib.mkApp {
+          drv = pkgs.writeShellApplication {
+            name = "ironwail-dedicated-test";
+            runtimeInputs = [];
+            text = ''
+              GAME_DIR="''${GAME_DIR:-/tank/josh/Documents/Games/PcGames/Quake/Quake/paks}"
+              exec ${ironwail}/bin/ironwail -dedicated -nossi -nojoy -nomissing -basedir "$GAME_DIR" "$@"
             '';
           };
         };
