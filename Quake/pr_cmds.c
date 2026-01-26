@@ -194,7 +194,7 @@ static void PF_setorigin (void)
 
 	e = G_EDICT(OFS_PARM0);
 	org = G_VECTOR(OFS_PARM1);
-	VectorCopy (org, e->v.origin);
+	VectorCopy (org, ENT_ORIGIN(e));
 	SV_LinkEdict (e, false);
 }
 
@@ -223,7 +223,7 @@ static void SetMinMaxSize (edict_t *e, float *minvec, float *maxvec, qboolean ro
 	else
 	{
 	// find min / max for rotations
-		angles = e->v.angles;
+		angles = ENT_ANGLES(e);
 
 		a = angles[1]/180 * M_PI;
 
@@ -266,9 +266,9 @@ static void SetMinMaxSize (edict_t *e, float *minvec, float *maxvec, qboolean ro
 	}
 
 // set derived values
-	VectorCopy (rmin, e->v.mins);
-	VectorCopy (rmax, e->v.maxs);
-	VectorSubtract (maxvec, minvec, e->v.size);
+	VectorCopy (rmin, ENT_MINS(e));
+	VectorCopy (rmax, ENT_MAXS(e));
+	VectorSubtract (maxvec, minvec, ENT_SIZE(e));
 
 	SV_LinkEdict (e, false);
 }
@@ -322,10 +322,10 @@ static void PF_setmodel (void)
 	{
 		PR_RunError ("no precache: %s", m);
 	}
-	e->v.model = PR_SetEngineString(*check);
-	e->v.modelindex = i; //SV_ModelIndex (m);
+	ENT_MODEL_T(e) = PR_SetEngineString(*check);
+	ENT_MODELINDEX(e) = i; //SV_ModelIndex (m);
 
-	mod = sv.models[ (int)e->v.modelindex];  // Mod_ForName (m, true);
+	mod = sv.models[ (int)ENT_MODELINDEX(e)];  // Mod_ForName (m, true);
 
 	if (mod)
 	//johnfitz -- correct physics cullboxes for bmodels
@@ -696,6 +696,49 @@ static void PF_break (void)
 
 /*
 =================
+PR_SetTraceGlobals
+
+Set trace result globals - uses runtime offsets for H2 mode compatibility
+=================
+*/
+void PR_SetTraceGlobals (trace_t *trace)
+{
+	if (hexen2_mode && h2_globals.ofs_trace_allsolid >= 0)
+	{
+		/* H2 mode: use runtime-looked-up offsets */
+		H2_GLOBAL_FLOAT(h2_globals.ofs_trace_allsolid) = trace->allsolid;
+		H2_GLOBAL_FLOAT(h2_globals.ofs_trace_startsolid) = trace->startsolid;
+		H2_GLOBAL_FLOAT(h2_globals.ofs_trace_fraction) = trace->fraction;
+		H2_GLOBAL_FLOAT(h2_globals.ofs_trace_inwater) = trace->inwater;
+		H2_GLOBAL_FLOAT(h2_globals.ofs_trace_inopen) = trace->inopen;
+		H2_SET_GLOBAL_VEC(h2_globals.ofs_trace_endpos, trace->endpos);
+		H2_SET_GLOBAL_VEC(h2_globals.ofs_trace_plane_normal, trace->plane.normal);
+		H2_GLOBAL_FLOAT(h2_globals.ofs_trace_plane_dist) = trace->plane.dist;
+		if (trace->ent)
+			H2_GLOBAL_INT(h2_globals.ofs_trace_ent) = EDICT_TO_PROG(trace->ent);
+		else
+			H2_GLOBAL_INT(h2_globals.ofs_trace_ent) = EDICT_TO_PROG(qcvm->edicts);
+	}
+	else
+	{
+		/* Q1 mode: use hardcoded struct offsets */
+		pr_global_struct->trace_allsolid = trace->allsolid;
+		pr_global_struct->trace_startsolid = trace->startsolid;
+		pr_global_struct->trace_fraction = trace->fraction;
+		pr_global_struct->trace_inwater = trace->inwater;
+		pr_global_struct->trace_inopen = trace->inopen;
+		VectorCopy (trace->endpos, pr_global_struct->trace_endpos);
+		VectorCopy (trace->plane.normal, pr_global_struct->trace_plane_normal);
+		pr_global_struct->trace_plane_dist = trace->plane.dist;
+		if (trace->ent)
+			pr_global_struct->trace_ent = EDICT_TO_PROG(trace->ent);
+		else
+			pr_global_struct->trace_ent = EDICT_TO_PROG(qcvm->edicts);
+	}
+}
+
+/*
+=================
 PF_traceline
 
 Used for use tracing and shot targeting
@@ -733,18 +776,7 @@ static void PF_traceline (void)
 
 	trace = SV_Move (v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
-	pr_global_struct->trace_allsolid = trace.allsolid;
-	pr_global_struct->trace_startsolid = trace.startsolid;
-	pr_global_struct->trace_fraction = trace.fraction;
-	pr_global_struct->trace_inwater = trace.inwater;
-	pr_global_struct->trace_inopen = trace.inopen;
-	VectorCopy (trace.endpos, pr_global_struct->trace_endpos);
-	VectorCopy (trace.plane.normal, pr_global_struct->trace_plane_normal);
-	pr_global_struct->trace_plane_dist =  trace.plane.dist;
-	if (trace.ent)
-		pr_global_struct->trace_ent = EDICT_TO_PROG(trace.ent);
-	else
-		pr_global_struct->trace_ent = EDICT_TO_PROG(qcvm->edicts);
+	PR_SetTraceGlobals (&trace);
 }
 
 /*
@@ -801,9 +833,9 @@ static int PF_newcheckclient (int check)
 
 		if (ent->free)
 			continue;
-		if (ent->v.health <= 0)
+		if (ENT_HEALTH(ent) <= 0)
 			continue;
-		if ((int)ent->v.flags & FL_NOTARGET)
+		if ((int)ENT_FLAGS(ent) & FL_NOTARGET)
 			continue;
 
 	// anything that is a client, or has a client as an enemy
@@ -811,7 +843,7 @@ static int PF_newcheckclient (int check)
 	}
 
 // get the PVS for the entity
-	VectorAdd (ent->v.origin, ent->v.view_ofs, org);
+	VectorAdd (ENT_ORIGIN(ent), ENT_VIEW_OFS(ent), org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
 	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
 	
@@ -861,7 +893,7 @@ static void PF_checkclient (void)
 
 // return check if it might be visible
 	ent = EDICT_NUM(sv.lastcheck);
-	if (ent->free || ent->v.health <= 0)
+	if (ent->free || ENT_HEALTH(ent) <= 0)
 	{
 		RETURN_EDICT(qcvm->edicts);
 		return;
@@ -869,7 +901,7 @@ static void PF_checkclient (void)
 
 // if current entity can't possibly see the check entity, return 0
 	self = PROG_TO_EDICT(pr_global_struct->self);
-	VectorAdd (self->v.origin, self->v.view_ofs, view);
+	VectorAdd (ENT_ORIGIN(self), ENT_VIEW_OFS(self), view);
 	leaf = Mod_PointInLeaf (view, sv.worldmodel);
 	l = (leaf - sv.worldmodel->leafs) - 1;
 	if ( (l < 0) || !(checkpvs[l>>3] & (1 << (l & 7))) )
@@ -991,23 +1023,23 @@ static void PF_findradius (void)
 		float d, lensq;
 		if (ent->free)
 			continue;
-		if (ent->v.solid == SOLID_NOT)
+		if (ENT_SOLID(ent) == SOLID_NOT)
 			continue;
 
-		d = org[0] - (ent->v.origin[0] + (ent->v.mins[0] + ent->v.maxs[0]) * 0.5);
+		d = org[0] - (ENT_ORIGIN(ent)[0] + (ENT_MINS(ent)[0] + ENT_MAXS(ent)[0]) * 0.5);
 		lensq = d * d;
 		if (lensq > rad)
 			continue;
-		d = org[1] - (ent->v.origin[1] + (ent->v.mins[1] + ent->v.maxs[1]) * 0.5);
+		d = org[1] - (ENT_ORIGIN(ent)[1] + (ENT_MINS(ent)[1] + ENT_MAXS(ent)[1]) * 0.5);
 		lensq += d * d;
 		if (lensq > rad)
 			continue;
-		d = org[2] - (ent->v.origin[2] + (ent->v.mins[2] + ent->v.maxs[2]) * 0.5);
+		d = org[2] - (ENT_ORIGIN(ent)[2] + (ENT_MINS(ent)[2] + ENT_MAXS(ent)[2]) * 0.5);
 		lensq += d * d;
 		if (lensq > rad)
 			continue;
 
-		ent->v.chain = EDICT_TO_PROG(chain);
+		ENT_CHAIN(ent) = EDICT_TO_PROG(chain);
 		chain = ent;
 	}
 
@@ -1206,7 +1238,7 @@ static void PF_walkmove (void)
 	yaw = G_FLOAT(OFS_PARM0);
 	dist = G_FLOAT(OFS_PARM1);
 
-	if ( !( (int)ent->v.flags & (FL_ONGROUND|FL_FLY|FL_SWIM) ) )
+	if ( !( (int)ENT_FLAGS(ent) & (FL_ONGROUND|FL_FLY|FL_SWIM) ) )
 	{
 		G_FLOAT(OFS_RETURN) = 0;
 		return;
@@ -1245,19 +1277,19 @@ static void PF_droptofloor (void)
 
 	ent = PROG_TO_EDICT(pr_global_struct->self);
 
-	VectorCopy (ent->v.origin, end);
+	VectorCopy (ENT_ORIGIN(ent), end);
 	end[2] -= 256;
 
-	trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, false, ent);
+	trace = SV_Move (ENT_ORIGIN(ent), ENT_MINS(ent), ENT_MAXS(ent), end, false, ent);
 
 	if (trace.fraction == 1 || trace.allsolid)
 		G_FLOAT(OFS_RETURN) = 0;
 	else
 	{
-		VectorCopy (trace.endpos, ent->v.origin);
+		VectorCopy (trace.endpos, ENT_ORIGIN(ent));
 		SV_LinkEdict (ent, false);
-		ent->v.flags = (int)ent->v.flags | FL_ONGROUND;
-		ent->v.groundentity = EDICT_TO_PROG(trace.ent);
+		ENT_FLAGS(ent) = (int)ENT_FLAGS(ent) | FL_ONGROUND;
+		ENT_GROUNDENTITY(ent) = EDICT_TO_PROG(trace.ent);
 		G_FLOAT(OFS_RETURN) = 1;
 	}
 }
@@ -1405,15 +1437,15 @@ static void PF_aim (void)
 	speed = G_FLOAT(OFS_PARM1);
 	(void) speed; /* variable set but not used */
 
-	VectorCopy (ent->v.origin, start);
+	VectorCopy (ENT_ORIGIN(ent), start);
 	start[2] += 20;
 
 // try sending a trace straight
 	VectorCopy (pr_global_struct->v_forward, dir);
 	VectorMA (start, 2048, dir, end);
 	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
-	if (tr.ent && tr.ent->v.takedamage == DAMAGE_AIM
-		&& (!teamplay.value || ent->v.team <= 0 || ent->v.team != tr.ent->v.team) )
+	if (tr.ent && ENT_TAKEDAMAGE(tr.ent) == DAMAGE_AIM
+		&& (!teamplay.value || ENT_FLOAT(ent, team) <= 0 || ENT_FLOAT(ent, team) != ENT_FLOAT(tr.ent, team)) )
 	{
 		VectorCopy (pr_global_struct->v_forward, G_VECTOR(OFS_RETURN));
 		return;
@@ -1427,14 +1459,14 @@ static void PF_aim (void)
 	check = NEXT_EDICT(qcvm->edicts);
 	for (i = 1; i < qcvm->num_edicts; i++, check = NEXT_EDICT(check) )
 	{
-		if (check->v.takedamage != DAMAGE_AIM)
+		if (ENT_TAKEDAMAGE(check) != DAMAGE_AIM)
 			continue;
 		if (check == ent)
 			continue;
-		if (teamplay.value && ent->v.team > 0 && ent->v.team == check->v.team)
+		if (teamplay.value && ENT_FLOAT(ent, team) > 0 && ENT_FLOAT(ent, team) == ENT_FLOAT(check, team))
 			continue;	// don't aim at teammate
 		for (j = 0; j < 3; j++)
-			end[j] = check->v.origin[j] + 0.5 * (check->v.mins[j] + check->v.maxs[j]);
+			end[j] = ENT_ORIGIN(check)[j] + 0.5 * (ENT_MINS(check)[j] + ENT_MAXS(check)[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
 		dist = DotProduct (dir, pr_global_struct->v_forward);
@@ -1450,7 +1482,7 @@ static void PF_aim (void)
 
 	if (bestent)
 	{
-		VectorSubtract (bestent->v.origin, ent->v.origin, dir);
+		VectorSubtract (ENT_ORIGIN(bestent), ENT_ORIGIN(ent), dir);
 		dist = DotProduct (dir, pr_global_struct->v_forward);
 		VectorScale (pr_global_struct->v_forward, dist, end);
 		end[2] = dir[2];
@@ -1476,9 +1508,9 @@ void PF_changeyaw (void)
 	float		ideal, current, move, speed;
 
 	ent = PROG_TO_EDICT(pr_global_struct->self);
-	current = anglemod( ent->v.angles[1] );
-	ideal = ent->v.ideal_yaw;
-	speed = ent->v.yaw_speed;
+	current = anglemod( ENT_ANGLES(ent)[1] );
+	ideal = ENT_IDEAL_YAW(ent);
+	speed = ENT_YAW_SPEED(ent);
 
 	if (current == ideal)
 		return;
@@ -1504,7 +1536,7 @@ void PF_changeyaw (void)
 			move = -speed;
 	}
 
-	ent->v.angles[1] = anglemod (current + move);
+	ENT_ANGLES(ent)[1] = anglemod (current + move);
 }
 
 /*
@@ -1608,7 +1640,7 @@ static void PF_makestatic (void)
 	//johnfitz -- PROTOCOL_FITZQUAKE
 	if (sv.protocol == PROTOCOL_NETQUAKE)
 	{
-		if (SV_ModelIndex(PR_GetString(ent->v.model)) & 0xFF00 || (int)(ent->v.frame) & 0xFF00)
+		if (SV_ModelIndex(ENT_MODEL(ent)) & 0xFF00 || (int)(ENT_FRAME(ent)) & 0xFF00)
 		{
 			ED_Free (ent);
 			return; //can't display the correct model & frame, so don't show it at all
@@ -1616,9 +1648,9 @@ static void PF_makestatic (void)
 	}
 	else
 	{
-		if (SV_ModelIndex(PR_GetString(ent->v.model)) & 0xFF00)
+		if (SV_ModelIndex(ENT_MODEL(ent)) & 0xFF00)
 			bits |= B_LARGEMODEL;
-		if ((int)(ent->v.frame) & 0xFF00)
+		if ((int)(ENT_FRAME(ent)) & 0xFF00)
 			bits |= B_LARGEFRAME;
 		if (ent->alpha != ENTALPHA_DEFAULT)
 			bits |= B_ALPHA;
@@ -1648,22 +1680,22 @@ static void PF_makestatic (void)
 		MSG_WriteByte (sv.signon, svc_spawnstatic);
 
 	if (bits & B_LARGEMODEL)
-		MSG_WriteShort (sv.signon, SV_ModelIndex(PR_GetString(ent->v.model)));
+		MSG_WriteShort (sv.signon, SV_ModelIndex(ENT_MODEL(ent)));
 	else
-		MSG_WriteByte (sv.signon, SV_ModelIndex(PR_GetString(ent->v.model)));
+		MSG_WriteByte (sv.signon, SV_ModelIndex(ENT_MODEL(ent)));
 
 	if (bits & B_LARGEFRAME)
-		MSG_WriteShort (sv.signon, ent->v.frame);
+		MSG_WriteShort (sv.signon, ENT_FRAME(ent));
 	else
-		MSG_WriteByte (sv.signon, ent->v.frame);
+		MSG_WriteByte (sv.signon, ENT_FRAME(ent));
 	//johnfitz
 
-	MSG_WriteByte (sv.signon, ent->v.colormap);
-	MSG_WriteByte (sv.signon, ent->v.skin);
+	MSG_WriteByte (sv.signon, ENT_FLOAT(ent, colormap));
+	MSG_WriteByte (sv.signon, ENT_SKIN(ent));
 	for (i = 0; i < 3; i++)
 	{
-		MSG_WriteCoord(sv.signon, ent->v.origin[i], sv.protocolflags);
-		MSG_WriteAngle(sv.signon, ent->v.angles[i], sv.protocolflags);
+		MSG_WriteCoord(sv.signon, ENT_ORIGIN(ent)[i], sv.protocolflags);
+		MSG_WriteAngle(sv.signon, ENT_ANGLES(ent)[i], sv.protocolflags);
 	}
 
 	//johnfitz -- PROTOCOL_FITZQUAKE

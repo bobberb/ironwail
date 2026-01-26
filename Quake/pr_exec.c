@@ -888,39 +888,39 @@ void PR_ExecuteProgram (func_t fnum)
 		int startFrame, endFrame;
 		float curFrame;
 		ed = PROG_TO_EDICT(pr_global_struct->self);
-		H2_ED_FLOAT(ed, h2_globals.ofs_nextthink) = pr_global_struct->time + HX_FRAME_TIME;
-		H2_ED_FUNC(ed, h2_globals.ofs_think) = qcvm->xfunction - qcvm->functions;
+		H2_ED_FLOAT(ed, h2_globals.fields.nextthink) = pr_global_struct->time + HX_FRAME_TIME;
+		H2_ED_FUNC(ed, h2_globals.fields.think) = qcvm->xfunction - qcvm->functions;
 		if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = false;
 		startFrame = (int)OPA->_float;
 		endFrame = (int)OPB->_float;
-		curFrame = H2_ED_FLOAT(ed, h2_globals.ofs_frame);
+		curFrame = H2_ED_FLOAT(ed, h2_globals.fields.frame);
 		if (startFrame <= endFrame)
 		{
 			if (curFrame < startFrame || curFrame > endFrame)
-				H2_ED_FLOAT(ed, h2_globals.ofs_frame) = startFrame;
+				H2_ED_FLOAT(ed, h2_globals.fields.frame) = startFrame;
 			else
 			{
 				curFrame++;
-				H2_ED_FLOAT(ed, h2_globals.ofs_frame) = curFrame;
+				H2_ED_FLOAT(ed, h2_globals.fields.frame) = curFrame;
 				if (curFrame > endFrame)
 				{
 					if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = true;
-					H2_ED_FLOAT(ed, h2_globals.ofs_frame) = startFrame;
+					H2_ED_FLOAT(ed, h2_globals.fields.frame) = startFrame;
 				}
 			}
 		}
 		else
 		{
 			if (curFrame > startFrame || curFrame < endFrame)
-				H2_ED_FLOAT(ed, h2_globals.ofs_frame) = startFrame;
+				H2_ED_FLOAT(ed, h2_globals.fields.frame) = startFrame;
 			else
 			{
 				curFrame--;
-				H2_ED_FLOAT(ed, h2_globals.ofs_frame) = curFrame;
+				H2_ED_FLOAT(ed, h2_globals.fields.frame) = curFrame;
 				if (curFrame < endFrame)
 				{
 					if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = true;
-					H2_ED_FLOAT(ed, h2_globals.ofs_frame) = startFrame;
+					H2_ED_FLOAT(ed, h2_globals.fields.frame) = startFrame;
 				}
 			}
 		}
@@ -932,39 +932,39 @@ void PR_ExecuteProgram (func_t fnum)
 		int startFrame, endFrame;
 		float curFrame;
 		ed = PROG_TO_EDICT(pr_global_struct->self);
-		H2_ED_FLOAT(ed, h2_globals.ofs_nextthink) = pr_global_struct->time + HX_FRAME_TIME;
-		H2_ED_FUNC(ed, h2_globals.ofs_think) = qcvm->xfunction - qcvm->functions;
+		H2_ED_FLOAT(ed, h2_globals.fields.nextthink) = pr_global_struct->time + HX_FRAME_TIME;
+		H2_ED_FUNC(ed, h2_globals.fields.think) = qcvm->xfunction - qcvm->functions;
 		if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = false;
 		startFrame = (int)OPA->_float;
 		endFrame = (int)OPB->_float;
-		curFrame = H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe);
+		curFrame = H2_ED_FLOAT(ed, h2_globals.fields.weaponframe);
 		if (startFrame <= endFrame)
 		{
 			if (curFrame < startFrame || curFrame > endFrame)
-				H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = startFrame;
+				H2_ED_FLOAT(ed, h2_globals.fields.weaponframe) = startFrame;
 			else
 			{
 				curFrame++;
-				H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = curFrame;
+				H2_ED_FLOAT(ed, h2_globals.fields.weaponframe) = curFrame;
 				if (curFrame > endFrame)
 				{
 					if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = true;
-					H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = startFrame;
+					H2_ED_FLOAT(ed, h2_globals.fields.weaponframe) = startFrame;
 				}
 			}
 		}
 		else
 		{
 			if (curFrame > startFrame || curFrame < endFrame)
-				H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = startFrame;
+				H2_ED_FLOAT(ed, h2_globals.fields.weaponframe) = startFrame;
 			else
 			{
 				curFrame--;
-				H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = curFrame;
+				H2_ED_FLOAT(ed, h2_globals.fields.weaponframe) = curFrame;
 				if (curFrame < endFrame)
 				{
 					if (h2_globals.cycle_wrapped) *h2_globals.cycle_wrapped = true;
-					H2_ED_FLOAT(ed, h2_globals.ofs_weaponframe) = startFrame;
+					H2_ED_FLOAT(ed, h2_globals.fields.weaponframe) = startFrame;
 				}
 			}
 		}
@@ -978,7 +978,7 @@ void PR_ExecuteProgram (func_t fnum)
 			qcvm->xstatement = st - qcvm->statements;
 			PR_RunError("assignment to world entity");
 		}
-		H2_ED_FLOAT(ed, h2_globals.ofs_nextthink) = pr_global_struct->time + OPB->_float;
+		H2_ED_FLOAT(ed, h2_globals.fields.nextthink) = pr_global_struct->time + OPB->_float;
 		break;
 
 	case OP_BITSET:		/* f (+) f  - set bits */

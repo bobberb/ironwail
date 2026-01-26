@@ -307,22 +307,208 @@ typedef struct savedata_s
 extern THREAD_LOCAL globalvars_t	*pr_global_struct;
 extern THREAD_LOCAL qcvm_t			*qcvm;
 
+/*
+ * Entity field offsets - populated at progs load time.
+ * These allow the engine to access entity fields correctly regardless of
+ * whether Q1 or H2 progs are loaded (the layouts differ significantly).
+ *
+ * H2 has extra fields that shift everything:
+ * - After ltime: lastruntime (+1)
+ * - After effects: scale, drawflags, abslight (+3 more, total +4)
+ * - After size: hull (+1 more, total +5)
+ * - Many other field differences throughout
+ */
+typedef struct
+{
+	/* Core entity fields - used heavily in physics */
+	int		modelindex;
+	int		absmin;			/* vec3 */
+	int		absmax;			/* vec3 */
+	int		ltime;
+	int		movetype;
+	int		solid;
+	int		origin;			/* vec3 */
+	int		oldorigin;		/* vec3 */
+	int		velocity;		/* vec3 */
+	int		angles;			/* vec3 */
+	int		avelocity;		/* vec3 */
+	int		punchangle;		/* vec3 */
+	int		classname;
+	int		model;
+	int		frame;
+	int		skin;
+	int		effects;
+	int		mins;			/* vec3 */
+	int		maxs;			/* vec3 */
+	int		size;			/* vec3 */
+	int		touch;
+	int		use;
+	int		think;
+	int		blocked;
+	int		nextthink;
+	int		groundentity;
+	int		health;
+	int		frags;
+	int		weapon;
+	int		weaponmodel;
+	int		weaponframe;
+	int		items;
+	int		takedamage;
+	int		chain;
+	int		deadflag;
+	int		view_ofs;		/* vec3 */
+	int		button0;
+	int		button1;
+	int		button2;
+	int		impulse;
+	int		fixangle;
+	int		v_angle;		/* vec3 */
+	int		idealpitch;
+	int		netname;
+	int		enemy;
+	int		flags;
+	int		colormap;
+	int		team;
+	int		max_health;
+	int		teleport_time;
+	int		armortype;
+	int		armorvalue;
+	int		waterlevel;
+	int		watertype;
+	int		ideal_yaw;
+	int		yaw_speed;
+	int		goalentity;
+	int		spawnflags;
+	int		target;
+	int		targetname;
+	int		dmg_take;
+	int		dmg_save;
+	int		dmg_inflictor;
+	int		owner;
+	int		movedir;		/* vec3 */
+	int		message;
+	int		sounds;			/* Q1: sounds, H2: soundtype */
+	int		noise;
+	int		noise1;
+	int		noise2;
+	int		noise3;
+
+	/* H2-specific entity fields */
+	int		lastruntime;	/* H2 only - for MOVETYPE_PUSH */
+	int		scale;			/* H2 only */
+	int		drawflags;		/* H2 only */
+	int		abslight;		/* H2 only */
+	int		hull;			/* H2 only - collision hull selection */
+	int		playerclass;	/* H2 only - player class (0-3) */
+	int		gravity;		/* H2/extension gravity field */
+} entfield_offsets_t;
+
 /* Hexen II specific global and entity field pointers - set up when loading H2 progs */
 typedef struct
 {
 	float	*cycle_wrapped;
-	/* Entity field offsets (in words, -1 if not found) */
-	int		ofs_frame;
-	int		ofs_weaponframe;
-	int		ofs_nextthink;
-	int		ofs_think;
-	/* H2-specific entity fields */
-	int		ofs_playerclass;	/* player class (0-3) */
-	int		ofs_hull;			/* collision hull selection */
-	int		ofs_soundtype;		/* sound type */
+
+	/* Entity field offsets - consolidated into separate struct */
+	entfield_offsets_t	fields;
+
+	/* Global variable offsets - H2 layout differs from Q1 after mapname (offset 34) */
+	int		ofs_trace_allsolid;
+	int		ofs_trace_startsolid;
+	int		ofs_trace_fraction;
+	int		ofs_trace_endpos;		/* vec3: 3 consecutive floats */
+	int		ofs_trace_plane_normal;	/* vec3: 3 consecutive floats */
+	int		ofs_trace_plane_dist;
+	int		ofs_trace_ent;
+	int		ofs_trace_inopen;
+	int		ofs_trace_inwater;
+	int		ofs_v_forward;			/* vec3: 3 consecutive floats */
+	int		ofs_v_up;				/* vec3: 3 consecutive floats */
+	int		ofs_v_right;			/* vec3: 3 consecutive floats */
+	int		ofs_msg_entity;
+	int		ofs_deathmatch;
+	int		ofs_coop;
+	int		ofs_teamplay;
+	int		ofs_serverflags;
+	int		ofs_total_secrets;
+	int		ofs_total_monsters;
+	int		ofs_found_secrets;
+	int		ofs_killed_monsters;
+	int		ofs_parm1;				/* first spawn parm, others follow */
 } h2_globals_t;
 
+/* Accessor macros for H2 globals - use runtime offsets instead of struct */
+#define H2_GLOBAL_FLOAT(ofs)		(qcvm->globals[ofs])
+#define H2_GLOBAL_INT(ofs)			(((int *)qcvm->globals)[ofs])
+#define H2_GLOBAL_VEC(ofs, vec)		do { (vec)[0] = qcvm->globals[ofs]; (vec)[1] = qcvm->globals[(ofs)+1]; (vec)[2] = qcvm->globals[(ofs)+2]; } while(0)
+#define H2_SET_GLOBAL_VEC(ofs, vec)	do { qcvm->globals[ofs] = (vec)[0]; qcvm->globals[(ofs)+1] = (vec)[1]; qcvm->globals[(ofs)+2] = (vec)[2]; } while(0)
+
 extern THREAD_LOCAL h2_globals_t	h2_globals;
+
+/*
+ * Entity field accessor macros - use runtime-looked-up offsets.
+ * These work for both Q1 and H2 modes because the offsets are populated
+ * at progs load time to match the actual progs layout.
+ *
+ * For read/write scalar fields: ENT_FLOAT(ent, field), ENT_INT(ent, field)
+ * For read/write vector fields: ENT_VEC(ent, field) returns float* pointer
+ *
+ * The 'field' is the field name from entfield_offsets_t (e.g., 'movetype', 'origin')
+ */
+#define ENT_FLOAT(ent, field)		E_FLOAT(ent, h2_globals.fields.field)
+#define ENT_INT(ent, field)			E_INT(ent, h2_globals.fields.field)
+#define ENT_VEC(ent, field)			E_VECTOR(ent, h2_globals.fields.field)
+#define ENT_STRING(ent, field)		E_STRING(ent, h2_globals.fields.field)
+#define ENT_STRING_T(ent, field)	(*(string_t *)&((float*)&(ent)->v)[h2_globals.fields.field])
+#define ENT_FUNC(ent, field)		(*(func_t *)&((float*)&(ent)->v)[h2_globals.fields.field])
+
+/* Shorthand for commonly used entity field accesses */
+#define ENT_ORIGIN(ent)				ENT_VEC(ent, origin)
+#define ENT_OLDORIGIN(ent)			ENT_VEC(ent, oldorigin)
+#define ENT_VELOCITY(ent)			ENT_VEC(ent, velocity)
+#define ENT_ANGLES(ent)				ENT_VEC(ent, angles)
+#define ENT_AVELOCITY(ent)			ENT_VEC(ent, avelocity)
+#define ENT_MINS(ent)				ENT_VEC(ent, mins)
+#define ENT_MAXS(ent)				ENT_VEC(ent, maxs)
+#define ENT_SIZE(ent)				ENT_VEC(ent, size)
+#define ENT_ABSMIN(ent)				ENT_VEC(ent, absmin)
+#define ENT_ABSMAX(ent)				ENT_VEC(ent, absmax)
+#define ENT_MOVETYPE(ent)			ENT_FLOAT(ent, movetype)
+#define ENT_SOLID(ent)				ENT_FLOAT(ent, solid)
+#define ENT_FLAGS(ent)				ENT_FLOAT(ent, flags)
+#define ENT_LTIME(ent)				ENT_FLOAT(ent, ltime)
+#define ENT_NEXTTHINK(ent)			ENT_FLOAT(ent, nextthink)
+#define ENT_THINK(ent)				ENT_FUNC(ent, think)
+#define ENT_TOUCH(ent)				ENT_FUNC(ent, touch)
+#define ENT_BLOCKED(ent)			ENT_FUNC(ent, blocked)
+#define ENT_FRAME(ent)				ENT_FLOAT(ent, frame)
+#define ENT_SKIN(ent)				ENT_FLOAT(ent, skin)
+#define ENT_EFFECTS(ent)			ENT_FLOAT(ent, effects)
+#define ENT_MODELINDEX(ent)			ENT_FLOAT(ent, modelindex)
+#define ENT_WATERLEVEL(ent)			ENT_FLOAT(ent, waterlevel)
+#define ENT_WATERTYPE(ent)			ENT_FLOAT(ent, watertype)
+#define ENT_HEALTH(ent)				ENT_FLOAT(ent, health)
+#define ENT_TAKEDAMAGE(ent)			ENT_FLOAT(ent, takedamage)
+#define ENT_CLASSNAME(ent)			ENT_STRING(ent, classname)
+#define ENT_CLASSNAME_T(ent)		ENT_STRING_T(ent, classname)
+#define ENT_MODEL(ent)				ENT_STRING(ent, model)
+#define ENT_MODEL_T(ent)			ENT_STRING_T(ent, model)
+#define ENT_NETNAME(ent)			ENT_STRING(ent, netname)
+#define ENT_NETNAME_T(ent)			ENT_STRING_T(ent, netname)
+#define ENT_VIEW_OFS(ent)			ENT_VEC(ent, view_ofs)
+#define ENT_V_ANGLE(ent)			ENT_VEC(ent, v_angle)
+#define ENT_PUNCHANGLE(ent)			ENT_VEC(ent, punchangle)
+#define ENT_MOVEDIR(ent)			ENT_VEC(ent, movedir)
+#define ENT_IDEALPITCH(ent)			ENT_FLOAT(ent, idealpitch)
+#define ENT_IDEAL_YAW(ent)			ENT_FLOAT(ent, ideal_yaw)
+#define ENT_YAW_SPEED(ent)			ENT_FLOAT(ent, yaw_speed)
+
+/* Entity reference fields (stored as int offsets into edict array) */
+#define ENT_GROUNDENTITY(ent)		ENT_INT(ent, groundentity)
+#define ENT_OWNER(ent)				ENT_INT(ent, owner)
+#define ENT_ENEMY(ent)				ENT_INT(ent, enemy)
+#define ENT_CHAIN(ent)				ENT_INT(ent, chain)
+#define ENT_GOALENTITY(ent)			ENT_INT(ent, goalentity)
+#define ENT_DMG_INFLICTOR(ent)		ENT_INT(ent, dmg_inflictor)
 
 void PR_SwitchQCVM(qcvm_t *nvm);
 void PR_PushQCVM(qcvm_t *newvm, qcvm_t **oldvm);

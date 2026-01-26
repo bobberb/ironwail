@@ -70,18 +70,7 @@ static void PF_h2_tracearea (void)
 
 	trace = SV_Move (v1, mins, maxs, v2, nomonsters, ent);
 
-	pr_global_struct->trace_allsolid = trace.allsolid;
-	pr_global_struct->trace_startsolid = trace.startsolid;
-	pr_global_struct->trace_fraction = trace.fraction;
-	pr_global_struct->trace_inwater = trace.inwater;
-	pr_global_struct->trace_inopen = trace.inopen;
-	VectorCopy (trace.endpos, pr_global_struct->trace_endpos);
-	VectorCopy (trace.plane.normal, pr_global_struct->trace_plane_normal);
-	pr_global_struct->trace_plane_dist =  trace.plane.dist;
-	if (trace.ent)
-		pr_global_struct->trace_ent = EDICT_TO_PROG(trace.ent);
-	else
-		pr_global_struct->trace_ent = EDICT_TO_PROG(qcvm->edicts);
+	PR_SetTraceGlobals (&trace);
 }
 
 /*
@@ -261,8 +250,8 @@ static void PF_h2_setclass (void)
 	}
 
 	// Set playerclass via runtime offset for H2 mode compatibility
-	if (h2_globals.ofs_playerclass >= 0)
-		((float *)&e->v)[h2_globals.ofs_playerclass] = newclass;
+	if (h2_globals.fields.playerclass >= 0)
+		((float *)&e->v)[h2_globals.fields.playerclass] = newclass;
 	Con_DPrintf("PF_h2_setclass: entity %d set to class %d\n", entnum, (int)newclass);
 }
 

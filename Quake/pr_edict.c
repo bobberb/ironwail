@@ -360,49 +360,200 @@ static ddef_t *ED_FindGlobal (const char *name)
 
 /*
 ============
+ED_FindGlobalOffset
+
+Returns global variable offset by name, or -1 if not found
+============
+*/
+static int ED_FindGlobalOffset (const char *name)
+{
+	ddef_t *def = ED_FindGlobal(name);
+	if (!def)
+		return -1;
+	return def->ofs;
+}
+
+/*
+============
 H2_SetupGlobals
 
-Set up Hexen II specific global pointers and entity field offsets after loading H2 progs
+Set up Hexen II specific global pointers and entity field offsets after loading H2 progs.
+This is critical because H2 has a different globalvars_t layout than Q1 - fields after
+mapname (offset 34) are shifted due to extra fields (startspot, randomclass, cl_playerclass).
 ============
 */
 void H2_SetupGlobals (void)
 {
 	ddef_t *def;
+	entfield_offsets_t *f = &h2_globals.fields;
 
-	// Initialize to defaults
+	// Initialize all to -1 (invalid)
+	memset(f, -1, sizeof(*f));
 	h2_globals.cycle_wrapped = NULL;
-	h2_globals.ofs_frame = -1;
-	h2_globals.ofs_weaponframe = -1;
-	h2_globals.ofs_nextthink = -1;
-	h2_globals.ofs_think = -1;
-	h2_globals.ofs_playerclass = -1;
-	h2_globals.ofs_hull = -1;
-	h2_globals.ofs_soundtype = -1;
 
-	if (!hexen2_mode)
-		return;
+	// Initialize global variable offsets to -1 (will use Q1 struct if not found)
+	h2_globals.ofs_trace_allsolid = -1;
+	h2_globals.ofs_trace_startsolid = -1;
+	h2_globals.ofs_trace_fraction = -1;
+	h2_globals.ofs_trace_endpos = -1;
+	h2_globals.ofs_trace_plane_normal = -1;
+	h2_globals.ofs_trace_plane_dist = -1;
+	h2_globals.ofs_trace_ent = -1;
+	h2_globals.ofs_trace_inopen = -1;
+	h2_globals.ofs_trace_inwater = -1;
+	h2_globals.ofs_v_forward = -1;
+	h2_globals.ofs_v_up = -1;
+	h2_globals.ofs_v_right = -1;
+	h2_globals.ofs_msg_entity = -1;
+	h2_globals.ofs_deathmatch = -1;
+	h2_globals.ofs_coop = -1;
+	h2_globals.ofs_teamplay = -1;
+	h2_globals.ofs_serverflags = -1;
+	h2_globals.ofs_total_secrets = -1;
+	h2_globals.ofs_total_monsters = -1;
+	h2_globals.ofs_found_secrets = -1;
+	h2_globals.ofs_killed_monsters = -1;
+	h2_globals.ofs_parm1 = -1;
 
-	// Find cycle_wrapped global
-	def = ED_FindGlobal("cycle_wrapped");
-	if (def)
-		h2_globals.cycle_wrapped = (float *)&qcvm->globals[def->ofs];
-	else
-		Con_DPrintf("H2_SetupGlobals: cycle_wrapped not found in progs\n");
+	/*
+	 * Look up ALL entity field offsets from the loaded progs.
+	 * This works for both Q1 and H2 progs - the offsets will match
+	 * whatever layout the actual progs file uses.
+	 */
 
-	// Find entity field offsets
-	h2_globals.ofs_frame = ED_FindFieldOffset("frame");
-	h2_globals.ofs_weaponframe = ED_FindFieldOffset("weaponframe");
-	h2_globals.ofs_nextthink = ED_FindFieldOffset("nextthink");
-	h2_globals.ofs_think = ED_FindFieldOffset("think");
-	h2_globals.ofs_playerclass = ED_FindFieldOffset("playerclass");
-	h2_globals.ofs_hull = ED_FindFieldOffset("hull");
-	h2_globals.ofs_soundtype = ED_FindFieldOffset("soundtype");
+	// Core entity fields - used heavily throughout the engine
+	f->modelindex = ED_FindFieldOffset("modelindex");
+	f->absmin = ED_FindFieldOffset("absmin");
+	f->absmax = ED_FindFieldOffset("absmax");
+	f->ltime = ED_FindFieldOffset("ltime");
+	f->movetype = ED_FindFieldOffset("movetype");
+	f->solid = ED_FindFieldOffset("solid");
+	f->origin = ED_FindFieldOffset("origin");
+	f->oldorigin = ED_FindFieldOffset("oldorigin");
+	f->velocity = ED_FindFieldOffset("velocity");
+	f->angles = ED_FindFieldOffset("angles");
+	f->avelocity = ED_FindFieldOffset("avelocity");
+	f->punchangle = ED_FindFieldOffset("punchangle");
+	f->classname = ED_FindFieldOffset("classname");
+	f->model = ED_FindFieldOffset("model");
+	f->frame = ED_FindFieldOffset("frame");
+	f->skin = ED_FindFieldOffset("skin");
+	f->effects = ED_FindFieldOffset("effects");
+	f->mins = ED_FindFieldOffset("mins");
+	f->maxs = ED_FindFieldOffset("maxs");
+	f->size = ED_FindFieldOffset("size");
+	f->touch = ED_FindFieldOffset("touch");
+	f->use = ED_FindFieldOffset("use");
+	f->think = ED_FindFieldOffset("think");
+	f->blocked = ED_FindFieldOffset("blocked");
+	f->nextthink = ED_FindFieldOffset("nextthink");
+	f->groundentity = ED_FindFieldOffset("groundentity");
+	f->health = ED_FindFieldOffset("health");
+	f->frags = ED_FindFieldOffset("frags");
+	f->weapon = ED_FindFieldOffset("weapon");
+	f->weaponmodel = ED_FindFieldOffset("weaponmodel");
+	f->weaponframe = ED_FindFieldOffset("weaponframe");
+	f->items = ED_FindFieldOffset("items");
+	f->takedamage = ED_FindFieldOffset("takedamage");
+	f->chain = ED_FindFieldOffset("chain");
+	f->deadflag = ED_FindFieldOffset("deadflag");
+	f->view_ofs = ED_FindFieldOffset("view_ofs");
+	f->button0 = ED_FindFieldOffset("button0");
+	f->button1 = ED_FindFieldOffset("button1");
+	f->button2 = ED_FindFieldOffset("button2");
+	f->impulse = ED_FindFieldOffset("impulse");
+	f->fixangle = ED_FindFieldOffset("fixangle");
+	f->v_angle = ED_FindFieldOffset("v_angle");
+	f->idealpitch = ED_FindFieldOffset("idealpitch");
+	f->netname = ED_FindFieldOffset("netname");
+	f->enemy = ED_FindFieldOffset("enemy");
+	f->flags = ED_FindFieldOffset("flags");
+	f->colormap = ED_FindFieldOffset("colormap");
+	f->team = ED_FindFieldOffset("team");
+	f->max_health = ED_FindFieldOffset("max_health");
+	f->teleport_time = ED_FindFieldOffset("teleport_time");
+	f->armortype = ED_FindFieldOffset("armortype");
+	f->armorvalue = ED_FindFieldOffset("armorvalue");
+	f->waterlevel = ED_FindFieldOffset("waterlevel");
+	f->watertype = ED_FindFieldOffset("watertype");
+	f->ideal_yaw = ED_FindFieldOffset("ideal_yaw");
+	f->yaw_speed = ED_FindFieldOffset("yaw_speed");
+	f->goalentity = ED_FindFieldOffset("goalentity");
+	f->spawnflags = ED_FindFieldOffset("spawnflags");
+	f->target = ED_FindFieldOffset("target");
+	f->targetname = ED_FindFieldOffset("targetname");
+	f->dmg_take = ED_FindFieldOffset("dmg_take");
+	f->dmg_save = ED_FindFieldOffset("dmg_save");
+	f->dmg_inflictor = ED_FindFieldOffset("dmg_inflictor");
+	f->owner = ED_FindFieldOffset("owner");
+	f->movedir = ED_FindFieldOffset("movedir");
+	f->message = ED_FindFieldOffset("message");
+	f->noise = ED_FindFieldOffset("noise");
+	f->noise1 = ED_FindFieldOffset("noise1");
+	f->noise2 = ED_FindFieldOffset("noise2");
+	f->noise3 = ED_FindFieldOffset("noise3");
 
-	Con_Printf("H2_SetupGlobals: frame=%d weaponframe=%d nextthink=%d think=%d cycle_wrapped=%p\n",
-		h2_globals.ofs_frame, h2_globals.ofs_weaponframe,
-		h2_globals.ofs_nextthink, h2_globals.ofs_think, h2_globals.cycle_wrapped);
-	Con_DPrintf("  playerclass=%d hull=%d soundtype=%d\n",
-		h2_globals.ofs_playerclass, h2_globals.ofs_hull, h2_globals.ofs_soundtype);
+	// sounds/soundtype - Q1 uses 'sounds', H2 uses 'soundtype'
+	f->sounds = ED_FindFieldOffset("sounds");
+	if (f->sounds < 0)
+		f->sounds = ED_FindFieldOffset("soundtype");
+
+	// H2-specific entity fields (will be -1 in Q1 mode)
+	f->lastruntime = ED_FindFieldOffset("lastruntime");
+	f->scale = ED_FindFieldOffset("scale");
+	f->drawflags = ED_FindFieldOffset("drawflags");
+	f->abslight = ED_FindFieldOffset("abslight");
+	f->hull = ED_FindFieldOffset("hull");
+	f->playerclass = ED_FindFieldOffset("playerclass");
+	f->gravity = ED_FindFieldOffset("gravity");
+
+	// H2-specific global variable offsets
+	if (hexen2_mode)
+	{
+		// Find cycle_wrapped global
+		def = ED_FindGlobal("cycle_wrapped");
+		if (def)
+			h2_globals.cycle_wrapped = (float *)&qcvm->globals[def->ofs];
+		else
+			Con_DPrintf("H2_SetupGlobals: cycle_wrapped not found in progs\n");
+
+		// Find global variable offsets - these differ from Q1 layout
+		h2_globals.ofs_trace_allsolid = ED_FindGlobalOffset("trace_allsolid");
+		h2_globals.ofs_trace_startsolid = ED_FindGlobalOffset("trace_startsolid");
+		h2_globals.ofs_trace_fraction = ED_FindGlobalOffset("trace_fraction");
+		h2_globals.ofs_trace_endpos = ED_FindGlobalOffset("trace_endpos");
+		h2_globals.ofs_trace_plane_normal = ED_FindGlobalOffset("trace_plane_normal");
+		h2_globals.ofs_trace_plane_dist = ED_FindGlobalOffset("trace_plane_dist");
+		h2_globals.ofs_trace_ent = ED_FindGlobalOffset("trace_ent");
+		h2_globals.ofs_trace_inopen = ED_FindGlobalOffset("trace_inopen");
+		h2_globals.ofs_trace_inwater = ED_FindGlobalOffset("trace_inwater");
+		h2_globals.ofs_v_forward = ED_FindGlobalOffset("v_forward");
+		h2_globals.ofs_v_up = ED_FindGlobalOffset("v_up");
+		h2_globals.ofs_v_right = ED_FindGlobalOffset("v_right");
+		h2_globals.ofs_msg_entity = ED_FindGlobalOffset("msg_entity");
+		h2_globals.ofs_deathmatch = ED_FindGlobalOffset("deathmatch");
+		h2_globals.ofs_coop = ED_FindGlobalOffset("coop");
+		h2_globals.ofs_teamplay = ED_FindGlobalOffset("teamplay");
+		h2_globals.ofs_serverflags = ED_FindGlobalOffset("serverflags");
+		h2_globals.ofs_total_secrets = ED_FindGlobalOffset("total_secrets");
+		h2_globals.ofs_total_monsters = ED_FindGlobalOffset("total_monsters");
+		h2_globals.ofs_found_secrets = ED_FindGlobalOffset("found_secrets");
+		h2_globals.ofs_killed_monsters = ED_FindGlobalOffset("killed_monsters");
+		h2_globals.ofs_parm1 = ED_FindGlobalOffset("parm1");
+	}
+
+	Con_DPrintf("H2_SetupGlobals: Entity field offsets:\n");
+	Con_DPrintf("  origin=%d velocity=%d angles=%d movetype=%d solid=%d flags=%d\n",
+		f->origin, f->velocity, f->angles, f->movetype, f->solid, f->flags);
+	Con_DPrintf("  nextthink=%d think=%d frame=%d ltime=%d groundentity=%d\n",
+		f->nextthink, f->think, f->frame, f->ltime, f->groundentity);
+	if (hexen2_mode)
+	{
+		Con_DPrintf("  H2: playerclass=%d hull=%d lastruntime=%d scale=%d\n",
+			f->playerclass, f->hull, f->lastruntime, f->scale);
+		Con_DPrintf("  H2 globals: trace_ent=%d msg_entity=%d v_forward=%d\n",
+			h2_globals.ofs_trace_ent, h2_globals.ofs_msg_entity, h2_globals.ofs_v_forward);
+	}
 }
 
 /*
