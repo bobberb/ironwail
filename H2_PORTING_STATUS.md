@@ -35,18 +35,17 @@ This document tracks the progress of porting Hexen II functionality from uhexen2
 
 ---
 
-## 2. ENTITY & PROGS (Phase 2) - BLOCKED
+## 2. ENTITY & PROGS (Phase 2) - COMPLETE
 
 ### 2.1 Entity Structure
 | Feature | Status | uhexen2 Source | Ironwail File |
 |---------|--------|----------------|---------------|
 | entvars_t (H2 fields) | [x] | `hexen2/progdefs.h` | `progdefs.h2` |
-| globalvars_t | [~] | `hexen2/progdefs.h` | `progdefs.h2` (defined but not used!) |
+| globalvars_t runtime offsets | [x] | `hexen2/progdefs.h` | `progs.h` (h2_globals_t) |
 
-**⚠️ CRITICAL BUG (ironwail-47a):** The engine uses Q1's globalvars_t from `progdefs.q1` at runtime,
-but H2 has different layout (extra fields: startspot, randomclass, cl_playerclass).
-This causes pr_global_struct->trace_ent to read garbage, crashing on any map with entities.
-Fix requires runtime offset lookup for H2 globals or separate globalvars_t switching.
+**Runtime offset system (ironwail-8lg - COMPLETE):** H2 has different globalvars_t layouts
+depending on progs version. The engine now uses runtime offset lookup via ED_FindGlobalOffset()
+for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 | Player class fields | [x] | `hexen2/progdefs.h` | `progdefs.h2` |
 | Mana system fields | [x] | `hexen2/progdefs.h` | `progdefs.h2` |
 | Armor slot fields | [x] | `hexen2/progdefs.h` | `progdefs.h2` |
@@ -79,11 +78,11 @@ Fix requires runtime offset lookup for H2 globals or separate globalvars_t switc
 | PF_AdvanceFrame (#63) | [x] | `h2shared/pr_cmds.c:1279` | `pr_cmds_hexen2.inc` |
 | PF_RewindFrame (#65) | [x] | `h2shared/pr_cmds.c:1318` | `pr_cmds_hexen2.inc` |
 | PF_setclass (#66) | [x] | `h2shared/pr_cmds.c:1356` | `pr_cmds_hexen2.inc` |
-| PF_lightstylevalue (#72) | [ ] | `h2shared/pr_cmds.c:1420` | `pr_cmds_hexen2.inc` |
+| PF_lightstylevalue (#72) | [x] | `h2shared/pr_cmds.c:1420` | `pr_cmds_hexen2.inc` |
 | PF_plaque_draw (#79) | [x] | `h2shared/pr_cmds.c:1504` | `pr_cmds_hexen2.inc` |
 | PF_rain_go (#80) | [x] | `h2shared/pr_cmds.c:1542` | `pr_cmds_hexen2.inc` |
 | PF_particleexplosion (#81) | [x] | `h2shared/pr_cmds.c:1588` | `pr_cmds_hexen2.inc` |
-| PF_movestep (#82) | [~] | `h2shared/pr_cmds.c:1632` | `pr_cmds_hexen2.inc` (stub) |
+| PF_movestep (#82) | [x] | `h2shared/pr_cmds.c:1632` | `pr_cmds_hexen2.inc` |
 | PF_particle3 (#85) | [x] | `h2shared/pr_cmds.c:1712` | `pr_cmds_hexen2.inc` |
 | PF_particle4 (#86) | [x] | `h2shared/pr_cmds.c:1758` | `pr_cmds_hexen2.inc` |
 | PF_setpuzzlemodel (#87) | [x] | `h2shared/pr_cmds.c:1802` | `pr_cmds_hexen2.inc` |
