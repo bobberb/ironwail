@@ -245,16 +245,16 @@ void ED_Free (edict_t *ed)
 	SV_UnlinkEdict (ed);		// unlink from world bsp
 	ED_AddToFreeList (ed);
 
-	ed->v.model = 0;
-	ed->v.takedamage = 0;
-	ed->v.modelindex = 0;
-	ed->v.colormap = 0;
-	ed->v.skin = 0;
-	ed->v.frame = 0;
-	VectorCopy (vec3_origin, ed->v.origin);
-	VectorCopy (vec3_origin, ed->v.angles);
-	ed->v.nextthink = -1;
-	ed->v.solid = 0;
+	ENT_STRING_T(ed, model) = 0;
+	ENT_TAKEDAMAGE(ed) = 0;
+	ENT_MODELINDEX(ed) = 0;
+	ENT_FLOAT(ed, colormap) = 0;
+	ENT_SKIN(ed) = 0;
+	ENT_FRAME(ed) = 0;
+	VectorCopy (vec3_origin, ENT_ORIGIN(ed));
+	VectorCopy (vec3_origin, ENT_ANGLES(ed));
+	ENT_NEXTTHINK(ed) = -1;
+	ENT_SOLID(ed) = 0;
 	ed->alpha = ENTALPHA_DEFAULT; //johnfitz -- reset alpha for next entity
 	ed->scale = ENTSCALE_DEFAULT;
 

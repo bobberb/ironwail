@@ -3,15 +3,176 @@
 /* Based on uhexen2's progdefs.h - must match exactly for field offsets */
 
 /*
- * IMPORTANT: Hexen II has THREE different globalvars_t layouts depending on progs version:
+ * Hexen II has THREE different globalvars_t layouts depending on progs version:
  *   - v1.03 (CRC 14046): No randomclass, no cl_playerclass, HAS modelindex_* (4 classes)
  *   - v1.11 (CRC 38488): HAS randomclass, no cl_playerclass, HAS modelindex_* (4 classes)
- *   - v1.12 (CRC 26905): HAS randomclass, HAS cl_playerclass, NO modelindex_* (4 classes)
+ *   - v1.12 (CRC 26905): HAS randomclass, HAS cl_playerclass, NO modelindex_* (Portals)
  *
- * This structure matches v1.12 (Portal of Praevus mission pack) which is the most common.
- * For v1.03/v1.11 support, runtime offset adjustment would be needed (not yet implemented).
+ * Runtime detection selects the appropriate layout based on progs CRC.
  */
 
+/* Hexen II progs CRC values (from uhexen2 progdefs.h) */
+#define PROGHEADER_CRC_H2_V103		14046	/* Hexen II 1.03/demo */
+#define PROGHEADER_CRC_H2_V111		38488	/* Hexen II 1.11 (also 1.09) */
+#define PROGHEADER_CRC_H2_V112		26905	/* Portal of Praevus (Mission Pack) */
+#define PROGHEADER_CRC_H2_UQE		19889	/* UQE patch */
+
+/* Use mission pack CRC as default */
+#define PROGHEADER_CRC PROGHEADER_CRC_H2_V112
+
+/* ========================================================================
+ * Globalvars structures for each progs version
+ * ======================================================================== */
+
+/* Hexen II v1.03 progs globalvars */
+typedef struct
+{	int	pad[28];
+	int	self;
+	int	other;
+	int	world;
+	float	time;
+	float	frametime;
+	float	force_retouch;
+	string_t	mapname;
+	string_t	startspot;
+	float	deathmatch;
+	/* no randomclass in v1.03 */
+	float	coop;
+	float	teamplay;
+	/* no cl_playerclass in v1.03-1.11 */
+	float	serverflags;
+	float	total_secrets;
+	float	total_monsters;
+	float	found_secrets;
+	float	killed_monsters;
+	float	chunk_cnt;
+	float	done_precache;
+	float	parm1;
+	float	parm2;
+	float	parm4;
+	float	parm5;
+	float	parm6;
+	float	parm7;
+	float	parm8;
+	float	parm9;
+	float	parm10;
+	float	parm11;
+	float	parm12;
+	float	parm13;
+	float	parm14;
+	float	parm15;
+	float	parm16;
+	string_t	parm3;
+	vec3_t	v_forward;
+	vec3_t	v_up;
+	vec3_t	v_right;
+	float	trace_allsolid;
+	float	trace_startsolid;
+	float	trace_fraction;
+	vec3_t	trace_endpos;
+	vec3_t	trace_plane_normal;
+	float	trace_plane_dist;
+	int	trace_ent;
+	float	trace_inopen;
+	float	trace_inwater;
+	int	msg_entity;
+	float	cycle_wrapped;
+	float	crouch_cnt;
+	/* modelindex_* only in v1.03-v1.11 */
+	float	modelindex_assassin;
+	float	modelindex_crusader;
+	float	modelindex_paladin;
+	float	modelindex_necromancer;
+	float	modelindex_sheep;
+	float	num_players;
+	float	exp_mult;
+	func_t	main;
+	func_t	StartFrame;
+	func_t	PlayerPreThink;
+	func_t	PlayerPostThink;
+	func_t	ClientKill;
+	func_t	ClientConnect;
+	func_t	PutClientInServer;
+	func_t	ClientReEnter;
+	func_t	ClientDisconnect;
+	func_t	ClassChangeWeapon;
+} globalvars_v103_t;
+
+/* Hexen II v1.11 progs globalvars */
+typedef struct
+{	int	pad[28];
+	int	self;
+	int	other;
+	int	world;
+	float	time;
+	float	frametime;
+	float	force_retouch;
+	string_t	mapname;
+	string_t	startspot;
+	float	deathmatch;
+	float	randomclass;	/* since v1.09 */
+	float	coop;
+	float	teamplay;
+	/* no cl_playerclass in v1.03-1.11 */
+	float	serverflags;
+	float	total_secrets;
+	float	total_monsters;
+	float	found_secrets;
+	float	killed_monsters;
+	float	chunk_cnt;
+	float	done_precache;
+	float	parm1;
+	float	parm2;
+	float	parm4;
+	float	parm5;
+	float	parm6;
+	float	parm7;
+	float	parm8;
+	float	parm9;
+	float	parm10;
+	float	parm11;
+	float	parm12;
+	float	parm13;
+	float	parm14;
+	float	parm15;
+	float	parm16;
+	string_t	parm3;
+	vec3_t	v_forward;
+	vec3_t	v_up;
+	vec3_t	v_right;
+	float	trace_allsolid;
+	float	trace_startsolid;
+	float	trace_fraction;
+	vec3_t	trace_endpos;
+	vec3_t	trace_plane_normal;
+	float	trace_plane_dist;
+	int	trace_ent;
+	float	trace_inopen;
+	float	trace_inwater;
+	int	msg_entity;
+	float	cycle_wrapped;
+	float	crouch_cnt;
+	/* modelindex_* only in v1.03-v1.11 */
+	float	modelindex_assassin;
+	float	modelindex_crusader;
+	float	modelindex_paladin;
+	float	modelindex_necromancer;
+	float	modelindex_sheep;
+	float	num_players;
+	float	exp_mult;
+	func_t	main;
+	func_t	StartFrame;
+	func_t	PlayerPreThink;
+	func_t	PlayerPostThink;
+	func_t	ClientKill;
+	func_t	ClientConnect;
+	func_t	PutClientInServer;
+	func_t	ClientReEnter;
+	func_t	ClientDisconnect;
+	func_t	ClassChangeWeapon;
+} globalvars_v111_t;
+
+/* Hexen II v1.12 (Mission Pack) progs globalvars */
 typedef struct
 {	int	pad[28];
 	int	self;
@@ -65,7 +226,7 @@ typedef struct
 	int	msg_entity;
 	float	cycle_wrapped;
 	float	crouch_cnt;
-	/* v1.12: NO modelindex_assassin/crusader/paladin/necromancer */
+	/* NO modelindex_assassin/crusader/paladin/necromancer in v1.12 */
 	float	modelindex_sheep;
 	float	num_players;
 	float	exp_mult;
@@ -79,9 +240,27 @@ typedef struct
 	func_t	ClientReEnter;
 	func_t	ClientDisconnect;
 	func_t	ClassChangeWeapon;
-	func_t	SetNewParms;		/* Quake: set new game parms */
-	func_t	SetChangeParms;		/* Quake: set change level parms */
-} globalvars_t;
+} globalvars_v112_t;
+
+/* ========================================================================
+ * NOTE: Runtime global variable access for Hexen II uses the offset-based
+ * h2_globals_t structure defined in progs.h, which looks up field offsets
+ * by NAME from the loaded progs. This automatically handles different
+ * progs versions (v1.03, v1.11, v1.12) without needing version-specific
+ * struct layouts at runtime.
+ *
+ * Access globals using:
+ *   - H2_GLOBAL_FLOAT(h2_globals.ofs_fieldname) for float/int
+ *   - H2_GLOBAL_VEC(h2_globals.ofs_fieldname, vec) for vectors
+ *   - GLOBAL_FUNC(funcname) for global functions
+ *
+ * The three globalvars_v*_t structs above are kept for reference/documentation
+ * to show the exact layout differences between progs versions.
+ * ======================================================================== */
+
+/* ========================================================================
+ * Entity variables structure (same across all H2 progs versions)
+ * ======================================================================== */
 
 typedef struct
 {
@@ -89,7 +268,7 @@ typedef struct
 	vec3_t	absmin;
 	vec3_t	absmax;
 	float	ltime;
-	float	lastruntime;	// H2 field - was missing!
+	float	lastruntime;	/* H2 field */
 	float	movetype;
 	float	solid;
 	vec3_t	origin;
@@ -124,8 +303,8 @@ typedef struct
 	float	health;
 	float	max_health;
 	float	playerclass;
-	float	next_playerclass;	// H2 field - was missing!
-	float	has_portals;		// H2 field - was missing!
+	float	next_playerclass;	/* H2 field */
+	float	has_portals;		/* H2 field */
 	float	bluemana;
 	float	greenmana;
 	float	max_mana;
@@ -176,10 +355,10 @@ typedef struct
 	float	colormap;
 	float	team;
 	float	light_level;
-	float	wpn_sound;		// H2 field - was missing!
-	float	targAng;		// H2 field - was missing!
-	float	targPitch;		// H2 field - was missing!
-	float	targDist;		// H2 field - was missing!
+	float	wpn_sound;		/* H2 field */
+	float	targAng;		/* H2 field */
+	float	targPitch;		/* H2 field */
+	float	targDist;		/* H2 field */
 	float	teleport_time;
 	float	armortype;
 	float	armorvalue;
@@ -197,7 +376,7 @@ typedef struct
 	int	dmg_inflictor;
 	int	owner;
 	vec3_t	movedir;
-	float	message;	// H2: float (Quake uses string_t)
+	float	message;	/* H2: float (Quake uses string_t) */
 	float	soundtype;
 	string_t	noise;
 	string_t	noise1;
@@ -230,25 +409,17 @@ typedef struct
 	int	movechain;
 	func_t	chainmoved;
 	float	string_index;
-	float	gravity;		// H2 field - was missing!
+	float	gravity;		/* H2 field */
 
 	/* Quake-only fields - not used by H2 progs but needed for C code
 	 * These are placed AFTER all H2 fields to preserve H2 field offsets.
 	 * When in hexen2_mode, C code should NOT access these directly. */
-	float	currentammo;	// Quake: current ammo display value
-	float	ammo_shells;	// Quake: shell ammo
-	float	ammo_nails;	// Quake: nail ammo
-	float	ammo_rockets;	// Quake: rocket ammo
-	float	ammo_cells;	// Quake: cell ammo
-	int	aiment;		// Quake: aimed entity
-	float	sounds;		// Quake: sound index (H2 uses soundtype)
+	float	currentammo;	/* Quake: current ammo display value */
+	float	ammo_shells;	/* Quake: shell ammo */
+	float	ammo_nails;	/* Quake: nail ammo */
+	float	ammo_rockets;	/* Quake: rocket ammo */
+	float	ammo_cells;	/* Quake: cell ammo */
+	int	aiment;		/* Quake: aimed entity */
+	float	sounds;		/* Quake: sound index (H2 uses soundtype) */
 } entvars_t;
 
-// Hexen II progs CRC values (from uhexen2 progdefs.h)
-#define PROGHEADER_CRC_H2_V103		14046	// Hexen II 1.03/demo
-#define PROGHEADER_CRC_H2_V111		38488	// Hexen II 1.11 (also 1.09)
-#define PROGHEADER_CRC_H2_V112		26905	// Portal of Praevus (Mission Pack)
-#define PROGHEADER_CRC_H2_UQE		19889	// UQE patch
-
-// Use mission pack CRC as default
-#define PROGHEADER_CRC PROGHEADER_CRC_H2_V112

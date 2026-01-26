@@ -47,9 +47,9 @@ void SV_H2_WriteInventoryUpdate(client_t *client, edict_t *ent, sizebuf_t *msg)
 	// H2 entity field accessors via GetEdictFieldValue
 	eval_t *val;
 
-	float health = ent->v.health;
+	float health = ENT_HEALTH(ent);
 	float bluemana = 0, greenmana = 0;
-	float weapon = ent->v.weapon;
+	float weapon = ENT_FLOAT(ent, weapon);
 	int artifact_active = 0, rings_active = 0;
 
 	// Get H2-specific fields

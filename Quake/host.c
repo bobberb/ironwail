@@ -854,7 +854,7 @@ static void Host_CheckAutosave (void)
 {
 	float health_change, speed, elapsed, score;
 
-	if (!sv_autosave.value || sv_autosave_interval.value <= 0.f || svs.maxclients != 1 || sv_player->v.health <= 0.f || cl.intermission)
+	if (!sv_autosave.value || sv_autosave_interval.value <= 0.f || svs.maxclients != 1 || ENT_HEALTH(sv_player) <= 0.f || cl.intermission)
 		return;
 
 	if (cls.signon == SIGNONS)
@@ -871,19 +871,19 @@ static void Host_CheckAutosave (void)
 
 	// Track health changes
 	if (!sv.autosave.prev_health)
-		sv.autosave.prev_health = sv_player->v.health;
-	health_change = sv_player->v.health - sv.autosave.prev_health;
+		sv.autosave.prev_health = ENT_HEALTH(sv_player);
+	health_change = ENT_HEALTH(sv_player) - sv.autosave.prev_health;
 	if (health_change < 0.f)
-		if (health_change < -3.f || sv_player->v.health < 100.f || sv_player->v.watertype == CONTENTS_SLIME || sv_player->v.watertype == CONTENTS_LAVA)
+		if (health_change < -3.f || ENT_HEALTH(sv_player) < 100.f || ENT_WATERTYPE(sv_player) == CONTENTS_SLIME || ENT_WATERTYPE(sv_player) == CONTENTS_LAVA)
 			sv.autosave.hurt_time = qcvm->time;
-	sv.autosave.prev_health = sv_player->v.health;
+	sv.autosave.prev_health = ENT_HEALTH(sv_player);
 
 	// Track attacking
-	if (sv_player->v.button0)
+	if (ENT_FLOAT(sv_player, button0))
 		sv.autosave.shoot_time = qcvm->time;
 
 	// Time spent with cheats active doesn't count
-	if (sv_player->v.movetype == MOVETYPE_NOCLIP || (int)sv_player->v.flags & (FL_GODMODE|FL_NOTARGET))
+	if (ENT_MOVETYPE(sv_player) == MOVETYPE_NOCLIP || (int)ENT_FLAGS(sv_player) & (FL_GODMODE|FL_NOTARGET))
 	{
 		sv.autosave.cheat += host_frametime;
 		return;
@@ -898,13 +898,13 @@ static void Host_CheckAutosave (void)
 		return;
 
 	// Only save when the player slows down a bit
-	speed = VectorLength (sv_player->v.velocity);
+	speed = VectorLength (ENT_VELOCITY(sv_player));
 	if (speed > 100.f)
 		return;
 
 	// Copper's func_void holds the player at the bottom for a bit before inflicting damage,
 	// so we can't assume it's safe to save just because we're no longer falling
-	if ((int)sv_player->v.movetype == MOVETYPE_NONE)
+	if ((int)ENT_MOVETYPE(sv_player) == MOVETYPE_NONE)
 		return;
 
 	// Don't save too often
@@ -917,7 +917,7 @@ static void Host_CheckAutosave (void)
 	// Base value is the fraction of the autosave interval already passed
 	score = elapsed / sv_autosave_interval.value;
 	// Scale down the score if health + armor is below 100 (save less often with lower health)
-	score *= q_min (100.f, (sv_player->v.health + sv_player->v.armortype * sv_player->v.armorvalue)) / 100.f;
+	score *= q_min (100.f, (ENT_HEALTH(sv_player) + ENT_FLOAT(sv_player, armortype) * ENT_FLOAT(sv_player, armorvalue))) / 100.f;
 	// Boost the score right after picking up health
 	score += q_max (0.f, health_change) / 100.f;
 	// Lower score a bit based on speed (favor standing still/slowing down)
@@ -925,7 +925,7 @@ static void Host_CheckAutosave (void)
 	// Boost the score after finding a secret
 	score += sv.autosave.secret_boost * 0.25f;
 	// Boost the score after teleporting
-	score += CLAMP (0.f, 1.f - (qcvm->time - sv_player->v.teleport_time) / 1.5f, 1.f) * 0.5f;
+	score += CLAMP (0.f, 1.f - (qcvm->time - ENT_FLOAT(sv_player, teleport_time)) / 1.5f, 1.f) * 0.5f;
 
 	// Only save if the score is high enough
 	if (score < 1.f)
@@ -1142,12 +1142,12 @@ static void CL_LoadCSProgs (void)
 				*qcvm->extglobals.player_localnum = cl.viewentity - 1; // this is a guess, but is important for scoreboards.
 
 			// set a few worldspawn fields too
-			qcvm->edicts->v.solid = SOLID_BSP;
-			qcvm->edicts->v.modelindex = 1;
-			qcvm->edicts->v.model = PR_SetEngineString (cl.worldmodel->name);
-			VectorCopy (cl.worldmodel->mins, qcvm->edicts->v.mins);
-			VectorCopy (cl.worldmodel->maxs, qcvm->edicts->v.maxs);
-			qcvm->edicts->v.message = PR_SetEngineString (cl.levelname);
+			ENT_SOLID(qcvm->edicts) = SOLID_BSP;
+			ENT_MODELINDEX(qcvm->edicts) = 1;
+			ENT_STRING_T(qcvm->edicts, model) = PR_SetEngineString (cl.worldmodel->name);
+			VectorCopy (cl.worldmodel->mins, ENT_MINS(qcvm->edicts));
+			VectorCopy (cl.worldmodel->maxs, ENT_MAXS(qcvm->edicts));
+			ENT_FLOAT(qcvm->edicts, message) = PR_SetEngineString (cl.levelname);
 
 			// and call the init function... if it exists.
 			if (qcvm->extfuncs.CSQC_Init)

@@ -776,9 +776,19 @@ void PR_ExecuteProgram (func_t fnum)
 
 	case OP_STATE:
 		ed = PROG_TO_EDICT(pr_global_struct->self);
-		ed->v.nextthink = pr_global_struct->time + 0.1;
-		ed->v.frame = OPA->_float;
-		ed->v.think = OPB->function;
+		if (hexen2_mode)
+		{
+			/* H2 has different entity field offsets - use runtime lookups */
+			H2_ED_FLOAT(ed, h2_globals.fields.nextthink) = pr_global_struct->time + 0.1;
+			H2_ED_FLOAT(ed, h2_globals.fields.frame) = OPA->_float;
+			H2_ED_FUNC(ed, h2_globals.fields.think) = OPB->function;
+		}
+		else
+		{
+			ed->v.nextthink = pr_global_struct->time + 0.1;
+			ed->v.frame = OPA->_float;
+			ed->v.think = OPB->function;
+		}
 		break;
 
 	/* ==================== */

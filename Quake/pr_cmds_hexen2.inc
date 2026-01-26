@@ -153,23 +153,23 @@ static void PF_h2_AdvanceFrame (void)
 	start = G_FLOAT(OFS_PARM0);
 	end = G_FLOAT(OFS_PARM1);
 
-	if (ent->v.frame < start || ent->v.frame > end)
+	if (ENT_FRAME(ent) < start || ENT_FRAME(ent) > end)
 	{
 		// Didn't start in the range
-		ent->v.frame = start;
+		ENT_FRAME(ent) = start;
 		result = 0;
 	}
-	else if (ent->v.frame == end)
+	else if (ENT_FRAME(ent) == end)
 	{
 		// Wrapping
-		ent->v.frame = start;
+		ENT_FRAME(ent) = start;
 		result = 1;
 	}
 	else
 	{
 		// Regular advance
-		ent->v.frame++;
-		if (ent->v.frame == end)
+		ENT_FRAME(ent)++;
+		if (ENT_FRAME(ent) == end)
 			result = 2;
 		else
 			result = 0;
@@ -200,23 +200,23 @@ static void PF_h2_RewindFrame (void)
 	start = G_FLOAT(OFS_PARM0);
 	end = G_FLOAT(OFS_PARM1);
 
-	if (ent->v.frame > start || ent->v.frame < end)
+	if (ENT_FRAME(ent) > start || ENT_FRAME(ent) < end)
 	{
 		// Didn't start in the range
-		ent->v.frame = start;
+		ENT_FRAME(ent) = start;
 		result = 0;
 	}
-	else if (ent->v.frame == end)
+	else if (ENT_FRAME(ent) == end)
 	{
 		// Wrapping
-		ent->v.frame = start;
+		ENT_FRAME(ent) = start;
 		result = 1;
 	}
 	else
 	{
 		// Regular rewind (decrement)
-		ent->v.frame--;
-		if (ent->v.frame == end)
+		ENT_FRAME(ent)--;
+		if (ENT_FRAME(ent) == end)
 			result = 2;
 		else
 			result = 0;
