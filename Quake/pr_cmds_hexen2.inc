@@ -781,21 +781,26 @@ Returns: (v_right * factors.x) + (v_forward * factors.y) + (v_up * factors.z)
 static void PF_h2_v_factor (void)
 {
 	float *factors;
-	vec3_t result;
+	vec3_t v_forward, v_right, v_up, result;
 
 	factors = G_VECTOR(OFS_PARM0);
 
-	result[0] = (pr_global_struct->v_right[0] * factors[0]) +
-				(pr_global_struct->v_forward[0] * factors[1]) +
-				(pr_global_struct->v_up[0] * factors[2]);
+	/* Get direction vectors using H2 runtime offsets */
+	H2_GLOBAL_VEC(h2_globals.ofs_v_forward, v_forward);
+	H2_GLOBAL_VEC(h2_globals.ofs_v_right, v_right);
+	H2_GLOBAL_VEC(h2_globals.ofs_v_up, v_up);
 
-	result[1] = (pr_global_struct->v_right[1] * factors[0]) +
-				(pr_global_struct->v_forward[1] * factors[1]) +
-				(pr_global_struct->v_up[1] * factors[2]);
+	result[0] = (v_right[0] * factors[0]) +
+				(v_forward[0] * factors[1]) +
+				(v_up[0] * factors[2]);
 
-	result[2] = (pr_global_struct->v_right[2] * factors[0]) +
-				(pr_global_struct->v_forward[2] * factors[1]) +
-				(pr_global_struct->v_up[2] * factors[2]);
+	result[1] = (v_right[1] * factors[0]) +
+				(v_forward[1] * factors[1]) +
+				(v_up[1] * factors[2]);
+
+	result[2] = (v_right[2] * factors[0]) +
+				(v_forward[2] * factors[1]) +
+				(v_up[2] * factors[2]);
 
 	VectorCopy(result, G_VECTOR(OFS_RETURN));
 }
@@ -815,7 +820,7 @@ static void PF_h2_v_factorrange (void)
 {
 	float *minv, *maxv;
 	float num;
-	vec3_t factors, result;
+	vec3_t v_forward, v_right, v_up, factors, result;
 
 	minv = G_VECTOR(OFS_PARM0);
 	maxv = G_VECTOR(OFS_PARM1);
@@ -828,18 +833,23 @@ static void PF_h2_v_factorrange (void)
 	num = (float)rand() / (float)RAND_MAX;
 	factors[2] = ((maxv[2] - minv[2]) * num) + minv[2];
 
+	/* Get direction vectors using H2 runtime offsets */
+	H2_GLOBAL_VEC(h2_globals.ofs_v_forward, v_forward);
+	H2_GLOBAL_VEC(h2_globals.ofs_v_right, v_right);
+	H2_GLOBAL_VEC(h2_globals.ofs_v_up, v_up);
+
 	// Apply to direction vectors
-	result[0] = (pr_global_struct->v_right[0] * factors[0]) +
-				(pr_global_struct->v_forward[0] * factors[1]) +
-				(pr_global_struct->v_up[0] * factors[2]);
+	result[0] = (v_right[0] * factors[0]) +
+				(v_forward[0] * factors[1]) +
+				(v_up[0] * factors[2]);
 
-	result[1] = (pr_global_struct->v_right[1] * factors[0]) +
-				(pr_global_struct->v_forward[1] * factors[1]) +
-				(pr_global_struct->v_up[1] * factors[2]);
+	result[1] = (v_right[1] * factors[0]) +
+				(v_forward[1] * factors[1]) +
+				(v_up[1] * factors[2]);
 
-	result[2] = (pr_global_struct->v_right[2] * factors[0]) +
-				(pr_global_struct->v_forward[2] * factors[1]) +
-				(pr_global_struct->v_up[2] * factors[2]);
+	result[2] = (v_right[2] * factors[0]) +
+				(v_forward[2] * factors[1]) +
+				(v_up[2] * factors[2]);
 
 	VectorCopy(result, G_VECTOR(OFS_RETURN));
 }
