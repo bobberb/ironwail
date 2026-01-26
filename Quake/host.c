@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "bgmusic.h"
+#include "host_string.h"
 #include "steam.h"
 #include <setjmp.h>
 
@@ -1401,6 +1402,7 @@ void Host_Init (void)
 	COM_InitFilesystem ();
 	Host_InitLocal ();
 	W_LoadWadFile (); //johnfitz -- filename is now hard-coded for honesty
+	Host_LoadStrings (); // Load Hexen II strings.txt if in H2 mode
 	if (cls.state != ca_dedicated)
 	{
 		Key_Init ();

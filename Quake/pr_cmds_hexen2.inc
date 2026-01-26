@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "sv_effect_hexen2.h"
+#include "host_string.h"
 
 // Hexen II mission pack objective tracking
 // These bitmasks track which objectives have been achieved
@@ -751,12 +752,10 @@ which provides internationalized game text.
 static void PF_h2_GetString (void)
 {
 	int idx = (int)G_FLOAT(OFS_PARM0);
+	const char *str;
 
-	// Note: Full implementation requires loading strings.txt
-	// For now, return empty string to avoid crashes
-	// The game will still work but text will be missing
-	Con_DPrintf("PF_h2_GetString: index %d (strings.txt not loaded)\n", idx);
-	G_INT(OFS_RETURN) = PR_SetEngineString("");
+	str = Host_GetString(idx);
+	G_INT(OFS_RETURN) = PR_SetEngineString(str);
 }
 
 /*

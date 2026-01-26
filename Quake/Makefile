@@ -256,6 +256,7 @@ OBJS = strlcat.o \
 	protocol_hexen2.o \
 	sv_effect_hexen2.o \
 	sv_inventory_hexen2.o \
+	host_string.o \
 	console.o \
 	keys.o \
 	menu.o \

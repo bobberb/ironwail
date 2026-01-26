@@ -35,13 +35,18 @@ This document tracks the progress of porting Hexen II functionality from uhexen2
 
 ---
 
-## 2. ENTITY & PROGS (Phase 2) - COMPLETE
+## 2. ENTITY & PROGS (Phase 2) - BLOCKED
 
 ### 2.1 Entity Structure
 | Feature | Status | uhexen2 Source | Ironwail File |
 |---------|--------|----------------|---------------|
 | entvars_t (H2 fields) | [x] | `hexen2/progdefs.h` | `progdefs.h2` |
-| globalvars_t | [x] | `hexen2/progdefs.h` | `progdefs.h2` |
+| globalvars_t | [~] | `hexen2/progdefs.h` | `progdefs.h2` (defined but not used!) |
+
+**⚠️ CRITICAL BUG (ironwail-47a):** The engine uses Q1's globalvars_t from `progdefs.q1` at runtime,
+but H2 has different layout (extra fields: startspot, randomclass, cl_playerclass).
+This causes pr_global_struct->trace_ent to read garbage, crashing on any map with entities.
+Fix requires runtime offset lookup for H2 globals or separate globalvars_t switching.
 | Player class fields | [x] | `hexen2/progdefs.h` | `progdefs.h2` |
 | Mana system fields | [x] | `hexen2/progdefs.h` | `progdefs.h2` |
 | Armor slot fields | [x] | `hexen2/progdefs.h` | `progdefs.h2` |
@@ -69,30 +74,30 @@ This document tracks the progress of porting Hexen II functionality from uhexen2
 |---------|--------|----------------|---------------|
 | PF_lightstylestatic (#5) | [x] | `h2shared/pr_cmds.c:262` | `pr_cmds.c` |
 | PF_tracearea (#33) | [x] | `h2shared/pr_cmds.c:1045` | `pr_cmds.c` (stub) |
-| PF_particle2 (#42) | [ ] | `h2shared/pr_cmds.c:1124` | `pr_cmds_hexen2.inc` |
+| PF_particle2 (#42) | [x] | `h2shared/pr_cmds.c:1124` | `pr_cmds_hexen2.inc` |
 | PF_vhlen (#50) | [x] | `h2shared/pr_cmds.c:1188` | `pr_cmds.c` |
-| PF_AdvanceFrame (#63) | [ ] | `h2shared/pr_cmds.c:1279` | `pr_cmds_hexen2.inc` |
-| PF_RewindFrame (#65) | [ ] | `h2shared/pr_cmds.c:1318` | `pr_cmds_hexen2.inc` |
+| PF_AdvanceFrame (#63) | [x] | `h2shared/pr_cmds.c:1279` | `pr_cmds_hexen2.inc` |
+| PF_RewindFrame (#65) | [x] | `h2shared/pr_cmds.c:1318` | `pr_cmds_hexen2.inc` |
 | PF_setclass (#66) | [x] | `h2shared/pr_cmds.c:1356` | `pr_cmds_hexen2.inc` |
 | PF_lightstylevalue (#72) | [ ] | `h2shared/pr_cmds.c:1420` | `pr_cmds_hexen2.inc` |
 | PF_plaque_draw (#79) | [x] | `h2shared/pr_cmds.c:1504` | `pr_cmds_hexen2.inc` |
 | PF_rain_go (#80) | [x] | `h2shared/pr_cmds.c:1542` | `pr_cmds_hexen2.inc` |
 | PF_particleexplosion (#81) | [x] | `h2shared/pr_cmds.c:1588` | `pr_cmds_hexen2.inc` |
 | PF_movestep (#82) | [~] | `h2shared/pr_cmds.c:1632` | `pr_cmds_hexen2.inc` (stub) |
-| PF_particle3 (#85) | [ ] | `h2shared/pr_cmds.c:1712` | `pr_cmds_hexen2.inc` |
-| PF_particle4 (#86) | [ ] | `h2shared/pr_cmds.c:1758` | `pr_cmds_hexen2.inc` |
+| PF_particle3 (#85) | [x] | `h2shared/pr_cmds.c:1712` | `pr_cmds_hexen2.inc` |
+| PF_particle4 (#86) | [x] | `h2shared/pr_cmds.c:1758` | `pr_cmds_hexen2.inc` |
 | PF_setpuzzlemodel (#87) | [x] | `h2shared/pr_cmds.c:1802` | `pr_cmds_hexen2.inc` |
 | PF_starteffect (#88) | [x] | `h2shared/pr_cmds.c:1846` | `sv_effect_hexen2.c` |
 | PF_endeffect (#89) | [x] | `h2shared/pr_cmds.c:1892` | `sv_effect_hexen2.c` |
 | PF_precache_puzzle (#90) | [x] | `h2shared/pr_cmds.c:1932` | `pr_cmds_hexen2.inc` |
-| PF_concatv (#91) | [ ] | `h2shared/pr_cmds.c:1968` | `pr_cmds_hexen2.inc` |
-| PF_GetString (#92) | [ ] | `h2shared/pr_cmds.c:2002` | `pr_cmds_hexen2.inc` |
-| PF_SpawnTemp (#93) | [ ] | `h2shared/pr_cmds.c:2038` | `pr_cmds_hexen2.inc` |
+| PF_concatv (#91) | [x] | `h2shared/pr_cmds.c:1968` | `pr_cmds_hexen2.inc` |
+| PF_GetString (#92) | [x] | `h2shared/pr_cmds.c:2002` | `pr_cmds_hexen2.inc`, `host_string.c` |
+| PF_SpawnTemp (#93) | [x] | `h2shared/pr_cmds.c:2038` | `pr_cmds_hexen2.inc` |
 | PF_v_factor (#94) | [x] | `h2shared/pr_cmds.c:2078` | `pr_cmds_hexen2.inc` |
 | PF_v_factorrange (#95) | [x] | `h2shared/pr_cmds.c:2116` | `pr_cmds_hexen2.inc` |
 | PF_matchAngleToSlope (#99) | [x] | `h2shared/pr_cmds.c:2208` | `pr_cmds_hexen2.inc` |
 | PF_updateInfoPlaque (#100) | [x] | `h2shared/pr_cmds.c:2268` | `pr_cmds_hexen2.inc` |
-| PF_stof (#101) | [ ] | `h2shared/pr_cmds.c:2308` | `pr_cmds_hexen2.inc` |
+| PF_stof (#101) | [-] | `h2shared/pr_cmds.c:2308` | Not used by H2 progs (slot 101 = precache_sound4) |
 | PF_doWhiteFlash (#104) | [x] | `h2shared/pr_cmds.c:2372` | `pr_cmds_hexen2.inc` |
 | PF_UpdateSoundPos (#105) | [x] | `h2shared/pr_cmds.c:2408` | `pr_cmds_hexen2.inc` |
 | PF_StopSound (#106) | [x] | `h2shared/pr_cmds.c:2454` | `pr_cmds_hexen2.inc` |
@@ -166,9 +171,9 @@ This document tracks the progress of porting Hexen II functionality from uhexen2
 | svc_mod_name | [ ] | `hexen2/cl_parse.c:1878` | `cl_parse_hexen2.c` |
 | Sound position updates | [ ] | `hexen2/snd_dma.c` | - |
 | 512 sound limit | [ ] | `hexen2/snd_dma.c` | - |
-| H2 model formats | [ ] | `hexen2/model.c` | - |
-| H2 texture loading | [ ] | `hexen2/r_texture.c` | - |
-| Puzzle strings | [ ] | `hexen2/pr_edict.c` | - |
+| H2 model formats | [x] | `hexen2/model.c` | `gl_model.c` (RAPO v50 loader) |
+| H2 texture loading | [x] | `hexen2/r_texture.c` | `gl_draw.c`, `wad.c` (gfx.wad + .lmp files) |
+| Puzzle strings | [x] | `hexen2/pr_edict.c` | `host_string.c` (strings.txt loading) |
 
 ---
 

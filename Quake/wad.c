@@ -80,7 +80,7 @@ void W_LoadWadFile (void) //johnfitz -- filename is now hard-coded for honesty
 	wad_base = COM_LoadMallocFile (filename, NULL);
 	if (!wad_base)
 	{
-		// Hexen II doesn't have a gfx.wad - graphics are in gfx/menu/*.lmp files
+		// Hexen II normally has gfx.wad inside pak0.pak, but some installs may lack it
 		if (hexen2_mode)
 		{
 			Con_Printf ("W_LoadWadFile: %s not found (Hexen II mode, using gfx/menu/)\n", filename);
@@ -113,6 +113,7 @@ void W_LoadWadFile (void) //johnfitz -- filename is now hard-coded for honesty
 		if (lump_p->type == TYP_QPIC)
 			SwapPic ( (qpic_t *)(wad_base + lump_p->filepos));
 	}
+
 }
 
 

@@ -2317,7 +2317,7 @@ static pack_t *COM_LoadPackFile (const char *packfile)
 	pack->numfiles = numpackfiles;
 	pack->files = newfiles;
 
-	//Sys_Printf ("Added packfile %s (%i files)\n", packfile, numpackfiles);
+	Sys_Printf ("Added packfile %s (%i files)\n", packfile, numpackfiles);
 	return pack;
 }
 
