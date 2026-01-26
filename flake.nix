@@ -54,6 +54,15 @@
         packages.default = ironwail;
         packages.ironwail = ironwail;
 
+        apps = flake-utils.lib.mkApp {
+          drv = pkgs.writeShellApplicationBin "ironwail-dedicated-test" {
+            text = ''
+              #!/bin/sh
+              exec ${ironwail}/bin/ironwail -dedicated -nossi -nojoy -nomissing "$@"
+            '';
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           inputsFrom = [ ironwail ];
 
@@ -66,6 +75,7 @@
             echo "Ironwail development environment"
             echo "Build with: nix build"
             echo "Run with: ./result/bin/ironwail"
+            echo "Run dedicated server test: nix run ."
           '';
         };
       }
