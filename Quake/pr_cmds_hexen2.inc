@@ -266,6 +266,7 @@ float lightstylevalue(float style) = #71
 static void PF_h2_lightstylevalue (void)
 {
 	int		style;
+	extern int d_lightstylevalue[256];
 
 	style = G_FLOAT(OFS_PARM0);
 	if (style < 0 || style >= MAX_LIGHTSTYLES)
@@ -275,9 +276,10 @@ static void PF_h2_lightstylevalue (void)
 		return;
 	}
 
-	// TODO: Return actual current value based on animation
-	// For now just return a static value
-	G_FLOAT(OFS_RETURN) = 264; // 'm' value (normal brightness)
+	/* Return current value scaled to 'a'-'z' range (0-11)
+	 * d_lightstylevalue is 8.8 fraction of base light, 'm'=264
+	 * Divide by 22 to convert to letter scale */
+	G_FLOAT(OFS_RETURN) = (int)((float)d_lightstylevalue[style] / 22.0f);
 }
 
 /*
@@ -397,15 +399,36 @@ static void PF_h2_particleexplosion (void)
 =================
 PF_h2_movestep
 
-Monster move step
+Monster move step - used by monster AI for movement
 float movestep(float x, float y, float z, float set_trace) = #82
+
+The set_trace param is currently ignored since Q1's SV_movestep
+doesn't support it directly.
 =================
 */
 static void PF_h2_movestep (void)
 {
-	// Stub: TODO - implement proper monster movement
-	Con_DPrintf("PF_h2_movestep: stub\n");
-	G_FLOAT(OFS_RETURN) = 0;
+	vec3_t			move;
+	edict_t			*ent;
+	dfunction_t		*oldf;
+	int				oldself;
+
+	ent = PROG_TO_EDICT(pr_global_struct->self);
+
+	move[0] = G_FLOAT(OFS_PARM0);
+	move[1] = G_FLOAT(OFS_PARM1);
+	move[2] = G_FLOAT(OFS_PARM2);
+	/* set_trace = G_FLOAT(OFS_PARM3); -- ignored for now */
+
+	/* Save program state, because SV_movestep may call other progs */
+	oldf = qcvm->xfunction;
+	oldself = pr_global_struct->self;
+
+	G_FLOAT(OFS_RETURN) = SV_movestep(ent, move, true);
+
+	/* Restore program state */
+	qcvm->xfunction = oldf;
+	pr_global_struct->self = oldself;
 }
 
 /*
