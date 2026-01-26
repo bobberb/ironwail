@@ -184,7 +184,22 @@ makevectors(vector)
 */
 static void PF_makevectors (void)
 {
-	AngleVectors (G_VECTOR(OFS_PARM0), pr_global_struct->v_forward, pr_global_struct->v_right, pr_global_struct->v_up);
+	vec3_t forward, right, up;
+
+	AngleVectors (G_VECTOR(OFS_PARM0), forward, right, up);
+
+	if (hexen2_mode && h2_globals.ofs_v_forward >= 0)
+	{
+		H2_SET_GLOBAL_VEC(h2_globals.ofs_v_forward, forward);
+		H2_SET_GLOBAL_VEC(h2_globals.ofs_v_right, right);
+		H2_SET_GLOBAL_VEC(h2_globals.ofs_v_up, up);
+	}
+	else
+	{
+		VectorCopy(forward, pr_global_struct->v_forward);
+		VectorCopy(right, pr_global_struct->v_right);
+		VectorCopy(up, pr_global_struct->v_up);
+	}
 }
 
 /*
