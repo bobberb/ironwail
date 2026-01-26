@@ -109,7 +109,7 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 | FL_MOVECHAIN_ANGLE | [x] | `hexen2/server.h` | `server.h` |
 | Hull field for collision | [x] | `hexen2/world.c` | `world.c` |
 | Server inventory sync (SC1/SC2) | [x] | `hexen2/sv_main.c` | `sv_inventory_hexen2.c` |
-| Effects save/load | [~] | `hexen2/sv_effect.c` | `sv_effect_hexen2.c` (save works) |
+| Effects save/load | [x] | `hexen2/sv_effect.c` | `sv_effect_hexen2.c` |
 
 ---
 
@@ -167,13 +167,13 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 
 ---
 
-## 5. AUDIO & ASSETS (Phase 5) - MOSTLY COMPLETE
+## 5. AUDIO & ASSETS (Phase 5) - COMPLETE
 
 | Feature | Status | uhexen2 Source | Ironwail File |
 |---------|--------|----------------|---------------|
 | MIDI music (OGG/MP3 replacement) | [x] | `hexen2/bgmusic.c` | `bgmusic.c` (uses BGM_Play) |
 | svc_midi_name | [x] | `hexen2/cl_parse.c:1842` | `cl_parse_hexen2.c` |
-| svc_mod_name | [ ] | `hexen2/cl_parse.c:1878` | - |
+| svc_mod_name | [x] | `hexen2/cl_parse.c:1878` | `cl_parse_hexen2.c` (CL_ParseModName) |
 | Sound position updates | [x] | `hexen2/snd_dma.c` | `snd_dma.c`, `pr_cmds_hexen2.inc` |
 | 512 sound limit | [-] | `hexen2/snd_dma.c` | Not needed (Ironwail already supports more) |
 | H2 model formats | [x] | `hexen2/model.c` | `gl_model.c` (RAPO v50 loader) |
@@ -211,8 +211,8 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 4. **Water jump bug** (`ironwail-4m8`) - Some H2 maps require low physics framerates
 
 ### Low Priority (polish)
-1. **Effects load from save** - Full string buffer parsing needed for load side
-2. **svc_mod_name** - UQE v1.13 extension for music files (rarely used)
+1. ~~**Effects load from save** - Full string buffer parsing needed for load side~~ ✅ COMPLETE
+2. ~~**svc_mod_name** - UQE v1.13 extension for music files~~ ✅ Already implemented
 
 ---
 
