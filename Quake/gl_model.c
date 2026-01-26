@@ -359,9 +359,6 @@ static qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 	byte	*buf;
 	int		mod_type;
 
-	Sys_Printf("Mod_LoadModel: entry, mod=%p, mod->name=%s, needload=%d\n", mod, mod ? mod->name : "NULL", mod ? mod->needload : -1);
-	fflush(stdout); fflush(stderr);
-
 	if (!mod->needload)
 	{
 		if (mod->type == mod_alias)
@@ -381,14 +378,10 @@ static qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 
 	}
 
-	Sys_Printf("Mod_LoadModel: about to load file\n");
-	fflush(stdout); fflush(stderr);
 //
 // load the file
 //
 	buf = COM_LoadMallocFile (mod->name, &mod->path_id);
-	Sys_Printf("Mod_LoadModel: COM_LoadMallocFile returned buf=%p\n", buf);
-	fflush(stdout); fflush(stderr);
 	if (!buf)
 	{
 		if (crash)
@@ -400,12 +393,8 @@ static qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 // allocate a new model
 //
 	COM_FileBase (mod->name, loadname, sizeof(loadname));
-	Sys_Printf("Mod_LoadModel: COM_FileBase done\n");
-	fflush(stdout); fflush(stderr);
 
 	loadmodel = mod;
-	Sys_Printf("Mod_LoadModel: loadmodel set\n");
-	fflush(stdout); fflush(stderr);
 
 //
 // fill it in
@@ -413,12 +402,8 @@ static qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 
 // call the apropriate loader
 	mod->needload = false;
-	Sys_Printf("Mod_LoadModel: about to check mod_type\n");
-	fflush(stdout); fflush(stderr);
 
 	mod_type = (buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24));
-	Sys_Printf("Mod_LoadModel: mod_type=%d\n", mod_type);
-	fflush(stdout); fflush(stderr);
 	switch (mod_type)
 	{
 	case IDPOLYHEADER:
@@ -434,19 +419,11 @@ static qmodel_t *Mod_LoadModel (qmodel_t *mod, qboolean crash)
 		break;
 
 	default:
-		Sys_Printf("Mod_LoadModel: calling Mod_LoadBrushModel\n");
-		fflush(stdout); fflush(stderr);
 		Mod_LoadBrushModel (mod, buf);
-		Sys_Printf("Mod_LoadModel: Mod_LoadBrushModel returned\n");
-		fflush(stdout); fflush(stderr);
 		break;
 	}
 
-	Sys_Printf("Mod_LoadModel: about to free buf\n");
-	fflush(stdout); fflush(stderr);
 	free (buf);
-	Sys_Printf("Mod_LoadModel: returning mod\n");
-	fflush(stdout); fflush(stderr);
 
 	return mod;
 }
@@ -1047,27 +1024,16 @@ static void Mod_LoadVertexes (lump_t *l)
 	mvertex_t	*out;
 	int			i, count;
 
-	Sys_Printf("Mod_LoadVertexes: entry\n");
-	fflush(stdout); fflush(stderr);
-
 	in = (dvertex_t *)(mod_base + l->fileofs);
-	Sys_Printf("Mod_LoadVertexes: in=%p, mod_base=%p, fileofs=%d\n", in, mod_base, l->fileofs);
-	fflush(stdout); fflush(stderr);
 
 	if (l->filelen % sizeof(*in))
 		Sys_Error ("MOD_LoadBmodel: funny lump size in %s",loadmodel->name);
 	count = l->filelen / sizeof(*in);
-	Sys_Printf("Mod_LoadVertexes: count=%d, about to alloc\n", count);
-	fflush(stdout); fflush(stderr);
 
 	out = (mvertex_t *) Hunk_AllocNameNoFill ( count*sizeof(*out), loadname);
-	Sys_Printf("Mod_LoadVertexes: out=%p\n", out);
-	fflush(stdout); fflush(stderr);
 
 	loadmodel->vertexes = out;
 	loadmodel->numvertexes = count;
-	Sys_Printf("Mod_LoadVertexes: vertexes set, about to copy\n");
-	fflush(stdout); fflush(stderr);
 
 	for (i=0 ; i<count ; i++, in++, out++)
 	{
@@ -1075,8 +1041,6 @@ static void Mod_LoadVertexes (lump_t *l)
 		out->position[1] = LittleFloat (in->point[1]);
 		out->position[2] = LittleFloat (in->point[2]);
 	}
-	Sys_Printf("Mod_LoadVertexes: done\n");
-	fflush(stdout); fflush(stderr);
 }
 
 /*
@@ -2299,28 +2263,31 @@ static void Mod_LoadSubmodels (lump_t *l)
 	int			i, j, count;
 	int			is_quake_format;
 
-	Sys_Printf("Mod_LoadSubmodels: entry\n");
-	fflush(stdout); fflush(stderr);
-
 	// Detect format based on size
-	is_quake_format = (l->filelen % sizeof(dmodelq_t) == 0);
-	Sys_Printf("Mod_LoadSubmodels: is_quake_format=%d\n", is_quake_format);
-	fflush(stdout); fflush(stderr);
+	// Check Hexen II format first (8 hulls), then Quake format (4 hulls)
+	// Hexen II BSP files have 8 hulls per submodel, but some old files may use 4
+	if (l->filelen % sizeof(dmodel_t) == 0)
+	{
+		is_quake_format = 0;  // Hexen II format (or newer)
+	}
+	else if (l->filelen % sizeof(dmodelq_t) == 0)
+	{
+		is_quake_format = 1;  // Quake format
+	}
+	else
+	{
+		Sys_Error("Mod_LoadSubmodels: unknown submodel format (filelen=%d)", l->filelen);
+	}
 
 	if (is_quake_format) {
 		inq = (dmodelq_t *)(mod_base + l->fileofs);
 		count = l->filelen / sizeof(*inq);
-		Sys_Printf("Mod_LoadSubmodels: Quake format, count=%d, sizeof(dmodelq_t)=%zu\n", count, sizeof(dmodelq_t));
 	} else {
 		inh = (dmodel_t *)(mod_base + l->fileofs);
 		count = l->filelen / sizeof(*inh);
-		Sys_Printf("Mod_LoadSubmodels: Hexen II format, count=%d, sizeof(dmodel_t)=%zu\n", count, sizeof(dmodel_t));
 	}
-	fflush(stdout); fflush(stderr);
 
 	out = (dmodel_t *) Hunk_AllocNameNoFill ( count*sizeof(*out), loadname);
-	Sys_Printf("Mod_LoadSubmodels: out=%p\n", out);
-	fflush(stdout); fflush(stderr);
 
 	loadmodel->submodels = out;
 	loadmodel->numsubmodels = count;
@@ -2360,11 +2327,6 @@ static void Mod_LoadSubmodels (lump_t *l)
 			out->numfaces = LittleLong (inh->numfaces);
 			inh++;
 		}
-
-		if (i == 0) {
-			Sys_Printf("Mod_LoadSubmodels: submodel[0].visleafs=%d\n", loadmodel->submodels[0].visleafs);
-			fflush(stdout); fflush(stderr);
-		}
 		out++;
 	}
 
@@ -2374,9 +2336,6 @@ static void Mod_LoadSubmodels (lump_t *l)
 	if (out->visleafs > 8192)
 		Con_DWarning ("%i visleafs exceeds standard limit of 8192.\n", out->visleafs);
 	//johnfitz
-
-	Sys_Printf("Mod_LoadSubmodels: done, submodels[0].visleafs=%d\n", loadmodel->submodels[0].visleafs);
-	fflush(stdout); fflush(stderr);
 }
 
 /*
@@ -2554,20 +2513,11 @@ static void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 	dmodel_t 	*bm;
 	float		radius; //johnfitz
 
-	Sys_Printf("Mod_LoadBrushModel: entry\n");
-	fflush(stdout); fflush(stderr);
-
 	loadmodel->type = mod_brush;
-	Sys_Printf("Mod_LoadBrushModel: after loadmodel->type\n");
-	fflush(stdout); fflush(stderr);
 
 	header = (dheader_t *)buffer;
-	Sys_Printf("Mod_LoadBrushModel: header=%p\n", header);
-	fflush(stdout); fflush(stderr);
 
 	mod->bspversion = LittleLong (header->version);
-	Sys_Printf("Mod_LoadBrushModel: bspversion=%d\n", mod->bspversion);
-	fflush(stdout); fflush(stderr);
 
 	switch(mod->bspversion)
 	{
@@ -2587,8 +2537,6 @@ static void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 		Sys_Error ("Mod_LoadBrushModel: %s has unsupported version number (%i)", mod->name, mod->bspversion);
 		break;
 	}
-	Sys_Printf("Mod_LoadBrushModel: bsp2 set, about to swap lumps\n");
-	fflush(stdout); fflush(stderr);
 
 // swap all the lumps
 	mod_base = (byte *)header;
@@ -2596,66 +2544,27 @@ static void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 	for (i = 0; i < (int) sizeof(dheader_t) / 4; i++)
 		((int *)header)[i] = LittleLong ( ((int *)header)[i]);
 
-	Sys_Printf("Mod_LoadBrushModel: lumps swapped, about to load vertexes\n");
-	fflush(stdout); fflush(stderr);
 // load into heap
 
 	Mod_LoadVertexes (&header->lumps[LUMP_VERTEXES]);
-	Sys_Printf("Mod_LoadBrushModel: after vertexes\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadEdges (&header->lumps[LUMP_EDGES], bsp2);
-	Sys_Printf("Mod_LoadBrushModel: after edges\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadSurfedges (&header->lumps[LUMP_SURFEDGES]);
-	Sys_Printf("Mod_LoadBrushModel: after surfedges\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadTextures (&header->lumps[LUMP_TEXTURES]);
-	Sys_Printf("Mod_LoadBrushModel: after textures\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadLighting (&header->lumps[LUMP_LIGHTING]);
-	Sys_Printf("Mod_LoadBrushModel: after lighting\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadPlanes (&header->lumps[LUMP_PLANES]);
-	Sys_Printf("Mod_LoadBrushModel: after planes\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadTexinfo (&header->lumps[LUMP_TEXINFO]);
-	Sys_Printf("Mod_LoadBrushModel: after texinfo\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadFaces (&header->lumps[LUMP_FACES], bsp2);
-	Sys_Printf("Mod_LoadBrushModel: after faces\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadMarksurfaces (&header->lumps[LUMP_MARKSURFACES], bsp2);
-	Sys_Printf("Mod_LoadBrushModel: after marksurfaces\n");
-	fflush(stdout); fflush(stderr);
 
-	Sys_Printf("Mod_LoadBrushModel: about to check external_vis condition\n");
-	fflush(stdout); fflush(stderr);
-
-	Sys_Printf("Mod_LoadBrushModel: bspversion=%d, BSPVERSION=%d\n", mod->bspversion, BSPVERSION);
-	fflush(stdout); fflush(stderr);
-
-	Sys_Printf("Mod_LoadBrushModel: external_vis.value=%f\n", external_vis.value);
-	fflush(stdout); fflush(stderr);
-
-	Sys_Printf("Mod_LoadBrushModel: sv.modelname[0]=%c\n", sv.modelname[0]);
-	fflush(stdout); fflush(stderr);
-
-	Sys_Printf("Mod_LoadBrushModel: sv.name=%s, loadname=%s\n", sv.name, loadname);
-	fflush(stdout); fflush(stderr);
-
-	int cmp_result = q_strcasecmp(loadname, sv.name);
-	Sys_Printf("Mod_LoadBrushModel: q_strcasecmp result=%d\n", cmp_result);
-	fflush(stdout); fflush(stderr);
-
-	if (mod->bspversion == BSPVERSION && external_vis.value && sv.modelname[0] && !cmp_result)
+	if (mod->bspversion == BSPVERSION && external_vis.value && sv.modelname[0] && !q_strcasecmp(loadname, sv.name))
 	{
 		FILE* fvis;
 		Con_DPrintf("trying to open external vis file\n");
@@ -2678,55 +2587,27 @@ static void Mod_LoadBrushModel (qmodel_t *mod, void *buffer)
 		}
 	}
 
-	Sys_Printf("Mod_LoadBrushModel: after external_vis check, about to load visibility\n");
-	fflush(stdout); fflush(stderr);
-
 	Mod_LoadVisibility (&header->lumps[LUMP_VISIBILITY]);
-	Sys_Printf("Mod_LoadBrushModel: after visibility\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadLeafs (&header->lumps[LUMP_LEAFS], bsp2);
-	Sys_Printf("Mod_LoadBrushModel: after leafs\n");
-	fflush(stdout); fflush(stderr);
 visdone:
 	Mod_LoadNodes (&header->lumps[LUMP_NODES], bsp2);
-	Sys_Printf("Mod_LoadBrushModel: after nodes\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadClipnodes (&header->lumps[LUMP_CLIPNODES], bsp2);
-	Sys_Printf("Mod_LoadBrushModel: after clipnodes\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadEntities (&header->lumps[LUMP_ENTITIES]);
-	Sys_Printf("Mod_LoadBrushModel: after entities\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_LoadSubmodels (&header->lumps[LUMP_MODELS]);
-	Sys_Printf("Mod_LoadBrushModel: after submodels\n");
-	fflush(stdout); fflush(stderr);
-
-	Sys_Printf("Mod_LoadBrushModel: about to call Mod_MakeHull0\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_MakeHull0 ();
 
-	Sys_Printf("Mod_LoadBrushModel: after Mod_MakeHull0\n");
-	fflush(stdout); fflush(stderr);
-
 	mod->numframes = 2;		// regular and alternate animation
-	Sys_Printf("Mod_LoadBrushModel: numframes set\n");
-	fflush(stdout); fflush(stderr);
 
 	Mod_CheckWaterVis ();
-	Sys_Printf("Mod_LoadBrushModel: after Mod_CheckWaterVis\n");
-	fflush(stdout); fflush(stderr);
 
 //
 // set up the submodels (FIXME: this is confusing)
 //
-	Sys_Printf("Mod_LoadBrushModel: about to check numsubmodels\n");
-	fflush(stdout); fflush(stderr);
-
 	if (mod->numsubmodels > 1)
 		mod->nummodelsurfaces = mod->submodels[1].firstface;
 	else
