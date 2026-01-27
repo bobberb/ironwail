@@ -997,10 +997,21 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		//johnfitz
 
 		val = GetEdictFieldValueByName(ent, "scale");
-		if (val)
-			ent->scale = ENTSCALE_ENCODE(val->_float);
+		if (hexen2_mode)
+		{
+			// H2: scale is stored as value * 100 (100 = 1.0x)
+			if (val && val->_float != 0.0f)
+				ent->scale = (int)(val->_float * 100.0f) & 255;
+			else
+				ent->scale = 100;  // H2 default: 100 = 1.0x
+		}
 		else
-			ent->scale = ENTSCALE_DEFAULT;
+		{
+			if (val)
+				ent->scale = ENTSCALE_ENCODE(val->_float);
+			else
+				ent->scale = ENTSCALE_DEFAULT;
+		}
 
 		//johnfitz -- PROTOCOL_FITZQUAKE
 		if (sv.protocol != PROTOCOL_NETQUAKE)
@@ -1049,7 +1060,15 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		if (bits & U_COLORMAP)
 			MSG_WriteByte (msg, ENT_FLOAT(ent, colormap));
 		if (bits & U_SKIN)
+		{
 			MSG_WriteByte (msg, ENT_SKIN(ent));
+			// H2: drawflags byte follows skin
+			if (hexen2_mode)
+			{
+				eval_t *val = GetEdictFieldValueByName(ent, "drawflags");
+				MSG_WriteByte(msg, val ? (int)val->_float : 0);
+			}
+		}
 		if (bits & U_EFFECTS)
 			MSG_WriteByte (msg, (int)ENT_EFFECTS(ent) & qcvm->effects_mask);
 		if (bits & U_ORIGIN1)
@@ -1069,7 +1088,15 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		if (bits & U_ALPHA)
 			MSG_WriteByte(msg, ent->alpha);
 		if (bits & U_SCALE)
+		{
 			MSG_WriteByte(msg, ent->scale);
+			// H2: abslight byte follows scale
+			if (hexen2_mode)
+			{
+				eval_t *val = GetEdictFieldValueByName(ent, "abslight");
+				MSG_WriteByte(msg, val ? (int)(val->_float * 255.0f) & 255 : 0);
+			}
+		}
 		if (bits & U_FRAME2)
 			MSG_WriteByte(msg, (int)ENT_FRAME(ent) >> 8);
 		if (bits & U_MODEL2)
@@ -1713,20 +1740,34 @@ void SV_CreateBaseline (void)
 			else
 				svent->baseline.modelindex = 0;  /* Will be set by progs */
 			svent->baseline.alpha = ENTALPHA_DEFAULT; //johnfitz -- alpha support
-			svent->baseline.scale = ENTSCALE_DEFAULT;
+			svent->baseline.scale = hexen2_mode ? 100 : ENTSCALE_DEFAULT;  // H2: 100 = 1.0x
 		}
 		else
 		{
+			eval_t* val;
 			svent->baseline.colormap = 0;
 			svent->baseline.modelindex = SV_ModelIndex(PR_GetString(ENT_MODEL_T(svent)));
 			svent->baseline.alpha = svent->alpha; //johnfitz -- alpha support
-			svent->baseline.scale = ENTSCALE_DEFAULT;
-			if (sv.protocol == PROTOCOL_RMQ)
+
+			// Set baseline scale based on mode
+			if (hexen2_mode)
 			{
-				eval_t* val;
+				// H2: scale is stored as value * 100 (100 = 1.0x)
 				val = GetEdictFieldValueByName(svent, "scale");
-				if (val)
-					svent->baseline.scale = ENTSCALE_ENCODE(val->_float);
+				if (val && val->_float != 0.0f)
+					svent->baseline.scale = (int)(val->_float * 100.0f) & 255;
+				else
+					svent->baseline.scale = 100;  // H2 default
+			}
+			else
+			{
+				svent->baseline.scale = ENTSCALE_DEFAULT;
+				if (sv.protocol == PROTOCOL_RMQ)
+				{
+					val = GetEdictFieldValueByName(svent, "scale");
+					if (val)
+						svent->baseline.scale = ENTSCALE_ENCODE(val->_float);
+				}
 			}
 		}
 
