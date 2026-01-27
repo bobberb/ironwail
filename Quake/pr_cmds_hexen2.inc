@@ -1007,8 +1007,10 @@ void doWhiteFlash() = #104
 */
 static void PF_h2_doWhiteFlash (void)
 {
-	// Stub: TODO - implement screen flash in Phase 3
-	Con_DPrintf("PF_h2_doWhiteFlash: stub\n");
+	// Send "wf" (white flash) command to all clients via stufftext
+	// Used by buddha.hc::buddha_die() and other dramatic moments
+	MSG_WriteByte (&sv.reliable_datagram, svc_stufftext);
+	MSG_WriteString (&sv.reliable_datagram, "wf\n");
 }
 
 /*

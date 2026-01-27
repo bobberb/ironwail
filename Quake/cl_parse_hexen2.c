@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "protocol_hexen2.h"
 #include "sbar_hexen2.h"
 #include "bgmusic.h"
+#include "host_string.h"
 
 /*
 ================
@@ -305,11 +306,26 @@ Display a plaque (story text overlay)
 void CL_ParsePlaque(void)
 {
 	int plaque_id;
+	const char *plaque_text;
 
 	plaque_id = MSG_ReadShort();
 
-	// TODO: Implement plaque display when UI is extended
-	Con_DPrintf("Plaque: %d\n", plaque_id);
+	// Look up plaque text from strings.txt (1-indexed in protocol)
+	if (plaque_id > 0)
+	{
+		plaque_text = Host_GetString(plaque_id - 1);
+		if (plaque_text && plaque_text[0])
+		{
+			// Display as center print for now
+			// TODO: Could add dedicated plaque rendering with H2 styling
+			SCR_CenterPrint(plaque_text);
+		}
+	}
+	else
+	{
+		// Clear plaque display
+		SCR_CenterPrint("");
+	}
 }
 
 /*
@@ -444,6 +460,10 @@ void CL_ParseSkybox(void)
 
 	skybox_name = MSG_ReadString();
 
-	// TODO: Load skybox when rendering is extended
-	Con_DPrintf("Skybox: %s\n", skybox_name);
+	// Load the skybox using Ironwail's existing skybox system
+	if (skybox_name[0])
+	{
+		Sky_LoadSkyBox(skybox_name);
+		Con_DPrintf("Skybox loaded: %s\n", skybox_name);
+	}
 }
