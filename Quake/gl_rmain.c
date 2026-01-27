@@ -120,6 +120,23 @@ extern cvar_t	r_softemu_dither_texture;
 
 cvar_t	gl_zfix = {"gl_zfix", "1", CVAR_ARCHIVE}; // QuakeSpasm z-fighting fix
 
+// H2/uhexen2 compatibility stub CVARs - no-op but prevent errors from mods
+cvar_t	gl_extra_dynamic_lights = {"gl_extra_dynamic_lights", "0", CVAR_ARCHIVE};
+cvar_t	gl_colored_dynamic_lights = {"gl_colored_dynamic_lights", "1", CVAR_ARCHIVE};
+cvar_t	gl_coloredlight = {"gl_coloredlight", "1", CVAR_ARCHIVE};
+cvar_t	gl_other_glows = {"gl_other_glows", "1", CVAR_ARCHIVE};
+cvar_t	gl_missile_glows = {"gl_missile_glows", "1", CVAR_ARCHIVE};
+cvar_t	gl_glows = {"gl_glows", "1", CVAR_ARCHIVE};
+cvar_t	gl_keeptjunctions = {"gl_keeptjunctions", "1", CVAR_ARCHIVE};
+cvar_t	gl_purge_maptex = {"gl_purge_maptex", "0", CVAR_ARCHIVE};
+cvar_t	gl_ztrick = {"gl_ztrick", "0", CVAR_ARCHIVE};
+cvar_t	gl_waterripple = {"gl_waterripple", "0", CVAR_ARCHIVE};
+cvar_t	r_texture_external = {"r_texture_external", "1", CVAR_ARCHIVE};
+cvar_t	r_shadows = {"r_shadows", "0", CVAR_ARCHIVE};
+cvar_t	gl_multitexture = {"gl_multitexture", "1", CVAR_ARCHIVE};
+cvar_t	gl_lightmapfmt = {"gl_lightmapfmt", "GL_RGBA", CVAR_ARCHIVE};
+cvar_t	gl_texture_NPOT = {"gl_texture_NPOT", "1", CVAR_ARCHIVE};
+
 cvar_t	r_lavaalpha = {"r_lavaalpha","0",CVAR_NONE};
 cvar_t	r_telealpha = {"r_telealpha","0",CVAR_NONE};
 cvar_t	r_slimealpha = {"r_slimealpha","0",CVAR_NONE};

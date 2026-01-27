@@ -48,6 +48,23 @@ extern cvar_t r_nolerp_list;
 extern cvar_t r_noshadow_list;
 //johnfitz
 extern cvar_t gl_zfix; // QuakeSpasm z-fighting fix
+// H2/uhexen2 compatibility stub CVARs
+extern cvar_t gl_extra_dynamic_lights;
+extern cvar_t gl_colored_dynamic_lights;
+extern cvar_t gl_coloredlight;
+extern cvar_t gl_other_glows;
+extern cvar_t gl_missile_glows;
+extern cvar_t gl_glows;
+extern cvar_t gl_keeptjunctions;
+extern cvar_t gl_purge_maptex;
+extern cvar_t gl_ztrick;
+extern cvar_t gl_waterripple;
+extern cvar_t r_texture_external;
+extern cvar_t r_shadows;
+extern cvar_t gl_multitexture;
+extern cvar_t gl_lightmapfmt;
+extern cvar_t gl_texture_NPOT;
+
 extern cvar_t r_alphasort;
 extern cvar_t r_oit;
 extern cvar_t r_dither;
@@ -350,6 +367,24 @@ void R_Init (void)
 	//johnfitz
 
 	Cvar_RegisterVariable (&gl_zfix); // QuakeSpasm z-fighting fix
+
+	// H2/uhexen2 compatibility stub CVARs - no-op but prevent errors from mods
+	Cvar_RegisterVariable (&gl_extra_dynamic_lights);
+	Cvar_RegisterVariable (&gl_colored_dynamic_lights);
+	Cvar_RegisterVariable (&gl_coloredlight);
+	Cvar_RegisterVariable (&gl_other_glows);
+	Cvar_RegisterVariable (&gl_missile_glows);
+	Cvar_RegisterVariable (&gl_glows);
+	Cvar_RegisterVariable (&gl_keeptjunctions);
+	Cvar_RegisterVariable (&gl_purge_maptex);
+	Cvar_RegisterVariable (&gl_ztrick);
+	Cvar_RegisterVariable (&gl_waterripple);
+	Cvar_RegisterVariable (&r_texture_external);
+	Cvar_RegisterVariable (&r_shadows);
+	Cvar_RegisterVariable (&gl_multitexture);
+	Cvar_RegisterVariable (&gl_lightmapfmt);
+	Cvar_RegisterVariable (&gl_texture_NPOT);
+
 	Cvar_RegisterVariable (&r_lavaalpha);
 	Cvar_RegisterVariable (&r_telealpha);
 	Cvar_RegisterVariable (&r_slimealpha);
