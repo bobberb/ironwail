@@ -156,7 +156,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ENTSCALE_DECODE(a)	((float)(a) / ENTSCALE_DEFAULT) // Convert to float for rendering
 
 // defaults for clientinfo messages
-#define	DEFAULT_VIEWHEIGHT	22
+#define	DEFAULT_VIEWHEIGHT		22
+#define	H2_DEFAULT_VIEWHEIGHT	50	// Hexen II uses 50 as default viewheight
 
 // game types sent by serverinfo
 // these determine which intermission screen plays

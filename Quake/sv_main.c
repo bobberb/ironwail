@@ -1202,6 +1202,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	edict_t	*other;
 	int		items;
 	eval_t	*val;
+	float	viewheight_to_send;
 
 //
 // send a damage message
@@ -1235,8 +1236,20 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 
 	bits = 0;
 
-	if (ENT_VEC(ent, view_ofs)[2] != DEFAULT_VIEWHEIGHT)
-		bits |= SU_VIEWHEIGHT;
+	// Check viewheight - H2 uses different default (50) than Q1 (22)
+	// Also verify the field offset is valid before accessing
+	{
+		int view_ofs_offset = h2_globals.fields.view_ofs;
+		float default_viewheight = hexen2_mode ? H2_DEFAULT_VIEWHEIGHT : DEFAULT_VIEWHEIGHT;
+
+		if (view_ofs_offset >= 0)
+			viewheight_to_send = ENT_VEC(ent, view_ofs)[2];
+		else
+			viewheight_to_send = default_viewheight;  // Field not found, use default
+
+		if (viewheight_to_send != default_viewheight)
+			bits |= SU_VIEWHEIGHT;
+	}
 
 	if (ENT_IDEALPITCH(ent))
 		bits |= SU_IDEALPITCH;
@@ -1311,7 +1324,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	//johnfitz
 
 	if (bits & SU_VIEWHEIGHT)
-		MSG_WriteChar (msg, ENT_VIEW_OFS(ent)[2]);
+		MSG_WriteChar (msg, (int)viewheight_to_send);
 
 	if (bits & SU_IDEALPITCH)
 		MSG_WriteChar (msg, ENT_IDEALPITCH(ent));

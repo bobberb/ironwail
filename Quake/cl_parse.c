@@ -797,7 +797,7 @@ void CL_ParseClientdata (void)
 	if (bits & SU_VIEWHEIGHT)
 		cl.viewheight = MSG_ReadChar ();
 	else
-		cl.viewheight = DEFAULT_VIEWHEIGHT;
+		cl.viewheight = hexen2_mode ? H2_DEFAULT_VIEWHEIGHT : DEFAULT_VIEWHEIGHT;
 
 	if (bits & SU_IDEALPITCH)
 		cl.idealpitch = MSG_ReadChar ();
