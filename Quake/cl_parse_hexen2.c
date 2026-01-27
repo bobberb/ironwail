@@ -219,7 +219,7 @@ void CL_ParseUpdateInventory(void)
 	if (sc1 & H2_SC1_CAMERAMODE)
 		cl.cameramode = MSG_ReadByte();
 	if (sc1 & H2_SC1_HASTED)
-		MSG_ReadFloat();  // Haste duration
+		cl.hasted = MSG_ReadFloat();  // Haste movement multiplier
 	if (sc1 & H2_SC1_INVENTORY)
 		MSG_ReadByte();   // Selected inventory
 	if (sc1 & H2_SC1_RINGS_ACTIVE)

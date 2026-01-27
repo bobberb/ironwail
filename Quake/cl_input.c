@@ -406,12 +406,23 @@ void CL_BaseMove (usercmd_t *cmd)
 
 //
 // adjust for speed key
+// H2: Don't apply speed key when already hasted > 1 (haste artifact provides its own multiplier)
 //
-	if ((in_speed.state & 1) ^ (cl_alwaysrun.value != 0.0))
+	if (((in_speed.state & 1) ^ (cl_alwaysrun.value != 0.0)) && (!hexen2_mode || cl.hasted <= 1.0f))
 	{
 		cmd->forwardmove *= cl_movespeedkey.value;
 		cmd->sidemove *= cl_movespeedkey.value;
 		cmd->upmove *= cl_movespeedkey.value;
+	}
+
+//
+// H2: Apply haste artifact movement multiplier
+//
+	if (hexen2_mode && cl.hasted > 0.0f)
+	{
+		cmd->forwardmove *= cl.hasted;
+		cmd->sidemove *= cl.hasted;
+		cmd->upmove *= cl.hasted;
 	}
 }
 
