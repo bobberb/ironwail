@@ -576,8 +576,27 @@ void CL_UpdateEffects(void)
 				org[0] += sinval * 30;
 				org[1] += cosval * 30;
 
-				if (Effects[idx].ef.RD.stage > 13)
-					CL_FreeEffect(idx);
+				if (Effects[idx].ef.RD.stage <= 6)
+				{
+					R_RiderParticle(Effects[idx].ef.RD.stage + 1, org);
+				}
+				else
+				{
+					// Set the rider's origin point for the particles
+					R_RiderParticle(0, org);
+					if (Effects[idx].ef.RD.stage == 7)
+					{
+						// White flash at stage 7
+						cl.cshifts[CSHIFT_BONUS].destcolor[0] = 255;
+						cl.cshifts[CSHIFT_BONUS].destcolor[1] = 255;
+						cl.cshifts[CSHIFT_BONUS].destcolor[2] = 255;
+						cl.cshifts[CSHIFT_BONUS].percent = 256;
+					}
+					else if (Effects[idx].ef.RD.stage > 13)
+					{
+						CL_FreeEffect(idx);
+					}
+				}
 			}
 			break;
 
@@ -595,7 +614,13 @@ void CL_UpdateEffects(void)
 				org[1] += cosval * 30;
 
 				if (Effects[idx].ef.RD.lifetime < cl.time)
+				{
 					CL_FreeEffect(idx);
+				}
+				else
+				{
+					R_GravityWellParticle(rand() % 8, org, Effects[idx].ef.RD.color);
+				}
 			}
 			break;
 
