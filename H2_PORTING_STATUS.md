@@ -208,7 +208,7 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 1. **Rendering features** (`ironwail-80p`) - Verify scale/drawflags working
 2. ~~**Protocol extensions** (`ironwail-soo`) - Extended stats SC1/SC2~~ ✅ DONE (server-side inventory sync)
 3. ~~**Sound extensions** (`ironwail-deq`) - UpdateSoundPos, StopSound~~ ✅ DONE
-4. **Water jump bug** (`ironwail-4m8`) - Some H2 maps require low physics framerates
+4. ~~**Water jump bug** (`ironwail-4m8`) - Some H2 maps require low physics framerates~~ ✅ FIXED (H2 physics capped at 20fps)
 
 ### Low Priority (polish)
 1. ~~**Effects load from save** - Full string buffer parsing needed for load side~~ ✅ COMPLETE

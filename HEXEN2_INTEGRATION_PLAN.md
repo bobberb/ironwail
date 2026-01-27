@@ -362,6 +362,11 @@ The engine automatically detects H2 game data by checking for:
 | `game_hexen2` | 0 | Force Hexen II mode (1=enable) |
 | `v_centerrollspeed` | 125 | H2 roll drift speed for swimming |
 
+### Automatic Behavior
+| Feature | Description |
+|---------|-------------|
+| Physics rate | H2 mode auto-caps physics at 20fps (matching original engine). Quake unchanged at 72fps. |
+
 ### Console Commands
 | Command | Description |
 |---------|-------------|
@@ -392,11 +397,13 @@ bind "tab" "+showinfo"
 
 ---
 
-## Side Mission: Headless Mode Support [bead: ironwail-92c]
+## Side Mission: Headless Mode Support [bead: ironwail-92c] ❌ **CANCELLED**
 
 **Purpose**: Enable testing and CI/CD without video/audio devices. Useful for automated testing, dedicated servers, and development in restricted environments.
 
-### Tasks:
+**Status**: Cancelled - not implementing. Use `-dedicated` mode for server-only testing.
+
+### Tasks (not implementing):
 - [ ] Add `-headless` command-line flag
 - [ ] Implement dummy video backend (no SDL window/OpenGL)
   - Skip VID_Init() and renderer initialization
