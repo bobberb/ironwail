@@ -127,7 +127,7 @@ void R_AddEfrags (entity_t *ent)
 		return;
 
 	entmodel = ent->model;
-	scalefactor = ENTSCALE_DECODE(ent->scale);
+	scalefactor = R_DecodeEntityScale(ent->scale);
 	if (scalefactor != 1.0f)
 	{
 		VectorMA (ent->origin, scalefactor, entmodel->mins, r_emins);

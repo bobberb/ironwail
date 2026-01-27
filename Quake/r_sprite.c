@@ -193,7 +193,7 @@ static void R_DrawSpriteModel_Real (entity_t *e, qboolean showtris)
 	float			*s_up, *s_right;
 	float			angle, sr, cr;
 	spritevert_t	*verts;
-	float			scale = ENTSCALE_DECODE(e->scale);
+	float			scale = R_DecodeEntityScale(e->scale);
 
 	frame = R_GetSpriteFrame (e);
 	psprite = (msprite_t *) e->model->cache.data;

@@ -682,10 +682,8 @@ static void R_DrawAliasModel_Real (entity_t *e, qboolean showtris)
 	else
 	{
 		// Standard Quake/non-scaled transform
-		// For H2 mode, use ENTSCALE_DEFAULT (16) since H2's scale=100 means 1.0x,
-		// but Q1's ENTSCALE_DECODE expects scale=16 for 1.0x
-		byte scale_for_matrix = hexen2_mode ? ENTSCALE_DEFAULT : e->scale;
-		R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, scale_for_matrix);
+		// R_EntityMatrix uses R_DecodeEntityScale which handles both Q1 and H2 formats
+		R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, e->scale);
 		ApplyTranslation (model_matrix, paliashdr->scale_origin[0], paliashdr->scale_origin[1] * fovscale, paliashdr->scale_origin[2] * fovscale);
 		ApplyScale (model_matrix, paliashdr->scale[0], paliashdr->scale[1] * fovscale, paliashdr->scale[2] * fovscale);
 	}

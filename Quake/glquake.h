@@ -497,6 +497,7 @@ void R_AnimateLight (void);
 void R_MarkSurfaces (void);
 qboolean R_CullBox (vec3_t emins, vec3_t emaxs);
 qboolean R_CullModelForEntity (entity_t *e);
+float R_DecodeEntityScale (unsigned char scale);
 void R_EntityMatrix (float matrix[16], vec3_t origin, vec3_t angles, unsigned char scale);
 
 void R_InitParticles (void);

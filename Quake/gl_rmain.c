@@ -384,6 +384,27 @@ qboolean R_CullBox (vec3_t emins, vec3_t emaxs)
 
 /*
 ===============
+R_DecodeEntityScale -- decode scale byte to float, handling Q1 and H2 formats
+===============
+*/
+float R_DecodeEntityScale (unsigned char scale)
+{
+	if (hexen2_mode)
+	{
+		// H2: scale is stored as value * 100 (100 = 1.0x, 0 = default/1.0x)
+		if (scale == 0)
+			return 1.0f;
+		return (float)scale / 100.0f;
+	}
+	else
+	{
+		// Q1: scale is stored as value * 16 (ENTSCALE_DEFAULT = 16 = 1.0x)
+		return ENTSCALE_DECODE(scale);
+	}
+}
+
+/*
+===============
 R_GetEntityBounds -- johnfitz -- uses correct bounds based on rotation
 ===============
 */
@@ -407,7 +428,7 @@ void R_GetEntityBounds (const entity_t *e, vec3_t mins, vec3_t maxs)
 		maxbounds = e->model->maxs;
 	}
 
-	scalefactor = ENTSCALE_DECODE(e->scale);
+	scalefactor = R_DecodeEntityScale(e->scale);
 	if (scalefactor != 1.0f)
 	{
 		VectorMA (e->origin, scalefactor, minbounds, mins);
@@ -441,7 +462,7 @@ R_EntityMatrix
 */
 void R_EntityMatrix (float matrix[16], vec3_t origin, vec3_t angles, unsigned char scale)
 {
-	float scalefactor	= ENTSCALE_DECODE(scale);
+	float scalefactor	= R_DecodeEntityScale(scale);
 	float yaw			= DEG2RAD(angles[YAW]);
 	float pitch			= angles[PITCH];
 	float roll			= angles[ROLL];
