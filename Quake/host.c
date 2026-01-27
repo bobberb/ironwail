@@ -1262,30 +1262,37 @@ void _Host_Frame (double time)
 	CL_AccumulateCmd ();
 
 	//Run the server+networking (client->server->client), at a different rate from everyt
-	if (accumtime >= host_netinterval)
+	//Hexen II needs slower physics (20fps) to match original engine for water jumps etc.
 	{
-		float realframetime = host_frametime;
-		if (host_netinterval)
+		float effective_netinterval = host_netinterval;
+		if (hexen2_mode && host_netinterval > 0 && host_netinterval < 0.05f)
+			effective_netinterval = 0.05f;
+
+		if (accumtime >= effective_netinterval)
 		{
-			host_frametime = q_max(accumtime, (double)host_netinterval);
-			accumtime -= host_frametime;
-			if (host_timescale.value > 0)
-				host_frametime *= host_timescale.value;
-			else if (host_framerate.value)
-				host_frametime = host_framerate.value;
+			float realframetime = host_frametime;
+			if (effective_netinterval)
+				{
+				host_frametime = q_max(accumtime, (double)effective_netinterval);
+				accumtime -= host_frametime;
+				if (host_timescale.value > 0)
+					host_frametime *= host_timescale.value;
+				else if (host_framerate.value)
+					host_frametime = host_framerate.value;
+			}
+			else
+				accumtime -= effective_netinterval;
+			CL_SendCmd ();
+			if (sv.active)
+			{
+				PR_SwitchQCVM(&sv.qcvm);
+				Host_ServerFrame ();
+				PR_SwitchQCVM(NULL);
+			}
+			host_frametime = realframetime;
+			Cbuf_Waited();
+			ranserver = true;
 		}
-		else
-			accumtime -= host_netinterval;
-		CL_SendCmd ();
-		if (sv.active)
-		{
-			PR_SwitchQCVM(&sv.qcvm);
-			Host_ServerFrame ();
-			PR_SwitchQCVM(NULL);
-		}
-		host_frametime = realframetime;
-		Cbuf_Waited();
-		ranserver = true;
 	}
 
 // fetch results from server
