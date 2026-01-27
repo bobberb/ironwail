@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "cl_effect.h"
+#include "protocol_hexen2.h"
 
 #define HX_FRAME_TIME	0.05f
 
@@ -277,8 +278,78 @@ void CL_ParseEffect(void)
 		{
 			entity_t *ent = &EffectEntities[Effects[idx].ef.Smoke.entity_index];
 			VectorCopy(Effects[idx].ef.Smoke.origin, ent->origin);
-			// Note: Model loading would happen here in full implementation
-			// For now, effect entities are placeholders
+
+			// Load appropriate sprite model based on effect type
+			switch (Effects[idx].type)
+			{
+			case CE_WHITE_SMOKE:
+			case CE_SLOW_WHITE_SMOKE:
+				ent->model = Mod_ForName("models/whtsmk1.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT;
+				break;
+			case CE_GREEN_SMOKE:
+				ent->model = Mod_ForName("models/grnsmk1.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT;
+				break;
+			case CE_GREY_SMOKE:
+				ent->model = Mod_ForName("models/grysmk1.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT;
+				break;
+			case CE_RED_SMOKE:
+				ent->model = Mod_ForName("models/redsmk1.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT;
+				break;
+			case CE_TELESMK1:
+				ent->model = Mod_ForName("models/telesmk1.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT;
+				break;
+			case CE_TELESMK2:
+				ent->model = Mod_ForName("models/telesmk2.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT;
+				break;
+			case CE_REDCLOUD:
+				ent->model = Mod_ForName("models/rcloud.spr", true);
+				break;
+			case CE_FLAMESTREAM:
+				ent->model = Mod_ForName("models/flamestr.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT | H2_MLS_ABSLIGHT;
+				ent->abslight = 255;
+				ent->frame = Effects[idx].ef.Smoke.frame;
+				break;
+			case CE_ACID_MUZZFL:
+				ent->model = Mod_ForName("models/muzzle1.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT | H2_MLS_ABSLIGHT;
+				ent->abslight = 51;
+				break;
+			case CE_FLAMEWALL:
+				ent->model = Mod_ForName("models/firewal1.spr", true);
+				break;
+			case CE_FLAMEWALL2:
+				ent->model = Mod_ForName("models/firewal2.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT;
+				break;
+			case CE_ONFIRE:
+				{
+					int rdm = rand() & 3;
+					if (rdm < 1)
+						ent->model = Mod_ForName("models/firewal1.spr", true);
+					else if (rdm < 2)
+						ent->model = Mod_ForName("models/firewal2.spr", true);
+					else
+						ent->model = Mod_ForName("models/firewal3.spr", true);
+					ent->drawflags = H2_DRF_TRANSLUCENT;
+					ent->abslight = 255;
+					ent->frame = Effects[idx].ef.Smoke.frame;
+				}
+				break;
+			case CE_GHOST:
+				ent->model = Mod_ForName("models/ghost.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT | H2_MLS_ABSLIGHT;
+				ent->abslight = 127;
+				break;
+			default:
+				break;
+			}
 		}
 		break;
 
@@ -326,6 +397,118 @@ void CL_ParseEffect(void)
 		{
 			entity_t *ent = &EffectEntities[Effects[idx].ef.Smoke.entity_index];
 			VectorCopy(Effects[idx].ef.Smoke.origin, ent->origin);
+
+			// Load appropriate sprite model based on effect type
+			switch (Effects[idx].type)
+			{
+			case CE_SM_WHITE_FLASH:
+				ent->model = Mod_ForName("models/sm_white.spr", true);
+				break;
+			case CE_YELLOWRED_FLASH:
+				ent->model = Mod_ForName("models/yr_flsh.spr", true);
+				ent->drawflags = H2_DRF_TRANSLUCENT;
+				break;
+			case CE_BLUESPARK:
+				ent->model = Mod_ForName("models/bspark.spr", true);
+				break;
+			case CE_YELLOWSPARK:
+				ent->model = Mod_ForName("models/spark.spr", true);
+				break;
+			case CE_SM_CIRCLE_EXP:
+				ent->model = Mod_ForName("models/fcircle.spr", true);
+				break;
+			case CE_BG_CIRCLE_EXP:
+				ent->model = Mod_ForName("models/xplod29.spr", true);
+				break;
+			case CE_SM_EXPLOSION:
+				ent->model = Mod_ForName("models/sm_expld.spr", true);
+				break;
+			case CE_LG_EXPLOSION:
+				ent->model = Mod_ForName("models/bg_expld.spr", true);
+				break;
+			case CE_FLOOR_EXPLOSION:
+				ent->model = Mod_ForName("models/fl_expld.spr", true);
+				break;
+			case CE_FLOOR_EXPLOSION3:
+				ent->model = Mod_ForName("models/biggy.spr", true);
+				break;
+			case CE_BLUE_EXPLOSION:
+				ent->model = Mod_ForName("models/xpspblue.spr", true);
+				break;
+			case CE_REDSPARK:
+				ent->model = Mod_ForName("models/rspark.spr", true);
+				break;
+			case CE_GREENSPARK:
+				ent->model = Mod_ForName("models/gspark.spr", true);
+				break;
+			case CE_ICEHIT:
+				ent->model = Mod_ForName("models/icehit.spr", true);
+				break;
+			case CE_MEDUSA_HIT:
+				ent->model = Mod_ForName("models/medhit.spr", true);
+				break;
+			case CE_MEZZO_REFLECT:
+				ent->model = Mod_ForName("models/mezzoref.spr", true);
+				break;
+			case CE_FLOOR_EXPLOSION2:
+				ent->model = Mod_ForName("models/flrexpl2.spr", true);
+				break;
+			case CE_XBOW_EXPLOSION:
+				ent->model = Mod_ForName("models/xbowexpl.spr", true);
+				break;
+			case CE_NEW_EXPLOSION:
+				ent->model = Mod_ForName("models/gen_expl.spr", true);
+				break;
+			case CE_MAGIC_MISSILE_EXPLOSION:
+				ent->model = Mod_ForName("models/mm_expld.spr", true);
+				break;
+			case CE_BONE_EXPLOSION:
+				ent->model = Mod_ForName("models/bonexpld.spr", true);
+				break;
+			case CE_BLDRN_EXPL:
+				ent->model = Mod_ForName("models/xplsn_1.spr", true);
+				break;
+			case CE_ACID_HIT:
+				ent->model = Mod_ForName("models/axplsn_2.spr", true);
+				break;
+			case CE_ACID_SPLAT:
+				ent->model = Mod_ForName("models/axplsn_1.spr", true);
+				break;
+			case CE_ACID_EXPL:
+				ent->model = Mod_ForName("models/axplsn_5.spr", true);
+				ent->drawflags = H2_MLS_ABSLIGHT;
+				ent->abslight = 255;
+				break;
+			case CE_FBOOM:
+				ent->model = Mod_ForName("models/fboom.spr", true);
+				break;
+			case CE_BOMB:
+				ent->model = Mod_ForName("models/pow.spr", true);
+				break;
+			case CE_LBALL_EXPL:
+				ent->model = Mod_ForName("models/Bluexp3.spr", true);
+				break;
+			case CE_FIREWALL_SMALL:
+				ent->model = Mod_ForName("models/firewal1.spr", true);
+				break;
+			case CE_FIREWALL_MEDIUM:
+				ent->model = Mod_ForName("models/firewal5.spr", true);
+				break;
+			case CE_FIREWALL_LARGE:
+				ent->model = Mod_ForName("models/firewal4.spr", true);
+				break;
+			case CE_BRN_BOUNCE:
+				ent->model = Mod_ForName("models/spark.spr", true);
+				break;
+			case CE_LSHOCK:
+				ent->model = Mod_ForName("models/vorpshok.mdl", true);
+				ent->drawflags = H2_MLS_TORCH;
+				ent->angles[2] = 90;
+				ent->scale = 255;
+				break;
+			default:
+				break;
+			}
 		}
 		break;
 
@@ -345,6 +528,26 @@ void CL_ParseEffect(void)
 		{
 			entity_t *ent = &EffectEntities[Effects[idx].ef.Flash.entity_index];
 			VectorCopy(Effects[idx].ef.Flash.origin, ent->origin);
+
+			// Load appropriate sprite model based on effect type
+			switch (Effects[idx].type)
+			{
+			case CE_WHITE_FLASH:
+				ent->model = Mod_ForName("models/gryspt.spr", true);
+				break;
+			case CE_BLUE_FLASH:
+				ent->model = Mod_ForName("models/bluflash.spr", true);
+				break;
+			case CE_SM_BLUE_FLASH:
+				ent->model = Mod_ForName("models/sm_blue.spr", true);
+				break;
+			case CE_RED_FLASH:
+				ent->model = Mod_ForName("models/redspt.spr", true);
+				break;
+			default:
+				break;
+			}
+			ent->drawflags = H2_DRF_TRANSLUCENT;
 		}
 		break;
 
@@ -368,13 +571,32 @@ void CL_ParseEffect(void)
 		Effects[idx].ef.Teleporter.origin[2] = MSG_ReadCoord(cl.protocolflags);
 		Effects[idx].ef.Teleporter.framelength = 0.05f;
 		// Allocate 8 entities for teleporter puffs
-		for (int i = 0; i < 8; ++i)
 		{
-			Effects[idx].ef.Teleporter.entity_index[i] = NewEffectEntity();
-			if (Effects[idx].ef.Teleporter.entity_index[i] == -1)
+			int dir = 0;
+			for (int i = 0; i < 8; ++i)
 			{
-				ImmediateFree = true;
-				break;
+				Effects[idx].ef.Teleporter.entity_index[i] = NewEffectEntity();
+				if (Effects[idx].ef.Teleporter.entity_index[i] == -1)
+				{
+					ImmediateFree = true;
+					break;
+				}
+				else
+				{
+					entity_t *ent = &EffectEntities[Effects[idx].ef.Teleporter.entity_index[i]];
+					VectorCopy(Effects[idx].ef.Teleporter.origin, ent->origin);
+
+					float sinval = sinf(dir * M_PI / 180.0f);
+					float cosval = cosf(dir * M_PI / 180.0f);
+
+					Effects[idx].ef.Teleporter.velocity[i][0] = 10 * cosval;
+					Effects[idx].ef.Teleporter.velocity[i][1] = 10 * sinval;
+					Effects[idx].ef.Teleporter.velocity[i][2] = 0;
+					dir += 45;
+
+					ent->model = Mod_ForName("models/telesmk2.spr", true);
+					ent->drawflags = H2_DRF_TRANSLUCENT;
+				}
 			}
 		}
 		break;
@@ -392,6 +614,16 @@ void CL_ParseEffect(void)
 		Effects[idx].ef.Teleporter.entity_index[0] = NewEffectEntity();
 		if (Effects[idx].ef.Teleporter.entity_index[0] == -1)
 			ImmediateFree = true;
+		else
+		{
+			entity_t *ent = &EffectEntities[Effects[idx].ef.Teleporter.entity_index[0]];
+			VectorCopy(Effects[idx].ef.Teleporter.origin, ent->origin);
+
+			ent->model = Mod_ForName("models/teleport.mdl", true);
+			ent->drawflags = H2_SCALE_TYPE_XYONLY | H2_DRF_TRANSLUCENT;
+			ent->scale = 100;
+			ent->skinnum = (int)Effects[idx].ef.Teleporter.skinnum;
+		}
 		break;
 
 	case CE_BONESHARD:
@@ -412,6 +644,16 @@ void CL_ParseEffect(void)
 		Effects[idx].ef.Missile.entity_index = NewEffectEntity();
 		if (Effects[idx].ef.Missile.entity_index == -1)
 			ImmediateFree = true;
+		else
+		{
+			entity_t *ent = &EffectEntities[Effects[idx].ef.Missile.entity_index];
+			VectorCopy(Effects[idx].ef.Missile.origin, ent->origin);
+			VectorCopy(Effects[idx].ef.Missile.angle, ent->angles);
+			if (Effects[idx].type == CE_BONESHARD)
+				ent->model = Mod_ForName("models/boneshot.mdl", true);
+			else
+				ent->model = Mod_ForName("models/boneshrd.mdl", true);
+		}
 		break;
 
 	case CE_CHUNK:
@@ -436,6 +678,254 @@ void CL_ParseEffect(void)
 			{
 				ImmediateFree = true;
 				break;
+			}
+			else
+			{
+				entity_t *ent = &EffectEntities[Effects[idx].ef.Chunk.entity_index[i]];
+				float final;
+				VectorCopy(Effects[idx].ef.Chunk.origin, ent->origin);
+
+				// Initialize velocity with randomization
+				VectorCopy(Effects[idx].ef.Chunk.srcVel, Effects[idx].ef.Chunk.velocity[i]);
+				VectorScale(Effects[idx].ef.Chunk.velocity[i],
+							0.80f + ((rand() % 4) / 10.0f),
+							Effects[idx].ef.Chunk.velocity[i]);
+				Effects[idx].ef.Chunk.velocity[i][0] += (rand() % 140) - 70;
+				Effects[idx].ef.Chunk.velocity[i][1] += (rand() % 140) - 70;
+				Effects[idx].ef.Chunk.velocity[i][2] += (rand() % 140) - 70;
+
+				// Random angles
+				ent->angles[0] = rand() % 360;
+				ent->angles[1] = rand() % 360;
+				ent->angles[2] = rand() % 360;
+
+				ent->scale = Effects[idx].ef.Chunk.aveScale + (rand() % 40);
+
+				// Select model based on chunk type
+				final = (rand() % 100) * 0.01f;
+				switch (Effects[idx].ef.Chunk.type)
+				{
+				case THINGTYPE_GLASS:
+				case THINGTYPE_REDGLASS:
+				case THINGTYPE_CLEARGLASS:
+				case THINGTYPE_WEBS:
+					if (final < 0.20f)
+						ent->model = Mod_ForName("models/shard1.mdl", true);
+					else if (final < 0.40f)
+						ent->model = Mod_ForName("models/shard2.mdl", true);
+					else if (final < 0.60f)
+						ent->model = Mod_ForName("models/shard3.mdl", true);
+					else if (final < 0.80f)
+						ent->model = Mod_ForName("models/shard4.mdl", true);
+					else
+						ent->model = Mod_ForName("models/shard5.mdl", true);
+					if (Effects[idx].ef.Chunk.type == THINGTYPE_CLEARGLASS)
+					{
+						ent->skinnum = 1;
+						ent->drawflags |= H2_DRF_TRANSLUCENT;
+					}
+					else if (Effects[idx].ef.Chunk.type == THINGTYPE_REDGLASS)
+						ent->skinnum = 2;
+					else if (Effects[idx].ef.Chunk.type == THINGTYPE_WEBS)
+					{
+						ent->skinnum = 3;
+						ent->drawflags |= H2_DRF_TRANSLUCENT;
+					}
+					break;
+				case THINGTYPE_WOOD:
+					if (final < 0.25f)
+						ent->model = Mod_ForName("models/splnter1.mdl", true);
+					else if (final < 0.50f)
+						ent->model = Mod_ForName("models/splnter2.mdl", true);
+					else if (final < 0.75f)
+						ent->model = Mod_ForName("models/splnter3.mdl", true);
+					else
+						ent->model = Mod_ForName("models/splnter4.mdl", true);
+					break;
+				case THINGTYPE_METAL:
+					if (final < 0.25f)
+						ent->model = Mod_ForName("models/metlchk1.mdl", true);
+					else if (final < 0.50f)
+						ent->model = Mod_ForName("models/metlchk2.mdl", true);
+					else if (final < 0.75f)
+						ent->model = Mod_ForName("models/metlchk3.mdl", true);
+					else
+						ent->model = Mod_ForName("models/metlchk4.mdl", true);
+					break;
+				case THINGTYPE_FLESH:
+					if (final < 0.33f)
+						ent->model = Mod_ForName("models/flesh1.mdl", true);
+					else if (final < 0.66f)
+						ent->model = Mod_ForName("models/flesh2.mdl", true);
+					else
+						ent->model = Mod_ForName("models/flesh3.mdl", true);
+					break;
+				case THINGTYPE_BROWNSTONE:
+					if (final < 0.25f)
+						ent->model = Mod_ForName("models/schunk1.mdl", true);
+					else if (final < 0.50f)
+						ent->model = Mod_ForName("models/schunk2.mdl", true);
+					else if (final < 0.75f)
+						ent->model = Mod_ForName("models/schunk3.mdl", true);
+					else
+						ent->model = Mod_ForName("models/schunk4.mdl", true);
+					ent->skinnum = 1;
+					break;
+				case THINGTYPE_CLAY:
+				case THINGTYPE_BONE:
+					if (final < 0.25f)
+						ent->model = Mod_ForName("models/clshard1.mdl", true);
+					else if (final < 0.50f)
+						ent->model = Mod_ForName("models/clshard2.mdl", true);
+					else if (final < 0.75f)
+						ent->model = Mod_ForName("models/clshard3.mdl", true);
+					else
+						ent->model = Mod_ForName("models/clshard4.mdl", true);
+					if (Effects[idx].ef.Chunk.type == THINGTYPE_BONE)
+						ent->skinnum = 1;
+					break;
+				case THINGTYPE_LEAVES:
+					if (final < 0.33f)
+						ent->model = Mod_ForName("models/leafchk1.mdl", true);
+					else if (final < 0.66f)
+						ent->model = Mod_ForName("models/leafchk2.mdl", true);
+					else
+						ent->model = Mod_ForName("models/leafchk3.mdl", true);
+					break;
+				case THINGTYPE_HAY:
+					if (final < 0.33f)
+						ent->model = Mod_ForName("models/hay1.mdl", true);
+					else if (final < 0.66f)
+						ent->model = Mod_ForName("models/hay2.mdl", true);
+					else
+						ent->model = Mod_ForName("models/hay3.mdl", true);
+					break;
+				case THINGTYPE_CLOTH:
+					if (final < 0.33f)
+						ent->model = Mod_ForName("models/clthchk1.mdl", true);
+					else if (final < 0.66f)
+						ent->model = Mod_ForName("models/clthchk2.mdl", true);
+					else
+						ent->model = Mod_ForName("models/clthchk3.mdl", true);
+					break;
+				case THINGTYPE_WOOD_LEAF:
+					if (final < 0.14f)
+						ent->model = Mod_ForName("models/splnter1.mdl", true);
+					else if (final < 0.28f)
+						ent->model = Mod_ForName("models/leafchk1.mdl", true);
+					else if (final < 0.42f)
+						ent->model = Mod_ForName("models/splnter2.mdl", true);
+					else if (final < 0.56f)
+						ent->model = Mod_ForName("models/leafchk2.mdl", true);
+					else if (final < 0.70f)
+						ent->model = Mod_ForName("models/splnter3.mdl", true);
+					else if (final < 0.84f)
+						ent->model = Mod_ForName("models/leafchk3.mdl", true);
+					else
+						ent->model = Mod_ForName("models/splnter4.mdl", true);
+					break;
+				case THINGTYPE_WOOD_METAL:
+					if (final < 0.125f)
+						ent->model = Mod_ForName("models/splnter1.mdl", true);
+					else if (final < 0.25f)
+						ent->model = Mod_ForName("models/metlchk1.mdl", true);
+					else if (final < 0.375f)
+						ent->model = Mod_ForName("models/splnter2.mdl", true);
+					else if (final < 0.50f)
+						ent->model = Mod_ForName("models/metlchk2.mdl", true);
+					else if (final < 0.625f)
+						ent->model = Mod_ForName("models/splnter3.mdl", true);
+					else if (final < 0.75f)
+						ent->model = Mod_ForName("models/metlchk3.mdl", true);
+					else if (final < 0.875f)
+						ent->model = Mod_ForName("models/splnter4.mdl", true);
+					else
+						ent->model = Mod_ForName("models/metlchk4.mdl", true);
+					break;
+				case THINGTYPE_WOOD_STONE:
+					if (final < 0.125f)
+						ent->model = Mod_ForName("models/splnter1.mdl", true);
+					else if (final < 0.25f)
+						ent->model = Mod_ForName("models/schunk1.mdl", true);
+					else if (final < 0.375f)
+						ent->model = Mod_ForName("models/splnter2.mdl", true);
+					else if (final < 0.50f)
+						ent->model = Mod_ForName("models/schunk2.mdl", true);
+					else if (final < 0.625f)
+						ent->model = Mod_ForName("models/splnter3.mdl", true);
+					else if (final < 0.75f)
+						ent->model = Mod_ForName("models/schunk3.mdl", true);
+					else if (final < 0.875f)
+						ent->model = Mod_ForName("models/splnter4.mdl", true);
+					else
+						ent->model = Mod_ForName("models/schunk4.mdl", true);
+					break;
+				case THINGTYPE_METAL_STONE:
+					if (final < 0.125f)
+						ent->model = Mod_ForName("models/metlchk1.mdl", true);
+					else if (final < 0.25f)
+						ent->model = Mod_ForName("models/schunk1.mdl", true);
+					else if (final < 0.375f)
+						ent->model = Mod_ForName("models/metlchk2.mdl", true);
+					else if (final < 0.50f)
+						ent->model = Mod_ForName("models/schunk2.mdl", true);
+					else if (final < 0.625f)
+						ent->model = Mod_ForName("models/metlchk3.mdl", true);
+					else if (final < 0.75f)
+						ent->model = Mod_ForName("models/schunk3.mdl", true);
+					else if (final < 0.875f)
+						ent->model = Mod_ForName("models/metlchk4.mdl", true);
+					else
+						ent->model = Mod_ForName("models/schunk4.mdl", true);
+					break;
+				case THINGTYPE_METAL_CLOTH:
+					if (final < 0.14f)
+						ent->model = Mod_ForName("models/metlchk1.mdl", true);
+					else if (final < 0.28f)
+						ent->model = Mod_ForName("models/clthchk1.mdl", true);
+					else if (final < 0.42f)
+						ent->model = Mod_ForName("models/metlchk2.mdl", true);
+					else if (final < 0.56f)
+						ent->model = Mod_ForName("models/clthchk2.mdl", true);
+					else if (final < 0.70f)
+						ent->model = Mod_ForName("models/metlchk3.mdl", true);
+					else if (final < 0.84f)
+						ent->model = Mod_ForName("models/clthchk3.mdl", true);
+					else
+						ent->model = Mod_ForName("models/metlchk4.mdl", true);
+					break;
+				case THINGTYPE_ICE:
+					ent->model = Mod_ForName("models/shard.mdl", true);
+					ent->skinnum = 0;
+					ent->frame = rand() % 2;
+					ent->drawflags |= H2_DRF_TRANSLUCENT | H2_MLS_ABSLIGHT;
+					ent->abslight = 127;
+					break;
+				case THINGTYPE_METEOR:
+					ent->model = Mod_ForName("models/tempmetr.mdl", true);
+					break;
+				case THINGTYPE_ACID:
+					ent->model = Mod_ForName("models/sucwp2p.mdl", true);
+					break;
+				case THINGTYPE_GREENFLESH:
+					if (final < 0.33f)
+						ent->model = Mod_ForName("models/sflesh1.mdl", true);
+					else if (final < 0.66f)
+						ent->model = Mod_ForName("models/sflesh2.mdl", true);
+					else
+						ent->model = Mod_ForName("models/sflesh3.mdl", true);
+					break;
+				default: // THINGTYPE_GREYSTONE or unknown
+					if (final < 0.25f)
+						ent->model = Mod_ForName("models/schunk1.mdl", true);
+					else if (final < 0.50f)
+						ent->model = Mod_ForName("models/schunk2.mdl", true);
+					else if (final < 0.75f)
+						ent->model = Mod_ForName("models/schunk3.mdl", true);
+					else
+						ent->model = Mod_ForName("models/schunk4.mdl", true);
+					break;
+				}
 			}
 		}
 		break;
@@ -672,27 +1162,141 @@ void CL_UpdateEffects(void)
 		case CE_FIREWALL_SMALL:
 		case CE_FIREWALL_MEDIUM:
 		case CE_FIREWALL_LARGE:
-			Effects[idx].ef.Smoke.time_amount += frametime;
-			// Sprite animation would happen here
-			// For now, just track time and free when done
-			if (Effects[idx].ef.Smoke.time_amount > 2.0f)
-				CL_FreeEffect(idx);
+			{
+				entity_t *ent;
+				if (Effects[idx].ef.Smoke.entity_index < 0)
+					break;
+
+				ent = &EffectEntities[Effects[idx].ef.Smoke.entity_index];
+
+				Effects[idx].ef.Smoke.time_amount += frametime;
+
+				// Animate sprite frames
+				while (Effects[idx].ef.Smoke.time_amount >= HX_FRAME_TIME)
+				{
+					ent->frame++;
+					Effects[idx].ef.Smoke.time_amount -= HX_FRAME_TIME;
+				}
+
+				// Check if animation is done
+				if (ent->model && ent->frame >= ent->model->numframes)
+				{
+					CL_FreeEffect(idx);
+					break;
+				}
+
+				// Update position for moving smoke
+				ent->origin[0] += frametime * Effects[idx].ef.Smoke.velocity[0];
+				ent->origin[1] += frametime * Effects[idx].ef.Smoke.velocity[1];
+				ent->origin[2] += frametime * Effects[idx].ef.Smoke.velocity[2];
+
+				CL_LinkEffectEntity(ent);
+			}
 			break;
 
 		case CE_WHITE_FLASH:
 		case CE_BLUE_FLASH:
 		case CE_SM_BLUE_FLASH:
 		case CE_RED_FLASH:
-			Effects[idx].ef.Flash.time_amount += frametime;
-			if (Effects[idx].ef.Flash.time_amount > 1.0f)
-				CL_FreeEffect(idx);
+			{
+				entity_t *ent;
+				if (Effects[idx].ef.Flash.entity_index < 0)
+					break;
+
+				ent = &EffectEntities[Effects[idx].ef.Flash.entity_index];
+
+				Effects[idx].ef.Flash.time_amount += frametime;
+
+				// Animate frames (forward then backward)
+				while (Effects[idx].ef.Flash.time_amount >= HX_FRAME_TIME)
+				{
+					if (!Effects[idx].ef.Flash.reverse)
+					{
+						ent->frame++;
+						if (ent->model && ent->frame >= ent->model->numframes)
+						{
+							Effects[idx].ef.Flash.reverse = 1;
+							ent->frame = ent->model->numframes - 1;
+						}
+					}
+					else
+					{
+						ent->frame--;
+						if (ent->frame < 0)
+						{
+							CL_FreeEffect(idx);
+							break;
+						}
+					}
+					Effects[idx].ef.Flash.time_amount -= HX_FRAME_TIME;
+				}
+
+				if (Effects[idx].type)
+					CL_LinkEffectEntity(ent);
+			}
 			break;
 
 		case CE_TELEPORTERPUFFS:
+			{
+				entity_t *ent;
+				int cur_frame;
+				float smoketime;
+
+				Effects[idx].ef.Teleporter.time_amount += frametime;
+				smoketime = Effects[idx].ef.Teleporter.framelength;
+
+				ent = &EffectEntities[Effects[idx].ef.Teleporter.entity_index[0]];
+				while (Effects[idx].ef.Teleporter.time_amount >= HX_FRAME_TIME)
+				{
+					ent->frame++;
+					Effects[idx].ef.Teleporter.time_amount -= HX_FRAME_TIME;
+				}
+				cur_frame = ent->frame;
+
+				if (ent->model && cur_frame >= ent->model->numframes)
+				{
+					CL_FreeEffect(idx);
+					break;
+				}
+
+				for (int i = 0; i < 8; ++i)
+				{
+					ent = &EffectEntities[Effects[idx].ef.Teleporter.entity_index[i]];
+
+					ent->origin[0] += (frametime / smoketime) * Effects[idx].ef.Teleporter.velocity[i][0];
+					ent->origin[1] += (frametime / smoketime) * Effects[idx].ef.Teleporter.velocity[i][1];
+					ent->origin[2] += (frametime / smoketime) * Effects[idx].ef.Teleporter.velocity[i][2];
+					ent->frame = cur_frame;
+
+					CL_LinkEffectEntity(ent);
+				}
+			}
+			break;
+
 		case CE_TELEPORTERBODY:
-			Effects[idx].ef.Teleporter.time_amount += frametime;
-			if (Effects[idx].ef.Teleporter.time_amount > 2.0f)
-				CL_FreeEffect(idx);
+			{
+				entity_t *ent;
+
+				Effects[idx].ef.Teleporter.time_amount += frametime;
+
+				ent = &EffectEntities[Effects[idx].ef.Teleporter.entity_index[0]];
+				while (Effects[idx].ef.Teleporter.time_amount >= HX_FRAME_TIME)
+				{
+					ent->scale -= 15;
+					Effects[idx].ef.Teleporter.time_amount -= HX_FRAME_TIME;
+				}
+
+				ent->angles[1] += 45;
+
+				if (ent->scale <= 10)
+				{
+					CL_FreeEffect(idx);
+				}
+				else
+				{
+					CL_LinkEffectEntity(ent);
+				}
+			}
 			break;
 
 		case CE_BONESHARD:
@@ -707,6 +1311,8 @@ void CL_UpdateEffects(void)
 				ent->origin[0] += frametime * Effects[idx].ef.Missile.velocity[0];
 				ent->origin[1] += frametime * Effects[idx].ef.Missile.velocity[1];
 				ent->origin[2] += frametime * Effects[idx].ef.Missile.velocity[2];
+
+				CL_LinkEffectEntity(ent);
 			}
 			if (Effects[idx].ef.Missile.time_amount > 5.0f)
 				CL_FreeEffect(idx);
@@ -728,6 +1334,12 @@ void CL_UpdateEffects(void)
 						ent->origin[1] += frametime * Effects[idx].ef.Chunk.velocity[i][1];
 						ent->origin[2] += frametime * Effects[idx].ef.Chunk.velocity[i][2];
 						Effects[idx].ef.Chunk.velocity[i][2] -= frametime * 500; // gravity
+
+						// Scale down near end of lifetime
+						if (Effects[idx].ef.Chunk.time_amount < frametime * 3)
+							ent->scale = (int)(ent->scale * 0.7f);
+
+						CL_LinkEffectEntity(ent);
 					}
 				}
 			}
