@@ -32,7 +32,7 @@ This document outlines the plan to integrate Hexen II features into Ironwail, al
 - [x] Implement svc_start_effect/svc_end_effect for effect streaming
 - [x] Add svc_particle_explosion for material-aware particles
 - [x] Implement stat bar messages (SC1/SC2 stat bits) - Parser stubs ready
-- [ ] Complete protocol extensions (extended stats SC1/SC2, inventory sync) [bead: ironwail-soo]
+- [x] Complete protocol extensions (extended stats SC1/SC2, inventory sync) [bead: ironwail-soo] ✅
 
 **Files modified:**
 - `cl_parse_hexen2.c` - Created with 13 H2 message parsers
@@ -328,11 +328,11 @@ svc_sound_update_pos = 53
 
 ### 7.1 Compatibility Testing
 - [x] Test with original Hexen II levels - Build verified
-- [ ] Test with Portal of Praevus (mission pack) [bead: ironwail-hu3.19]
+- [x] Test with Portal of Praevus (mission pack) [bead: ironwail-hu3.19] ✅
 - [x] Verify Quake compatibility still works - No regressions
 - [ ] Test protocol switching between games [bead: ironwail-hu3.25]
 - [ ] Test multiplayer in both modes [bead: ironwail-hu3.28]
-- [ ] Test original Hexen II levels end-to-end [bead: ironwail-4mv]
+- [x] Test original Hexen II levels end-to-end [bead: ironwail-4mv] ✅
 
 ### 7.2 Performance Optimization
 - [x] Optimize particle system for 7000 particles - Uses existing system
@@ -521,8 +521,8 @@ GitHub: https://github.com/sezero/uhexen2-hcode_archive
 
 ## Success Criteria
 
-- [ ] Can load and play original Hexen II levels [bead: ironwail-4mv]
-- [ ] Can load and play Portal of Praevus [bead: ironwail-hu3.19]
+- [x] Can load and play original Hexen II levels [bead: ironwail-4mv] ✅
+- [x] Can load and play Portal of Praevus [bead: ironwail-hu3.19] ✅
 - [ ] All 4 character classes functional
 - [ ] Mana/artifact/ring systems working
 - [ ] Particles and effects rendering correctly
