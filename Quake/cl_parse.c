@@ -1313,6 +1313,10 @@ void CL_ParseServerMessage (void)
 						}
 					}
 					break;
+				case svc_h2_update_kingofhill:
+					// Deathmatch: update which player is king of the hill
+					h2_kingofhill = MSG_ReadShort() - 1;  // Server sends 1-indexed, store 0-indexed (-1 = none)
+					break;
 				default:
 					Host_Error ("Illegible server message %d (previous was %s)", cmd, svc_strings[lastcmd]);
 					break;

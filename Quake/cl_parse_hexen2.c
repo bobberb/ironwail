@@ -27,6 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "bgmusic.h"
 #include "host_string.h"
 
+// Deathmatch: current king of the hill player (-1 = none)
+int h2_kingofhill = -1;
+
 /*
 ================
 CL_ParseUpdateClass
@@ -249,23 +252,23 @@ void CL_ParseUpdateInventory(void)
 	if (sc2 & H2_SC2_TOME_T)
 		MSG_ReadFloat();  // Tome time remaining
 
-	// Puzzle pieces
+	// Puzzle pieces (truncate to 9 chars + null terminator)
 	if (sc2 & H2_SC2_PUZZLE1)
-		MSG_ReadString();  // We'd store this in cl.puzzle_pieces[0]
+		q_strlcpy(cl.puzzle_pieces[0], MSG_ReadString(), sizeof(cl.puzzle_pieces[0]));
 	if (sc2 & H2_SC2_PUZZLE2)
-		MSG_ReadString();
+		q_strlcpy(cl.puzzle_pieces[1], MSG_ReadString(), sizeof(cl.puzzle_pieces[1]));
 	if (sc2 & H2_SC2_PUZZLE3)
-		MSG_ReadString();
+		q_strlcpy(cl.puzzle_pieces[2], MSG_ReadString(), sizeof(cl.puzzle_pieces[2]));
 	if (sc2 & H2_SC2_PUZZLE4)
-		MSG_ReadString();
+		q_strlcpy(cl.puzzle_pieces[3], MSG_ReadString(), sizeof(cl.puzzle_pieces[3]));
 	if (sc2 & H2_SC2_PUZZLE5)
-		MSG_ReadString();
+		q_strlcpy(cl.puzzle_pieces[4], MSG_ReadString(), sizeof(cl.puzzle_pieces[4]));
 	if (sc2 & H2_SC2_PUZZLE6)
-		MSG_ReadString();
+		q_strlcpy(cl.puzzle_pieces[5], MSG_ReadString(), sizeof(cl.puzzle_pieces[5]));
 	if (sc2 & H2_SC2_PUZZLE7)
-		MSG_ReadString();
+		q_strlcpy(cl.puzzle_pieces[6], MSG_ReadString(), sizeof(cl.puzzle_pieces[6]));
 	if (sc2 & H2_SC2_PUZZLE8)
-		MSG_ReadString();
+		q_strlcpy(cl.puzzle_pieces[7], MSG_ReadString(), sizeof(cl.puzzle_pieces[7]));
 
 	if (sc2 & H2_SC2_MAXHEALTH)
 		MSG_ReadShort();  // Max health
