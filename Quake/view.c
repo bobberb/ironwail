@@ -198,7 +198,11 @@ void V_DriftPitch (void)
 // don't count small mouse motion
 	if (cl.nodrift)
 	{
-		if ( fabs(cl.cmd.forwardmove) < cl_forwardspeed.value)
+		// H2: Scale threshold with haste multiplier (faster when hasted)
+		float threshold = cl_forwardspeed.value;
+		if (hexen2_mode && cl.hasted > 0.0f)
+			threshold = (cl.hasted * cl_forwardspeed.value) - 10.0f;
+		if ( fabs(cl.cmd.forwardmove) < threshold)
 			cl.driftmove = 0;
 		else
 			cl.driftmove += host_frametime;
@@ -909,8 +913,12 @@ void V_CalcRefdef (void)
 	float		bob;
 	static float oldz = 0;
 
-	V_DriftPitch ();
-	V_DriftRoll ();		// H2: roll drift for swimming effects
+	// H2: Don't drift when in cameramode (locked to entity)
+	if (!hexen2_mode || !cl.cameramode)
+	{
+		V_DriftPitch ();
+		V_DriftRoll ();		// H2: roll drift for swimming effects
+	}
 
 // ent is the player model (visible when out of body)
 	ent = &cl_entities[cl.viewentity];
