@@ -693,6 +693,29 @@ void CL_RelinkEntities (void)
 			CL_RocketTrail (ent, 1);
 		else if (ent->model->flags & EF_TRACER3)
 			CL_RocketTrail (ent, 6);
+		// H2-specific model effect trails
+		else if (ent->model->flags & EF_FIREBALL)
+			CL_RocketTrail (ent, rt_fireball);
+		else if (ent->model->flags & EF_ICE)
+			CL_RocketTrail (ent, rt_ice);
+		else if (ent->model->flags & EF_SPIT)
+			CL_RocketTrail (ent, rt_spit);
+		else if (ent->model->flags & EF_SPELL)
+			CL_RocketTrail (ent, rt_spell);
+		else if (ent->model->flags & EF_VORP_MISSILE)
+			CL_RocketTrail (ent, rt_vorpal);
+		else if (ent->model->flags & EF_SET_STAFF)
+			CL_RocketTrail (ent, rt_setstaff);
+		else if (ent->model->flags & EF_MAGICMISSILE)
+			CL_RocketTrail (ent, rt_magicmissile);
+		else if (ent->model->flags & EF_BONESHARD)
+			CL_RocketTrail (ent, rt_boneshard);
+		else if (ent->model->flags & EF_SCARAB)
+			CL_RocketTrail (ent, rt_scarab);
+		else if (ent->model->flags & EF_ACIDBALL)
+			CL_RocketTrail (ent, rt_acidball);
+		else if (ent->model->flags & EF_BLOODSHOT)
+			CL_RocketTrail (ent, rt_bloodshot);
 		else
 			CL_ResetTrail (ent);
 

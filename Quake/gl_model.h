@@ -386,6 +386,7 @@ extern	trivertx_t			*poseverts[MAXALIASFRAMES];
 
 typedef enum {mod_brush, mod_alias, mod_sprite, mod_numtypes} modtype_t;
 
+// Model effect flags (stored in model->flags from MDL file synctype field)
 #define	EF_ROCKET	1			// leave a trail
 #define	EF_GRENADE	2			// leave a trail
 #define	EF_GIB		4			// leave a trail
@@ -394,6 +395,26 @@ typedef enum {mod_brush, mod_alias, mod_sprite, mod_numtypes} modtype_t;
 #define	EF_ZOMGIB	32			// small blood trail
 #define	EF_TRACER2	64			// orange split trail + rotate
 #define	EF_TRACER3	128			// purple trail
+
+// H2-specific model effect flags (bits 8-24)
+#define	EF_FIREBALL		(1<<8)	// Yellow transparent trail in all directions
+#define	EF_ICE			(1<<9)	// Blue-white transparent trail, with gravity
+#define	EF_MIP_MAP		(1<<10)	// This model has mip-maps (H2 specific)
+#define	EF_SPIT			(1<<11)	// Black transparent trail with negative light
+#define	EF_TRANSPARENT	(1<<12)	// Transparent sprite
+#define	EF_SPELL		(1<<13)	// Vertical spray of particles
+#define	EF_HOLEY		(1<<14)	// Solid model with color 0 (H2) / index 255 transparent (QS)
+#define	EF_SPECIAL_TRANS	(1<<15)	// Translucency through the particle table
+#define	EF_FACE_VIEW	(1<<16)	// Poly Model always faces you
+#define	EF_VORP_MISSILE	(1<<17)	// leave a trail at top and bottom of model
+#define	EF_SET_STAFF	(1<<18)	// slowly move up and left/right
+#define	EF_MAGICMISSILE	(1<<19)	// a trickle of blue/white particles with gravity
+#define	EF_BONESHARD	(1<<20)	// a trickle of brown particles with gravity
+#define	EF_SCARAB		(1<<21)	// white transparent particles with little gravity
+#define	EF_ACIDBALL		(1<<22)	// Green drippy acid trail
+#define	EF_BLOODSHOT	(1<<23)	// Blood rain shot trail
+#define	EF_MIP_MAP_FAR	(1<<24)	// This model will use the far mip map
+
 #define	MF_HOLEY	(1u<<14)		// MarkV/QSS -- make index 255 transparent on mdl's
 
 //johnfitz -- extra flags for rendering
