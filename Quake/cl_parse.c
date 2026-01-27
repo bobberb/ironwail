@@ -1285,6 +1285,34 @@ void CL_ParseServerMessage (void)
 				case svc_h2_toggle_statbar:
 					CL_ParseToggleStatbar();
 					break;
+				case svc_h2_setangle_interpolate:
+					{
+						// H2: Smooth angle interpolation (1/8th step towards target)
+						vec3_t target, delta;
+						int k;
+						for (k = 0; k < 3; k++)
+							target[k] = MSG_ReadAngle(cl.protocolflags);
+						for (k = 0; k < 3; k++)
+						{
+							// Normalize both angles to -180..180
+							float cur = cl.viewangles[k];
+							float tgt = target[k];
+							while (cur > 180) cur -= 360;
+							while (cur < -180) cur += 360;
+							while (tgt > 180) tgt -= 360;
+							while (tgt < -180) tgt += 360;
+							// Calculate delta (shortest path)
+							delta[k] = tgt - cur;
+							if (delta[k] > 180) delta[k] -= 360;
+							else if (delta[k] < -180) delta[k] += 360;
+							// Apply 1/8th of the delta
+							cl.viewangles[k] += delta[k] / 8.0f;
+							// Normalize result
+							while (cl.viewangles[k] > 180) cl.viewangles[k] -= 360;
+							while (cl.viewangles[k] < -180) cl.viewangles[k] += 360;
+						}
+					}
+					break;
 				default:
 					Host_Error ("Illegible server message %d (previous was %s)", cmd, svc_strings[lastcmd]);
 					break;
