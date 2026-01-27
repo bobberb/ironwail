@@ -32,6 +32,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define BAR_TOTAL_HEIGHT	(BAR_TOP_HEIGHT + BAR_BOTTOM_HEIGHT)
 #define BAR_BUMP_HEIGHT		23
 
+// Centering offset for 320-pixel-wide HUD
+#define SB_XOFS				((vid.width - 320) / 2)
+
 // Cached graphics
 static qpic_t *sb_h2_nums[11];
 static qpic_t *sb_h2_colon;
@@ -189,7 +192,7 @@ static void Sbar_H2_DrawPic(int x, int y, qpic_t *pic)
 {
 	if (!pic)
 		return;
-	Draw_Pic(x, y + (vid.height - BAR_TOTAL_HEIGHT), pic);
+	Draw_Pic(x + SB_XOFS, y + (vid.height - BAR_TOTAL_HEIGHT), pic);
 }
 
 /*
@@ -204,7 +207,7 @@ static void Sbar_H2_DrawTransPic(int x, int y, qpic_t *pic)
 {
 	if (!pic)
 		return;
-	Draw_Pic(x, y + (vid.height - BAR_TOTAL_HEIGHT), pic);
+	Draw_Pic(x + SB_XOFS, y + (vid.height - BAR_TOTAL_HEIGHT), pic);
 }
 
 /*

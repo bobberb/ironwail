@@ -1691,6 +1691,50 @@ static void PF_makestatic (void)
 	}
 	//johnfitz
 
+	SV_ReserveSignonSpace (34);
+
+	// Hexen II has its own static entity format with scale, drawflags, abslight
+	if (hexen2_mode)
+	{
+		eval_t *val;
+		float scale_val = 1.0f;
+		int drawflags_val = 0;
+		float abslight_val = 0.0f;
+
+		MSG_WriteByte (sv.signon, svc_spawnstatic);
+		MSG_WriteShort (sv.signon, SV_ModelIndex(ENT_MODEL(ent)));
+		MSG_WriteByte (sv.signon, ENT_FRAME(ent));
+		MSG_WriteByte (sv.signon, ENT_FLOAT(ent, colormap));
+		MSG_WriteByte (sv.signon, ENT_SKIN(ent));
+
+		// H2: scale (byte = value * 100)
+		val = GetEdictFieldValueByName(ent, "scale");
+		if (val && val->_float != 0.0f)
+			scale_val = val->_float;
+		MSG_WriteByte (sv.signon, (int)(scale_val * 100.0f) & 255);
+
+		// H2: drawflags
+		val = GetEdictFieldValueByName(ent, "drawflags");
+		if (val)
+			drawflags_val = (int)val->_float;
+		MSG_WriteByte (sv.signon, drawflags_val);
+
+		// H2: abslight (byte = value * 255)
+		val = GetEdictFieldValueByName(ent, "abslight");
+		if (val)
+			abslight_val = val->_float;
+		MSG_WriteByte (sv.signon, (int)(abslight_val * 255.0f) & 255);
+
+		for (i = 0; i < 3; i++)
+		{
+			MSG_WriteCoord(sv.signon, ENT_ORIGIN(ent)[i], sv.protocolflags);
+			MSG_WriteAngle(sv.signon, ENT_ANGLES(ent)[i], sv.protocolflags);
+		}
+
+		ED_Free (ent);
+		return;
+	}
+
 	//johnfitz -- PROTOCOL_FITZQUAKE
 	if (sv.protocol == PROTOCOL_NETQUAKE)
 	{
@@ -1722,8 +1766,6 @@ static void PF_makestatic (void)
 				bits |= B_SCALE;
 		}
 	}
-
-	SV_ReserveSignonSpace (34);
 
 	if (bits)
 	{

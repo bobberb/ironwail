@@ -990,7 +990,7 @@ void V_CalcRefdef (void)
 	view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	view->frame = cl.stats[STAT_WEAPONFRAME];
 	view->colormap = vid.colormap;
-	view->scale = ENTSCALE_DEFAULT;
+	view->scale = hexen2_mode ? 100 : ENTSCALE_DEFAULT;  // H2 uses 100 = 1.0x scale
 
 //johnfitz -- v_gunkick
 	if (v_gunkick.value == 1) //original quake kick

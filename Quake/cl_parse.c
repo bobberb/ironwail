@@ -971,7 +971,29 @@ void CL_ParseStatic (int version) //johnfitz -- added a parameter
 
 	ent = &cl_static_entities[i];
 	cl.num_statics++;
-	CL_ParseBaseline (ent, version); //johnfitz -- added second parameter
+
+	// H2 has a different static entity format: modelindex(short), frame, colormap, skin, scale, drawflags, abslight, origin/angles
+	if (hexen2_mode && version == 1)
+	{
+		ent->baseline.modelindex = MSG_ReadShort();
+		ent->baseline.frame = MSG_ReadByte();
+		ent->baseline.colormap = MSG_ReadByte();
+		ent->baseline.skin = MSG_ReadByte();
+		ent->scale = MSG_ReadByte();  // H2: scale * 100
+		ent->drawflags = MSG_ReadByte();  // H2: drawflags
+		ent->abslight = MSG_ReadByte();  // H2: abslight * 255
+		for (i = 0; i < 3; i++)
+		{
+			ent->baseline.origin[i] = MSG_ReadCoord(cl.protocolflags);
+			ent->baseline.angles[i] = MSG_ReadAngle(cl.protocolflags);
+		}
+		ent->baseline.alpha = ENTALPHA_DEFAULT;
+		ent->baseline.scale = ent->scale;  // Already read above
+	}
+	else
+	{
+		CL_ParseBaseline (ent, version); //johnfitz -- added second parameter
+	}
 
 // copy it to the current state
 
@@ -983,7 +1005,8 @@ void CL_ParseStatic (int version) //johnfitz -- added a parameter
 	ent->skinnum = ent->baseline.skin;
 	ent->effects = ent->baseline.effects;
 	ent->alpha = ent->baseline.alpha; //johnfitz -- alpha
-	ent->scale = ent->baseline.scale;
+	if (!hexen2_mode)
+		ent->scale = ent->baseline.scale;
 	VectorCopy (ent->baseline.origin, ent->origin);
 	VectorCopy (ent->baseline.angles, ent->angles);
 	R_AddEfrags (ent);
