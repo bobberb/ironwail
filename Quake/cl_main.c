@@ -109,8 +109,7 @@ void CL_ClearState (void)
 // clear other arrays
 	memset (cl_dlights, 0, sizeof(cl_dlights));
 	memset (cl_lightstyle, 0, sizeof(cl_lightstyle));
-	memset (cl_temp_entities, 0, sizeof(cl_temp_entities));
-	memset (cl_beams, 0, sizeof(cl_beams));
+	CL_ClearTEnts ();
 	CL_ClearEffects ();
 
 	//johnfitz -- cl_entities is now dynamically allocated

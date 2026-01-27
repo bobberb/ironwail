@@ -431,6 +431,7 @@ void V_SetContentsColor (int contents);
 // cl_tent
 //
 void CL_InitTEnts (void);
+void CL_ClearTEnts (void);
 void CL_SignonReply (void);
 
 //
