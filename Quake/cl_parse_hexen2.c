@@ -548,3 +548,16 @@ void CL_ParseClearViewFlags(void)
 {
 	cl.viewent.drawflags &= ~MSG_ReadByte();
 }
+
+/*
+================
+CL_ParseToggleStatbar
+
+Parse svc_h2_toggle_statbar message
+Toggle status bar visibility (does nothing in practice)
+================
+*/
+void CL_ParseToggleStatbar(void)
+{
+	// This message has no parameters and does nothing in original H2
+}

@@ -1278,6 +1278,9 @@ void CL_ParseServerMessage (void)
 				case svc_h2_clear_view_flags:
 					CL_ParseClearViewFlags();
 					break;
+				case svc_h2_toggle_statbar:
+					CL_ParseToggleStatbar();
+					break;
 				default:
 					Host_Error ("Illegible server message %d (previous was %s)", cmd, svc_strings[lastcmd]);
 					break;

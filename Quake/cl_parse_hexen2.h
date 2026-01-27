@@ -41,5 +41,6 @@ void CL_ParseSkybox(void);
 void CL_ParseCutscene(void);
 void CL_ParseSetViewFlags(void);
 void CL_ParseClearViewFlags(void);
+void CL_ParseToggleStatbar(void);
 
 #endif /* _CL_PARSE_HEXEN2_H */
