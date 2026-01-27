@@ -42,8 +42,12 @@ CL_ParseTEnt
 */
 void CL_InitTEnts (void)
 {
-	cl_sfx_wizhit = S_PrecacheSound ("wizard/hit.wav");
-	cl_sfx_knighthit = S_PrecacheSound ("hknight/hit.wav");
+	// Q1-specific monster impact sounds - not present in H2
+	if (!hexen2_mode)
+	{
+		cl_sfx_wizhit = S_PrecacheSound ("wizard/hit.wav");
+		cl_sfx_knighthit = S_PrecacheSound ("hknight/hit.wav");
+	}
 	cl_sfx_tink1 = S_PrecacheSound ("weapons/tink1.wav");
 	cl_sfx_ric1 = S_PrecacheSound ("weapons/ric1.wav");
 	cl_sfx_ric2 = S_PrecacheSound ("weapons/ric2.wav");
