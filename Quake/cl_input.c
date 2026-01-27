@@ -342,6 +342,13 @@ void CL_BaseMove (usercmd_t *cmd)
 	if (cls.signon != SIGNONS)
 		return;
 
+	// H2: cameramode locks player to a camera entity - no movement allowed
+	if (hexen2_mode && cl.cameramode)
+	{
+		Q_memset (cmd, 0, sizeof(*cmd));
+		return;
+	}
+
 	Q_memset (cmd, 0, sizeof(*cmd));
 
 	if (in_strafe.state & 1)

@@ -250,11 +250,16 @@ Draw a small number for artifact counts
 */
 static void Sbar_H2_DrawSmallNum(int x, int y, int number)
 {
-	// TODO: Implement small number drawing
-	// For now, just use regular Draw_String
+	// Draw small numbers using half-size characters (4x4 instead of 8x8)
 	char str[8];
+	int i;
+	float draw_y = y + (vid.height - BAR_TOTAL_HEIGHT);
+
 	q_snprintf(str, sizeof(str), "%d", number);
-	Draw_String(x, y + (vid.height - BAR_TOTAL_HEIGHT), str);
+	for (i = 0; str[i]; i++)
+	{
+		Draw_CharacterEx(x + i * 4, draw_y, 4, 4, str[i]);
+	}
 }
 
 /*
@@ -402,9 +407,9 @@ Draw the armor slots
 */
 static void Sbar_H2_DrawArmor(void)
 {
-	// TODO: Check actual armor slot values from H2 stats
-	// For now, just draw placeholders based on armor value
-
+	// H2 has individual armor values (armor_amulet, armor_bracer, etc.)
+	// which require entity-level data syncing to display accurately.
+	// Using threshold-based approximation based on total armor value.
 	int armor = cl.stats[STAT_ARMOR];
 
 	if (armor > 0)
@@ -665,24 +670,87 @@ void Sbar_H2_DrawMini(void)
 ===============
 Sbar_H2_IntermissionOverlay
 
-Draw intermission screen
+Draw intermission screen (level completion stats)
 ===============
 */
 void Sbar_H2_IntermissionOverlay(void)
 {
-	// TODO: Implement H2 intermission screen
+	qpic_t	*pic;
+	char	str[80];
+	int		y;
+
+	// In deathmatch, show scoreboard instead
+	if (cl.gametype == GAME_DEATHMATCH)
+	{
+		Sbar_DeathmatchOverlay();
+		return;
+	}
+
+	GL_SetCanvas(CANVAS_MENU);
+
+	// Draw H2 intermission background if available, otherwise plain background
+	pic = Draw_CachePic("gfx/meso.lmp");
+	if (pic)
+		Draw_Pic((320 - pic->width) / 2, (200 - pic->height) / 2, pic);
+
+	// Draw "Level Complete" text
+	y = 40;
+	Draw_String(160 - 7 * 4, y, "Level Complete");
+	y += 24;
+
+	// Draw level name
+	if (cl.levelname[0])
+	{
+		char map[80];
+		Mod_SanitizeMapDescription(map, sizeof(map), cl.levelname);
+		COM_TintString(map, map, sizeof(map));
+		Draw_String(160 - strlen(map) * 4, y, map);
+	}
+	else
+	{
+		Draw_String(160 - strlen(cl.mapname) * 4, y, cl.mapname);
+	}
+	y += 32;
+
+	// Time
+	q_snprintf(str, sizeof(str), "Time:    %d:%02d", cl.completed_time / 60, cl.completed_time % 60);
+	Draw_String(100, y, str);
+	y += 16;
+
+	// Secrets
+	q_snprintf(str, sizeof(str), "Secrets: %d/%d", cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS]);
+	Draw_String(100, y, str);
+	y += 16;
+
+	// Monsters
+	q_snprintf(str, sizeof(str), "Kills:   %d/%d", cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS]);
+	Draw_String(100, y, str);
 }
 
 /*
 ===============
 Sbar_H2_FinaleOverlay
 
-Draw finale screen
+Draw finale screen (end of episode/game)
 ===============
 */
 void Sbar_H2_FinaleOverlay(void)
 {
-	// TODO: Implement H2 finale screen
+	qpic_t	*pic;
+
+	GL_SetCanvas(CANVAS_MENU);
+
+	// Try to load H2 finale graphic, fall back to generic message
+	pic = Draw_CachePic("gfx/finale.lmp");
+	if (pic)
+	{
+		Draw_Pic((320 - pic->width) / 2, 16, pic);
+	}
+	else
+	{
+		// Fallback text if no graphic
+		Draw_String(160 - 6 * 4, 80, "The End");
+	}
 }
 
 /*

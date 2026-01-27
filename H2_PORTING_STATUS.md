@@ -313,3 +313,30 @@ cd "/tank/josh/Documents/Games/PcGames/HeXen II"
 - [ ] Sound plays
 - [ ] Effects render
 - [ ] Can complete demo1 level
+
+---
+
+## Version Reference
+
+### Progs CRC Values (from progs.dat header)
+- Hexen II v1.03: CRC 14046
+- Hexen II v1.11: CRC 38488
+- Hexen II v1.12 (Portal of Praevus): CRC 26905
+- Hexen II UQE patch: CRC 19889
+
+### Known Pak File Checksums
+
+#### Hexen II v1.11 (data1/)
+- pak0.pak: MD5 c9675191e75dd25a3b9ed81ee7e05eff
+- pak1.pak: MD5 c2ac5b0640773eed9ebe1cda2eca2ad0
+- progs.dat: MD5 2334c5036d573d6831fc95737142bf73 (CRC 38488)
+
+#### Portal of Praevus v1.12 (portals/)
+- pak3.pak: MD5 77ae298dd0dcd16ab12f4a68067ff2c3
+- progs.dat: MD5 cb360095b039043dd619cc9cb83144b2 (CRC 26905)
+
+### Progs Version Differences
+- v1.11 globalvars_t: has `randomclass`, NO `cl_playerclass`, HAS `modelindex_*`
+- v1.12 globalvars_t: has `randomclass`, HAS `cl_playerclass`, NO `modelindex_*`
+- Field offsets differ after `randomclass` between versions
+- Engine uses runtime offset lookup (ED_FindGlobalOffset) to handle differences

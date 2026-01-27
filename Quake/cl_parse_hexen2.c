@@ -106,11 +106,8 @@ void CL_ParseParticleExplosion(void)
 	radius = MSG_ReadByte();
 	counter = MSG_ReadByte();
 
-	// TODO: Implement H2 material-aware particles when particle system is extended
-	// For now, create a basic explosion effect
-	// R_ParticleExplosion(org);
-	Con_DPrintf("Particle explosion at (%.1f, %.1f, %.1f), color %d, radius %d\n",
-				org[0], org[1], org[2], color, radius);
+	// H2 material-aware colored particle explosion
+	R_ColoredParticleExplosion(org, color, radius, counter);
 }
 
 /*
@@ -227,7 +224,7 @@ void CL_ParseUpdateInventory(void)
 	if (sc1 & H2_SC1_MOVETYPE)
 		MSG_ReadByte();   // Movement type
 	if (sc1 & H2_SC1_CAMERAMODE)
-		MSG_ReadByte();   // Camera mode
+		cl.cameramode = MSG_ReadByte();
 	if (sc1 & H2_SC1_HASTED)
 		MSG_ReadFloat();  // Haste duration
 	if (sc1 & H2_SC1_INVENTORY)
@@ -350,8 +347,13 @@ void CL_ParseParticle2(void)
 	color = MSG_ReadByte();
 	count = MSG_ReadByte();
 
-	// TODO: Implement H2 particle system
-	Con_DPrintf("Particle2: color %d, count %d\n", color, count);
+	// H2 extended particle effect
+	{
+		vec3_t dmin, dmax;
+		VectorScale(dir, -1, dmin);
+		VectorCopy(dir, dmax);
+		R_RunParticleEffect2(org, dmin, dmax, color, pt_static, count);
+	}
 }
 
 /*
@@ -364,21 +366,23 @@ Rain/snow weather effect
 */
 void CL_ParseRainEffect(void)
 {
-	vec3_t org, dir;
-	int color, count;
+	vec3_t org, e_size;
+	int x_dir, y_dir, color, count;
 
+	// Parse rain effect message (matches PF_h2_rain_go server format)
 	org[0] = MSG_ReadCoord(cl.protocolflags);
 	org[1] = MSG_ReadCoord(cl.protocolflags);
 	org[2] = MSG_ReadCoord(cl.protocolflags);
-	dir[0] = MSG_ReadChar();
-	dir[1] = MSG_ReadChar();
-	dir[2] = MSG_ReadChar();
-	color = MSG_ReadByte();
-	count = MSG_ReadByte();
+	e_size[0] = MSG_ReadCoord(cl.protocolflags);
+	e_size[1] = MSG_ReadCoord(cl.protocolflags);
+	e_size[2] = MSG_ReadCoord(cl.protocolflags);
+	x_dir = MSG_ReadAngle(cl.protocolflags);
+	y_dir = MSG_ReadAngle(cl.protocolflags);
+	color = MSG_ReadShort();
+	count = MSG_ReadShort();
 
-	// TODO: Implement rain/snow weather particles
-	Con_DPrintf("Rain effect at (%.1f, %.1f, %.1f), count %d\n",
-				org[0], org[1], org[2], count);
+	// Create rain particles
+	R_RainEffect(org, e_size, x_dir, y_dir, color, count);
 }
 
 /*

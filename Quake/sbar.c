@@ -2169,6 +2169,13 @@ void Sbar_IntermissionOverlay (void)
 		return;
 	}
 
+	// Hexen II uses its own intermission overlay
+	if (hexen2_mode)
+	{
+		Sbar_H2_IntermissionOverlay();
+		return;
+	}
+
 	if (cl.gametype == GAME_DEATHMATCH)
 	{
 		Sbar_DeathmatchOverlay ();
@@ -2216,6 +2223,13 @@ Sbar_FinaleOverlay
 void Sbar_FinaleOverlay (void)
 {
 	qpic_t	*pic;
+
+	// Hexen II uses its own finale overlay
+	if (hexen2_mode)
+	{
+		Sbar_H2_FinaleOverlay();
+		return;
+	}
 
 	GL_SetCanvas (CANVAS_MENU); //johnfitz
 
