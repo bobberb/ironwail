@@ -1254,7 +1254,14 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 		float default_viewheight = hexen2_mode ? H2_DEFAULT_VIEWHEIGHT : DEFAULT_VIEWHEIGHT;
 
 		if (view_ofs_offset >= 0)
+		{
 			viewheight_to_send = ENT_VEC(ent, view_ofs)[2];
+			// In H2 mode, treat 0 as uninitialized and use default
+			// H2 progs sets view_ofs in PutClientInServer, but it may not
+			// be called yet when first clientdata is sent
+			if (hexen2_mode && viewheight_to_send == 0)
+				viewheight_to_send = default_viewheight;
+		}
 		else
 			viewheight_to_send = default_viewheight;  // Field not found, use default
 
