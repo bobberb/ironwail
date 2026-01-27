@@ -647,24 +647,30 @@ static void R_DrawAliasModel_Real (entity_t *e, qboolean showtris)
 		scale_y = paliashdr->scale[1] * xyfact * fovscale;
 		scale_z = paliashdr->scale[2] * zfact * fovscale;
 
-		// Determine origin offset based on scale origin
+		// Determine origin offset based on scale origin (matching uhexen2)
+		// First compute the offset factors like uhexen2 does
+		float xy_offset = (xyfact - 1.0f) * 127.95f;
+		float z_offset = (zfact - 1.0f) * 127.95f;
+
 		switch (e->drawflags & H2_SCALE_ORIGIN_MASKIN)
 		{
 		default:
 		case H2_SCALE_ORIGIN_CENTER:
-			origin_x = paliashdr->scale_origin[0] - paliashdr->scale[0] * (xyfact - 1.0f) * 127.95f;
-			origin_y = paliashdr->scale_origin[1] - paliashdr->scale[1] * (xyfact - 1.0f) * 127.95f;
-			origin_z = paliashdr->scale_origin[2] - paliashdr->scale[2] * (zfact - 1.0f) * 127.95f;
+			origin_x = paliashdr->scale_origin[0] - paliashdr->scale[0] * xy_offset;
+			origin_y = paliashdr->scale_origin[1] - paliashdr->scale[1] * xy_offset;
+			origin_z = paliashdr->scale_origin[2] - paliashdr->scale[2] * z_offset;
 			break;
 		case H2_SCALE_ORIGIN_BOTTOM:
-			origin_x = paliashdr->scale_origin[0];
-			origin_y = paliashdr->scale_origin[1];
+			// XY adjusted, Z stays at scale_origin (bottom anchored)
+			origin_x = paliashdr->scale_origin[0] - paliashdr->scale[0] * xy_offset;
+			origin_y = paliashdr->scale_origin[1] - paliashdr->scale[1] * xy_offset;
 			origin_z = paliashdr->scale_origin[2];
 			break;
 		case H2_SCALE_ORIGIN_TOP:
-			origin_x = paliashdr->scale_origin[0] - paliashdr->scale[0] * (xyfact - 1.0f) * 255.95f;
-			origin_y = paliashdr->scale_origin[1] - paliashdr->scale[1] * (xyfact - 1.0f) * 255.95f;
-			origin_z = paliashdr->scale_origin[2] - paliashdr->scale[2] * (zfact - 1.0f) * 255.95f;
+			// XY adjusted, Z adjusted by 2x (top anchored)
+			origin_x = paliashdr->scale_origin[0] - paliashdr->scale[0] * xy_offset;
+			origin_y = paliashdr->scale_origin[1] - paliashdr->scale[1] * xy_offset;
+			origin_z = paliashdr->scale_origin[2] - paliashdr->scale[2] * z_offset * 2.0f;
 			break;
 		}
 
@@ -676,7 +682,10 @@ static void R_DrawAliasModel_Real (entity_t *e, qboolean showtris)
 	else
 	{
 		// Standard Quake/non-scaled transform
-		R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, e->scale);
+		// For H2 mode, use ENTSCALE_DEFAULT (16) since H2's scale=100 means 1.0x,
+		// but Q1's ENTSCALE_DECODE expects scale=16 for 1.0x
+		byte scale_for_matrix = hexen2_mode ? ENTSCALE_DEFAULT : e->scale;
+		R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, scale_for_matrix);
 		ApplyTranslation (model_matrix, paliashdr->scale_origin[0], paliashdr->scale_origin[1] * fovscale, paliashdr->scale_origin[2] * fovscale);
 		ApplyScale (model_matrix, paliashdr->scale[0], paliashdr->scale[1] * fovscale, paliashdr->scale[2] * fovscale);
 	}
