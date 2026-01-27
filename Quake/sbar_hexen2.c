@@ -88,6 +88,12 @@ static int inv_flg = 0;			// Inventory visible flag
 static double inv_time = 0;		// Time inventory was shown
 static qboolean sb_h2_loaded = false;
 
+// Bar height for animated show/hide (default: only top bar visible)
+static float BarHeight = BAR_TOP_HEIGHT;
+static float BarTargetHeight = BAR_TOP_HEIGHT;
+static qboolean sb_ShowInfo = false;
+#define BAR_SPEED 15.0f		// Animation speed multiplier
+
 // Forward declarations
 static void Sbar_H2_DrawPic(int x, int y, qpic_t *pic);
 static void Sbar_H2_DrawTransPic(int x, int y, qpic_t *pic);
@@ -192,7 +198,7 @@ static void Sbar_H2_DrawPic(int x, int y, qpic_t *pic)
 {
 	if (!pic)
 		return;
-	Draw_Pic(x + SB_XOFS, y + (vid.height - BAR_TOTAL_HEIGHT), pic);
+	Draw_Pic(x + SB_XOFS, y + (vid.height - (int)BarHeight), pic);
 }
 
 /*
@@ -207,7 +213,7 @@ static void Sbar_H2_DrawTransPic(int x, int y, qpic_t *pic)
 {
 	if (!pic)
 		return;
-	Draw_Pic(x + SB_XOFS, y + (vid.height - BAR_TOTAL_HEIGHT), pic);
+	Draw_Pic(x + SB_XOFS, y + (vid.height - (int)BarHeight), pic);
 }
 
 /*
@@ -256,7 +262,7 @@ static void Sbar_H2_DrawSmallNum(int x, int y, int number)
 	// Draw small numbers using half-size characters (4x4 instead of 8x8)
 	char str[8];
 	int i;
-	float draw_y = y + (vid.height - BAR_TOTAL_HEIGHT);
+	float draw_y = y + (vid.height - (int)BarHeight);
 
 	q_snprintf(str, sizeof(str), "%d", number);
 	for (i = 0; str[i]; i++)
@@ -640,6 +646,8 @@ Main H2 status bar drawing function
 */
 void Sbar_H2_Draw(void)
 {
+	float delta;
+
 	if (!sb_h2_loaded)
 	{
 		// Try to load H2 graphics
@@ -653,9 +661,34 @@ void Sbar_H2_Draw(void)
 		}
 	}
 
-	// Draw full H2 HUD
+	// Animate bar height toward target
+	if (BarHeight < BarTargetHeight)
+	{
+		delta = (BarTargetHeight - BarHeight) * BAR_SPEED * host_frametime;
+		if (delta < 1)
+			delta = 1;
+		BarHeight += delta;
+		if (BarHeight > BarTargetHeight)
+			BarHeight = BarTargetHeight;
+	}
+	else if (BarHeight > BarTargetHeight)
+	{
+		delta = (BarHeight - BarTargetHeight) * BAR_SPEED * host_frametime;
+		if (delta < 1)
+			delta = 1;
+		BarHeight -= delta;
+		if (BarHeight < BarTargetHeight)
+			BarHeight = BarTargetHeight;
+	}
+
+	// Always draw top bar
 	Sbar_H2_DrawTopBar();
-	Sbar_H2_DrawBottomBar();
+
+	// Only draw bottom bar if bar is raised
+	if (BarHeight > BAR_TOP_HEIGHT)
+		Sbar_H2_DrawBottomBar();
+
+	// Draw artifact inventory above top bar
 	Sbar_H2_DrawArtifactInventory();
 
 	// Draw info overlay if active
@@ -904,9 +937,16 @@ static qboolean sb_h2_showdm = false;
 
 void Sbar_H2_ShowInfo(qboolean show)
 {
-	if (show && !sb_h2_showinfo)
+	if (show && !sb_ShowInfo)
 	{
 		S_LocalSound("misc/barmovup.wav");
+		BarTargetHeight = BAR_TOTAL_HEIGHT;
+		sb_ShowInfo = true;
+	}
+	else if (!show && sb_ShowInfo)
+	{
+		BarTargetHeight = BAR_TOP_HEIGHT;
+		sb_ShowInfo = false;
 	}
 	sb_h2_showinfo = show;
 }

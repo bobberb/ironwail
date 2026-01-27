@@ -273,9 +273,11 @@ void M_DrawTextCursor (int cx, int cy)
 
 void M_PrintEx (int cx, int cy, int dim, const char *str)
 {
+	// H2 uses +256 for gold text (512-char font), Q1 uses +128 (256-char font)
+	int color_offset = hexen2_mode ? 256 : 128;
 	while (*str)
 	{
-		Draw_CharacterEx (cx, cy, dim, dim, (*str)+128);
+		Draw_CharacterEx (cx, cy, dim, dim, ((unsigned char)(*str)) + color_offset);
 		str++;
 		cx += dim;
 	}
@@ -325,7 +327,8 @@ void M_PrintScroll (int x, int y, int maxwidth, const char *str, double time, qb
 	int maxchars = maxwidth / 8;
 	int len = strlen (str);
 	int i, ofs;
-	char mask = color ? QCHAR_COLOR_MASK : 0;
+	// H2 uses +256 for gold text (512-char font), Q1 uses +128 (256-char font)
+	int color_offset = color ? (hexen2_mode ? 256 : 128) : 0;
 
 	if (len <= maxchars)
 	{
@@ -343,8 +346,8 @@ void M_PrintScroll (int x, int y, int maxwidth, const char *str, double time, qb
 
 	for (i = 0; i < maxchars; i++)
 	{
-		char c = (ofs < len) ? str[ofs] : " /// "[ofs - len];
-		M_DrawCharacter (x, y, c ^ mask);
+		unsigned char c = (ofs < len) ? str[ofs] : " /// "[ofs - len];
+		M_DrawCharacter (x, y, c + color_offset);
 		x += 8;
 		if (++ofs >= len + 5)
 			ofs = 0;
@@ -353,10 +356,11 @@ void M_PrintScroll (int x, int y, int maxwidth, const char *str, double time, qb
 
 static void M_PrintSubstring (int x, int y, const char *text, int numchars, qboolean color)
 {
-	char mask = color ? 0x80 : 0;
+	// H2 uses +256 for gold text (512-char font), Q1 uses +128 (256-char font)
+	int color_offset = color ? (hexen2_mode ? 256 : 128) : 0;
 	while (*text && numchars)
 	{
-		M_DrawCharacter (x, y, *text++ ^ mask);
+		M_DrawCharacter (x, y, ((unsigned char)(*text++)) + color_offset);
 		x += 8;
 		--numchars;
 	}
@@ -364,10 +368,11 @@ static void M_PrintSubstring (int x, int y, const char *text, int numchars, qboo
 
 static void M_PrintDotFill (int x, int y, const char *text, int cols, qboolean color)
 {
-	char mask = color ? 0x80 : 0;
+	// H2 uses +256 for gold text (512-char font), Q1 uses +128 (256-char font)
+	int color_offset = color ? (hexen2_mode ? 256 : 128) : 0;
 	while (*text && cols >= 2)
 	{
-		M_DrawCharacter (x, y, *text++ ^ mask);
+		M_DrawCharacter (x, y, ((unsigned char)(*text++)) + color_offset);
 		x += 8;
 		--cols;
 	}
@@ -375,7 +380,7 @@ static void M_PrintDotFill (int x, int y, const char *text, int cols, qboolean c
 	GL_SetCanvasColor (1.f, 1.f, 1.f, 0.375f);
 	while (cols --> 0)
 	{
-		M_DrawCharacter (x, y, '.' ^ mask);
+		M_DrawCharacter (x, y, '.' + color_offset);
 		x += 8;
 	}
 	GL_SetCanvasColor (1.f, 1.f, 1.f, 1.f);
@@ -1891,7 +1896,8 @@ void M_Maps_Draw (void)
 		int idx = i + firstvis;
 		const mapitem_t *item = &mapsmenu.items[idx];
 		const char *message = M_Maps_GetMessage (item);
-		int mask = item->active ? 128 : 0;
+		// H2 uses +256 for gold text (512-char font), Q1 uses +128 (256-char font)
+		int color_offset = item->active ? (hexen2_mode ? 256 : 128) : 0;
 		qboolean selected = (idx == mapsmenu.list.cursor);
 
 		if (!item->source)
@@ -1911,13 +1917,14 @@ void M_Maps_Draw (void)
 			numvismaps++;
 
 			for (j = 0; j < namecols - 2 && buf[j]; j++)
-				M_DrawCharacter (x + j*8, y + i*8, buf[j] ^ mask);
+				M_DrawCharacter (x + j*8, y + i*8, ((unsigned char)buf[j]) + color_offset);
 
 			if (!message || message[0])
 			{
 				if (!message)
 				{
-					memset (buf, '.' | 0x80, desccols);
+					// H2 uses +256 for gold text (512-char font), Q1 uses +128 (256-char font)
+					memset (buf, '.' + (hexen2_mode ? 256 : 128), desccols);
 					buf[desccols] = '\0';
 				}
 				else if (mapsmenu.list.search.len > 0)
@@ -1927,7 +1934,7 @@ void M_Maps_Draw (void)
 
 				GL_SetCanvasColor (1, 1, 1, 0.375f);
 				for (/**/; j < namecols; j++)
-					M_DrawCharacter (x + j*8, y + i*8, '.' | mask);
+					M_DrawCharacter (x + j*8, y + i*8, '.' + color_offset);
 				if (message)
 					GL_SetCanvasColor (1, 1, 1, 1);
 
@@ -6655,7 +6662,9 @@ void M_Mods_Draw (void)
 	{
 		int idx = i + firstvis;
 		const moditem_t *item = &modsmenu.items[idx];
-		int mask = item->active ? 128 : 0;
+		// H2 uses +256 for gold text (512-char font), Q1 uses +128 (256-char font)
+		int gold_offset = hexen2_mode ? 256 : 128;
+		int color_offset = item->active ? gold_offset : 0;
 		const char *message = item->source ? Modlist_GetFullName (item->source) : NULL;
 		qboolean selected = (idx == modsmenu.list.cursor);
 
@@ -6675,7 +6684,7 @@ void M_Mods_Draw (void)
 				double progress = Modlist_GetDownloadProgress (item->source);
 				q_snprintf (buf, sizeof (buf), "\20%3.0f%%\21 %s", 100.0 * progress, item->name);
 				if (flash)
-					mask ^= 128;
+					color_offset = color_offset ? 0 : gold_offset;  // toggle
 			}
 			else
 				q_strlcpy (buf, tinted, sizeof (buf));
@@ -6685,7 +6694,7 @@ void M_Mods_Draw (void)
 			numvismods++;
 
 			for (j = 0; j < namecols - 2 && buf[j]; j++)
-				M_DrawCharacter (x + j*8, y + i*8, buf[j] ^ mask);
+				M_DrawCharacter (x + j*8, y + i*8, ((unsigned char)buf[j]) + color_offset);
 
 			if (message && message[0])
 			{
@@ -6696,7 +6705,7 @@ void M_Mods_Draw (void)
 
 				GL_SetCanvasColor (1, 1, 1, 0.375f);
 				for (/**/; j < namecols; j++)
-					M_DrawCharacter (x + j*8, y + i*8, '.' | mask);
+					M_DrawCharacter (x + j*8, y + i*8, '.' + color_offset);
 				if (message)
 					GL_SetCanvasColor (1, 1, 1, 1);
 
