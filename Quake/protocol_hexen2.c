@@ -103,11 +103,16 @@ const char *H2_GetProtocolName(int protocol)
 =================
 H2_DetectGameType
 
-Detect if we should be running in Hexen II mode based on game data
+Detect if we should be running in Hexen II mode based on game data.
+Called after COM_InitFilesystem has set up search paths.
 =================
 */
 void H2_DetectGameType(void)
 {
+	int handle;
+	FILE *dummy;
+	unsigned int path_id;
+
 	// Check if user forced Hexen II mode
 	if (cv_game_hexen2.value != 0)
 	{
@@ -116,56 +121,63 @@ void H2_DetectGameType(void)
 		return;
 	}
 
-	// Auto-detect based on game directory
-	// Look for common Hexen II identifiers
+	// Auto-detect based on game data in search paths
 	hexen2_mode = false;
+	hexen2_missionpack = false;
 
-	// Hexen II uses data1/ and portals/ instead of Quake's id1/
-	// Check for these directories/files
+	// Check for H2-specific files that would be in the search path
+	// puzzles.txt is in data1/pak0.pak and uniquely identifies H2
+	handle = COM_FOpenFile("puzzles.txt", &dummy, &path_id);
+	if (handle >= 0)
 	{
-		int handle;
-		FILE *dummy;
-		unsigned int path_id;
+		fclose(dummy);
+		hexen2_mode = true;
+		Con_DPrintf("Hexen II mode: DETECTED (puzzles.txt found)\n");
+	}
 
-		// Check for data1 directory with pak files (base Hexen II)
-		handle = COM_FOpenFile("data1/pak0.pak", &dummy, &path_id);
+	// Also check for H2 menu graphics as backup detection
+	if (!hexen2_mode)
+	{
+		handle = COM_FOpenFile("gfx/menu/title0.lmp", &dummy, &path_id);
 		if (handle >= 0)
 		{
 			fclose(dummy);
 			hexen2_mode = true;
-			Con_Printf("Hexen II mode: DETECTED (data1/pak0.pak found)\n");
-			return;
-		}
-
-		// Check for portals directory (Portal of Praevus mission pack)
-		handle = COM_FOpenFile("portals/pak3.pak", &dummy, &path_id);
-		if (handle >= 0)
-		{
-			fclose(dummy);
-			hexen2_mode = true;
-			hexen2_missionpack = true;
-			Con_Printf("Hexen II mode: DETECTED (Portal of Praevus mission pack)\n");
-			return;
-		}
-
-		// Check for puzzles.txt (H2-specific file)
-		handle = COM_FOpenFile("puzzles.txt", &dummy, &path_id);
-		if (handle >= 0)
-		{
-			fclose(dummy);
-			hexen2_mode = true;
-			Con_Printf("Hexen II mode: DETECTED (puzzles.txt found)\n");
-			return;
+			Con_DPrintf("Hexen II mode: DETECTED (H2 menu graphics found)\n");
 		}
 	}
 
-	// Check for Hexen II progs.dat CRC
-	// TODO: Add CRC checking when progs loading is integrated
+	// Check for Portal of Praevus mission pack
+	// The mission pack has unique files like the demoness portrait
+	if (hexen2_mode)
+	{
+		handle = COM_FOpenFile("gfx/cport5.lmp", &dummy, &path_id);
+		if (handle >= 0)
+		{
+			fclose(dummy);
+			hexen2_missionpack = true;
+			Con_DPrintf("Portal of Praevus: DETECTED (demoness portrait found)\n");
+		}
+
+		// Also check -portals command line flag
+		if (!hexen2_missionpack && COM_CheckParm("-portals"))
+		{
+			hexen2_missionpack = true;
+			Con_DPrintf("Portal of Praevus: ENABLED via -portals flag\n");
+		}
+	}
 
 	if (hexen2_mode)
-		Con_Printf("Hexen II mode: ENABLED\n");
+	{
+		if (hexen2_missionpack)
+			Con_Printf("Hexen II mode: ENABLED (with Portal of Praevus)\n");
+		else
+			Con_Printf("Hexen II mode: ENABLED\n");
+	}
 	else
-		Con_Printf("Quake mode: ENABLED\n");
+	{
+		Con_DPrintf("Quake mode: ENABLED\n");
+	}
 }
 
 /*

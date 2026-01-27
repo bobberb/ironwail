@@ -148,6 +148,7 @@ typedef struct client_s
 	edict_t			*edict;				// EDICT_NUM(clientnum+1)
 	char			name[32];			// for printing to other people
 	int				colors;
+	int				playerclass;		// H2: player class (1-5)
 
 	float			ping_times[NUM_PING_TIMES];
 	int				num_pings;			// ping_times[num_pings%NUM_PING_TIMES]

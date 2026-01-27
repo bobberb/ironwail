@@ -40,8 +40,9 @@ static char BigCharWidth[27][27];
 static qboolean bigfont_loaded = false;
 static qpic_t *bigfont_pic = NULL;
 
-// Player class for new game
-int h2_player_class = 1;
+// Player class for new game (uses _cl_playerclass cvar)
+extern cvar_t cl_playerclass;
+#define h2_player_class ((int)cl_playerclass.value)
 
 // Help pages
 #define H2_NUM_HELP_PAGES	5
@@ -114,20 +115,13 @@ Check if the Portals of Praevus expansion is available
 */
 qboolean M_H2_HasPortals(void)
 {
-	// Check for portals pak file or command line parameter
+	// Use the flag that was set during H2 detection in protocol_hexen2.c
+	if (hexen2_missionpack)
+		return true;
+
+	// Also check command line override
 	if (COM_CheckParm("-portals"))
 		return true;
-
-	// Check for portals directory with content
-	// In H2, the Demoness class is only available with the mission pack
-	// We can check for the presence of pak3.pak in the portals directory
-	// or check for specific mission pack files
-
-	// For now, also check if running from portals game dir
-	if (q_strcasecmp(com_gamedir, "portals") == 0)
-		return true;
-
-	// TODO: Could also check for existence of specific mission pack files
 
 	return false;
 }
@@ -174,8 +168,8 @@ void M_H2_BuildBigCharWidth(void)
 		return;
 	}
 
-	// Bigfont2.lmp is 160x80 pixels, containing 10 chars per row (16 pixels wide each)
-	// Characters are arranged: A-Z (rows 0-2, 10 chars each minus a few), then /
+	// Bigfont2.lmp is 160x80 pixels, 8 chars per row (4 rows), each char 20x20 pixels
+	// Characters are arranged: A-Z then / (27 chars total across 4 rows)
 	// For detailed kerning, we'd need to analyze the raw pixel data
 	// For simplicity, use fixed spacing based on char widths
 
@@ -259,17 +253,15 @@ void M_H2_DrawBigCharacter(int x, int y, int num)
 	if (num < 0 || num >= 27)
 		return;
 
-	// Bigfont layout: 10 chars per row, each 16x20 pixels (approx)
-	// Actually it's 160x80 total, so 16x26-27 per char
-	row = num / 10;
-	col = num % 10;
+	// Bigfont layout: 8 chars per row, 4 rows total (A-Z plus /)
+	// Texture is 160x80 pixels, so each char is 20x20 pixels
+	row = num / 8;
+	col = num % 8;
 
-	// Draw the character as a subpic
-	// Each char is roughly 16 pixels wide in the 160 wide texture
-	srcx = col * 16;
-	srcy = row * 26;
+	srcx = col * 20;
+	srcy = row * 20;
 
-	M_DrawSubpic(x, y, bigfont_pic, srcx, srcy, 16, 26);
+	M_DrawSubpic(x, y, bigfont_pic, srcx, srcy, 20, 20);
 }
 
 /*
@@ -821,7 +813,7 @@ static void M_H2_Class_Key(int key)
 	case K_ABUTTON:
 	case K_MOUSE1:
 		m_entersound = true;
-		h2_player_class = h2_class_cursor + 1;  // Convert 0-based to 1-based
+		Cvar_SetValue("_cl_playerclass", h2_class_cursor + 1);  // Convert 0-based to 1-based
 		M_Menu_H2_Difficulty_f();
 		break;
 	}

@@ -36,7 +36,8 @@ qpic_t		*draw_backtile;
 qboolean	custom_conchars;
 
 gltexture_t *char_texture; //johnfitz
-byte		char_texture_data[256 * 10 * 10];
+byte		char_texture_data[32 * 10 * 16 * 10];  // sized for H2 (320x160), Q1 uses 160x160 subset
+static int	char_texture_cols = 16;  // chars per row: 16 for Q1, 32 for H2
 qpic_t		*pic_ovr, *pic_ins; //johnfitz -- new cursor handling
 qpic_t		*pic_nul; //johnfitz -- for missing gfx, don't crash
 
@@ -500,7 +501,7 @@ void Draw_LoadPics (void)
 		/*
 		 * Hexen II conchars.lmp is raw 256x128 pixels, no header.
 		 * Layout: 32 chars per row (256/8), 16 rows (128/8) = 512 chars
-		 * We need to convert to Quake's 16x16 layout (128x128) for first 256 chars.
+		 * Keep the native layout (like uhexen2) - use 32 chars per row.
 		 */
 		int h2_filesize;
 		byte *h2_data;
@@ -521,31 +522,24 @@ void Draw_LoadPics (void)
 		}
 
 		/*
-		 * H2: 32 chars/row, 8x8 each, stride=256
-		 * Q1: 16 chars/row, 8x8 each, stride=128
-		 * Copy first 256 characters (16 rows of 16 chars) from H2 layout
+		 * H2: 32 chars/row, 16 rows, 8x8 each = 512 chars
+		 * Output: 320x160 texture (32*10 x 16*10) with 1-pixel borders
 		 */
-		for (i = 0; i < 256; i++)
+		char_texture_cols = 32;
+		memset(char_texture_data, 255, 32*10*16*10);  /* fill with transparent */
+
+		for (i = 0; i < 512; i++)
 		{
-			int h2_row = i / 32;  /* H2 has 32 chars per row */
+			int h2_row = i / 32;
 			int h2_col = i % 32;
-			int q1_row = i / 16;  /* Q1 expects 16 chars per row */
-			int q1_col = i % 16;
 			int y;
 
 			for (y = 0; y < 8; y++)
 			{
 				byte *src = h2_data + (h2_row * 8 + y) * 256 + h2_col * 8;
-				byte *dst = char_texture_data + (q1_row * 10 + y + 1) * (16*10) + q1_col * 10 + 1;
+				byte *dst = char_texture_data + (h2_row * 10 + y + 1) * (32*10) + h2_col * 10 + 1;
 				memcpy(dst, src, 8);
 			}
-		}
-
-		/* Fill the border pixels with transparent */
-		for (i = 0; i < 16*10*16*10; i++)
-		{
-			if (char_texture_data[i] == 0)
-				char_texture_data[i] = 255;
 		}
 
 		custom_conchars = true;
@@ -559,6 +553,7 @@ void Draw_LoadPics (void)
 			Sys_Error ("Draw_LoadPics: truncated conchars");
 		custom_conchars = (COM_HashBlock (data, 128*218) != 0xc7e2a10a);
 
+		char_texture_cols = 16;
 		for (i = 0; i < 256; i++)
 		{
 			row = i / 16;
@@ -568,7 +563,7 @@ void Draw_LoadPics (void)
 		}
 	}
 
-	char_texture = TexMgr_LoadImage (NULL, WADFILENAME":conchars", 16*10, 16*10, SRC_INDEXED, char_texture_data,
+	char_texture = TexMgr_LoadImage (NULL, WADFILENAME":conchars", char_texture_cols*10, 16*10, SRC_INDEXED, char_texture_data,
 		"", (src_offset_t) char_texture_data, TEXPREF_ALPHA | TEXPREF_NEAREST | TEXPREF_NOPICMIP | TEXPREF_CONCHARS);
 
 	if (hexen2_mode)
@@ -823,21 +818,34 @@ Draw_CharacterQuadEx -- johnfitz -- seperate function to spit out verts
 void Draw_CharacterQuadEx (float x, float y, float dimx, float dimy, char num)
 {
 	int				row, col;
-	float			frow, fcol, fsize;
+	float			frow, fcol, fsizex, fsizey;
+	float			tex_width, tex_height;
 	guivertex_t		*verts;
 
-	row = num>>4;
-	col = num&15;
+	/* H2: 32 chars/row, 16 rows; Q1: 16 chars/row, 16 rows */
+	if (char_texture_cols == 32)
+	{
+		row = ((unsigned char)num) >> 5;
+		col = ((unsigned char)num) & 31;
+	}
+	else
+	{
+		row = ((unsigned char)num) >> 4;
+		col = ((unsigned char)num) & 15;
+	}
 
-	frow = row * 0.0625f + 1.f / (16.f * 10.f);
-	fcol = col * 0.0625f + 1.f / (16.f * 10.f);
-	fsize = 8.f / (16.f * 10.f);
+	tex_width = (float)(char_texture_cols * 10);
+	tex_height = 16.f * 10.f;
+	frow = row / 16.f + 1.f / tex_height;
+	fcol = col / (float)char_texture_cols + 1.f / tex_width;
+	fsizex = 8.f / tex_width;
+	fsizey = 8.f / tex_height;
 
 	verts = Draw_AllocQuad ();
-	Draw_SetVertex (verts++, x,      y,      fcol,         frow);
-	Draw_SetVertex (verts++, x+dimx, y,      fcol + fsize, frow);
-	Draw_SetVertex (verts++, x+dimx, y+dimy, fcol + fsize, frow + fsize);
-	Draw_SetVertex (verts++, x,      y+dimy, fcol,         frow + fsize);
+	Draw_SetVertex (verts++, x,      y,      fcol,          frow);
+	Draw_SetVertex (verts++, x+dimx, y,      fcol + fsizex, frow);
+	Draw_SetVertex (verts++, x+dimx, y+dimy, fcol + fsizex, frow + fsizey);
+	Draw_SetVertex (verts++, x,      y+dimy, fcol,          frow + fsizey);
 }
 
 /*

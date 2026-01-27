@@ -2755,6 +2755,86 @@ static void Host_Name_f (void)
 	MSG_WriteString (&sv.reliable_datagram, host_client->name);
 }
 
+/*
+======================
+Host_Class_f
+
+Hexen II player class selection (1-5)
+======================
+*/
+extern cvar_t cl_playerclass;
+extern const char *h2_class_names[];
+
+static void Host_Class_f (void)
+{
+	int newClass;
+	int maxClass;
+
+	if (!hexen2_mode)
+	{
+		Con_Printf ("playerclass command only available in Hexen II mode\n");
+		return;
+	}
+
+	maxClass = hexen2_missionpack ? 5 : 4;
+
+	if (Cmd_Argc () == 1)
+	{
+		int curClass = (int)cl_playerclass.value;
+		const char *className = (curClass >= 1 && curClass <= 5) ? h2_class_names[curClass - 1] : "unknown";
+		Con_Printf ("\"playerclass\" is %d (\"%s\")\n", curClass, className);
+		return;
+	}
+
+	if (Cmd_Argc () == 2)
+		newClass = atoi(Cmd_Argv(1));
+	else
+		newClass = atoi(Cmd_Args());
+
+	if (newClass < 1 || newClass > maxClass)
+	{
+		Con_Printf ("Invalid player class (1-%d).\n", maxClass);
+		return;
+	}
+
+	// Class 5 (Demoness) requires Portal of Praevus
+	if (newClass == 5 && !hexen2_missionpack)
+	{
+		Con_Printf ("Demoness class requires Portal of Praevus.\n");
+		return;
+	}
+
+	if (cmd_source == src_command)
+	{
+		Cvar_SetValue ("_cl_playerclass", newClass);
+
+		// Update progs cl_playerclass global if server is active
+		if (sv.active && h2_globals.ofs_cl_playerclass >= 0)
+			qcvm->globals[h2_globals.ofs_cl_playerclass] = (float)newClass;
+
+		if (cls.state == ca_connected)
+			Cmd_ForwardToServer ();
+		return;
+	}
+
+	// Server-side: set player's class on entity
+	if (h2_globals.fields.playerclass >= 0)
+	{
+		((float *)&host_client->edict->v)[h2_globals.fields.playerclass] = (float)newClass;
+	}
+
+	host_client->playerclass = newClass;
+
+	// Update progs cl_playerclass global
+	if (h2_globals.ofs_cl_playerclass >= 0)
+		qcvm->globals[h2_globals.ofs_cl_playerclass] = (float)newClass;
+
+	// Send class update to all clients
+	MSG_WriteByte (&sv.reliable_datagram, svc_h2_updateclass);
+	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
+	MSG_WriteByte (&sv.reliable_datagram, (byte)newClass);
+}
+
 static void Host_Say(qboolean teamonly)
 {
 	int		j;
@@ -3827,6 +3907,7 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("connect", Host_Connect_f);
 	Cmd_AddCommand_Console ("reconnect", Host_Reconnect_f);
 	Cmd_AddCommand_ClientCommand ("name", Host_Name_f);
+	Cmd_AddCommand_ClientCommand ("playerclass", Host_Class_f);
 	Cmd_AddCommand_ClientCommand ("noclip", Host_Noclip_f);
 	Cmd_AddCommand_ClientCommand ("setpos", Host_SetPos_f); //QuakeSpasm
 

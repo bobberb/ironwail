@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // these two are not intended to be set directly
 cvar_t	cl_name = {"_cl_name", "player", CVAR_ARCHIVE};
 cvar_t	cl_color = {"_cl_color", "0", CVAR_ARCHIVE};
+cvar_t	cl_playerclass = {"_cl_playerclass", "1", CVAR_ARCHIVE}; // H2: player class (1-5)
 
 cvar_t	cl_shownet = {"cl_shownet","0",CVAR_NONE};	// can be 0, 1, or 2
 cvar_t	cl_nolerp = {"cl_nolerp","0",CVAR_NONE};
@@ -1011,6 +1012,7 @@ void CL_Init (void)
 
 	Cvar_RegisterVariable (&cl_name);
 	Cvar_RegisterVariable (&cl_color);
+	Cvar_RegisterVariable (&cl_playerclass);
 	Cvar_RegisterVariable (&cl_upspeed);
 	Cvar_RegisterVariable (&cl_forwardspeed);
 	Cvar_RegisterVariable (&cl_backspeed);

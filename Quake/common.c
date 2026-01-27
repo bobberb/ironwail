@@ -3346,6 +3346,17 @@ void COM_InitFilesystem (void) //johnfitz -- modified based on topaz's tutorial
 		COM_AddGameDirectory ("quoth");
 	if (COM_CheckParm ("-portals"))
 		COM_AddGameDirectory ("portals");
+	else
+	{
+		// Auto-detect Portal of Praevus if portals directory exists
+		// This allows Hexen II + mission pack to work without -portals flag
+		char portalcheck[MAX_OSPATH];
+		q_snprintf(portalcheck, sizeof(portalcheck), "%s/portals/pak3.pak", com_basedirs[0]);
+		if (Sys_FileExists(portalcheck))
+		{
+			COM_AddGameDirectory("portals");
+		}
+	}
 
 	for(i = 0;;)
 	{

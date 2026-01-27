@@ -164,6 +164,7 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 | Class selection | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
 | Difficulty selection | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
 | Portals expansion detect | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
+| Demoness class (5th) | [x] | `hexen2/menu.c` | `menu_hexen2.c` (auto-detected via portals) |
 
 ---
 
@@ -306,10 +307,17 @@ cd "/tank/josh/Documents/Games/PcGames/HeXen II"
 ```
 
 ### Test Checklist
-- [ ] Game loads without crash
+- [x] H2 mode auto-detected (puzzles.txt, data1/)
+- [x] Portals auto-detected (pak3.pak, cport5.lmp)
+- [x] 5 classes available with Portals (Demoness)
+- [x] Map loads in dedicated server (demo1: 306 entities)
+- [x] Player spawn point exists (info_player_start)
+- [x] H2 progs loads (v1.11 with runtime offset handling)
+- [x] sv_sound_distance cvar works
+- [ ] Game loads without crash (graphics mode)
 - [ ] Player can move
 - [ ] Entities render correctly
-- [ ] HUD displays
+- [ ] HUD displays properly
 - [ ] Sound plays
 - [ ] Effects render
 - [ ] Can complete demo1 level

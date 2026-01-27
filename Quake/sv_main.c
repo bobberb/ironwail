@@ -137,6 +137,7 @@ int		sv_protocol = PROTOCOL_RMQ; //johnfitz
 extern cvar_t nomonsters;
 
 static cvar_t sv_netsort = {"sv_netsort", "1", CVAR_NONE};
+static cvar_t sv_sound_distance = {"sv_sound_distance", "800", CVAR_NONE}; // H2: sound culling distance
 
 //============================================================================
 
@@ -280,6 +281,7 @@ void SV_Init (void)
 	Cvar_RegisterVariable (&sv_gameplayfix_random);
 	Cvar_RegisterVariable (&sv_gameplayfix_elevators);
 	Cvar_RegisterVariable (&sv_netsort);
+	Cvar_RegisterVariable (&sv_sound_distance);
 	Cvar_RegisterVariable (&sv_autoload);
 	Cvar_RegisterVariable (&sv_autosave);
 	Cvar_RegisterVariable (&sv_autosave_interval);
