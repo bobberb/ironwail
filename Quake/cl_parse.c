@@ -710,6 +710,27 @@ void CL_ParseBaseline (entity_t *ent, int version) //johnfitz -- added argument
 	int	i;
 	int bits; //johnfitz
 
+	// H2 has a different baseline format: modelindex(short), frame, colormap, skin, scale, drawflags, abslight, origin/angles
+	if (hexen2_mode && version == 1)
+	{
+		ent->baseline.modelindex = MSG_ReadShort();
+		ent->baseline.frame = MSG_ReadByte();
+		ent->baseline.colormap = MSG_ReadByte();
+		ent->baseline.skin = MSG_ReadByte();
+		ent->scale = MSG_ReadByte();  // H2: scale * 100
+		ent->drawflags = MSG_ReadByte();
+		ent->abslight = MSG_ReadByte();
+		for (i = 0; i < 3; i++)
+		{
+			ent->baseline.origin[i] = MSG_ReadCoord(cl.protocolflags);
+			ent->baseline.angles[i] = MSG_ReadAngle(cl.protocolflags);
+		}
+		ent->baseline.alpha = ENTALPHA_DEFAULT;
+		ent->baseline.scale = ent->scale;  // Copy to baseline
+		ent->baseline.drawflags = ent->drawflags;
+		return;
+	}
+
 	//johnfitz -- PROTOCOL_FITZQUAKE
 	bits = (version == 2) ? MSG_ReadByte() : 0;
 	ent->baseline.modelindex = (bits & B_LARGEMODEL) ? MSG_ReadShort() : MSG_ReadByte();

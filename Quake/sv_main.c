@@ -1759,45 +1759,89 @@ void SV_CreateBaseline (void)
 	//
 		SV_ReserveSignonSpace (35);
 
-		//johnfitz -- PROTOCOL_FITZQUAKE
-		if (bits)
-			MSG_WriteByte (sv.signon, svc_spawnbaseline2);
-		else
-			MSG_WriteByte (sv.signon, svc_spawnbaseline);
-		//johnfitz
-
-		MSG_WriteShort (sv.signon,entnum);
-
-		//johnfitz -- PROTOCOL_FITZQUAKE
-		if (bits)
-			MSG_WriteByte (sv.signon, bits);
-
-		if (bits & B_LARGEMODEL)
-			MSG_WriteShort (sv.signon, svent->baseline.modelindex);
-		else
-			MSG_WriteByte (sv.signon, svent->baseline.modelindex);
-
-		if (bits & B_LARGEFRAME)
-			MSG_WriteShort (sv.signon, svent->baseline.frame);
-		else
-			MSG_WriteByte (sv.signon, svent->baseline.frame);
-		//johnfitz
-
-		MSG_WriteByte (sv.signon, svent->baseline.colormap);
-		MSG_WriteByte (sv.signon, svent->baseline.skin);
-		for (i=0 ; i<3 ; i++)
+		// H2 has a completely different baseline format
+		if (hexen2_mode)
 		{
-			MSG_WriteCoord(sv.signon, svent->baseline.origin[i], sv.protocolflags);
-			MSG_WriteAngle(sv.signon, svent->baseline.angles[i], sv.protocolflags);
+			eval_t *val;
+			float scale_val = 1.0f;
+			int drawflags_val = 0;
+			float abslight_val = 0.0f;
+
+			MSG_WriteByte (sv.signon, svc_spawnbaseline);
+			MSG_WriteShort (sv.signon, entnum);
+
+			// H2: modelindex is always a short
+			MSG_WriteShort (sv.signon, svent->baseline.modelindex);
+			MSG_WriteByte (sv.signon, svent->baseline.frame);
+			MSG_WriteByte (sv.signon, svent->baseline.colormap);
+			MSG_WriteByte (sv.signon, svent->baseline.skin);
+
+			// H2: scale (byte = value * 100)
+			val = GetEdictFieldValueByName(svent, "scale");
+			if (val && val->_float != 0.0f)
+				scale_val = val->_float;
+			MSG_WriteByte (sv.signon, (int)(scale_val * 100.0f) & 255);
+
+			// H2: drawflags
+			val = GetEdictFieldValueByName(svent, "drawflags");
+			if (val)
+				drawflags_val = (int)val->_float;
+			MSG_WriteByte (sv.signon, drawflags_val);
+
+			// H2: abslight (byte = value * 255)
+			val = GetEdictFieldValueByName(svent, "abslight");
+			if (val)
+				abslight_val = val->_float;
+			MSG_WriteByte (sv.signon, (int)(abslight_val * 255.0f) & 255);
+
+			for (i = 0; i < 3; i++)
+			{
+				MSG_WriteCoord(sv.signon, svent->baseline.origin[i], sv.protocolflags);
+				MSG_WriteAngle(sv.signon, svent->baseline.angles[i], sv.protocolflags);
+			}
 		}
+		else
+		{
+			//johnfitz -- PROTOCOL_FITZQUAKE
+			if (bits)
+				MSG_WriteByte (sv.signon, svc_spawnbaseline2);
+			else
+				MSG_WriteByte (sv.signon, svc_spawnbaseline);
+			//johnfitz
 
-		//johnfitz -- PROTOCOL_FITZQUAKE
-		if (bits & B_ALPHA)
-			MSG_WriteByte (sv.signon, svent->baseline.alpha);
-		//johnfitz
+			MSG_WriteShort (sv.signon,entnum);
 
-		if (bits & B_SCALE)
-			MSG_WriteByte (sv.signon, svent->baseline.scale);
+			//johnfitz -- PROTOCOL_FITZQUAKE
+			if (bits)
+				MSG_WriteByte (sv.signon, bits);
+
+			if (bits & B_LARGEMODEL)
+				MSG_WriteShort (sv.signon, svent->baseline.modelindex);
+			else
+				MSG_WriteByte (sv.signon, svent->baseline.modelindex);
+
+			if (bits & B_LARGEFRAME)
+				MSG_WriteShort (sv.signon, svent->baseline.frame);
+			else
+				MSG_WriteByte (sv.signon, svent->baseline.frame);
+			//johnfitz
+
+			MSG_WriteByte (sv.signon, svent->baseline.colormap);
+			MSG_WriteByte (sv.signon, svent->baseline.skin);
+			for (i=0 ; i<3 ; i++)
+			{
+				MSG_WriteCoord(sv.signon, svent->baseline.origin[i], sv.protocolflags);
+				MSG_WriteAngle(sv.signon, svent->baseline.angles[i], sv.protocolflags);
+			}
+
+			//johnfitz -- PROTOCOL_FITZQUAKE
+			if (bits & B_ALPHA)
+				MSG_WriteByte (sv.signon, svent->baseline.alpha);
+			//johnfitz
+
+			if (bits & B_SCALE)
+				MSG_WriteByte (sv.signon, svent->baseline.scale);
+		}
 	}
 }
 
