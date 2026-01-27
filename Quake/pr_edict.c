@@ -600,8 +600,8 @@ void H2_SetupGlobals (void)
 		f->owner, f->aiment, f->enemy, f->chain, f->goalentity);
 	if (hexen2_mode)
 	{
-		Con_DPrintf("  H2: playerclass=%d hull=%d lastruntime=%d scale=%d\n",
-			f->playerclass, f->hull, f->lastruntime, f->scale);
+		Con_DPrintf("  H2: playerclass=%d hull=%d lastruntime=%d scale=%d view_ofs=%d\n",
+			f->playerclass, f->hull, f->lastruntime, f->scale, f->view_ofs);
 		Con_DPrintf("  H2 globals: trace_ent=%d msg_entity=%d v_forward=%d\n",
 			h2_globals.ofs_trace_ent, h2_globals.ofs_msg_entity, h2_globals.ofs_v_forward);
 	}
