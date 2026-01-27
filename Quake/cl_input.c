@@ -58,6 +58,10 @@ kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
 kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack;
 kbutton_t	in_up, in_down;
 
+// H2: Infoplaque input for mission objectives display
+static kbutton_t	in_infoplaque;
+qboolean	h2_info_up = false;	// H2: True when infoplaque key is held
+
 int			in_impulse;
 
 
@@ -174,6 +178,22 @@ void IN_UseDown (void) {KeyDown(&in_use);}
 void IN_UseUp (void) {KeyUp(&in_use);}
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
+
+// H2: Infoplaque key handlers for mission objectives display
+static void IN_infoPlaqueDown (void)
+{
+	if (key_dest == key_game)
+	{
+		h2_info_up = true;
+		KeyDown(&in_infoplaque);
+	}
+}
+
+static void IN_infoPlaqueUp (void)
+{
+	h2_info_up = false;
+	KeyUp(&in_infoplaque);
+}
 
 void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
 
@@ -502,5 +522,8 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("+mlook", IN_MLookDown);
 	Cmd_AddCommand ("-mlook", IN_MLookUp);
 
+	// H2: Mission objectives display (Portal of Praevus)
+	Cmd_AddCommand ("+infoplaque", IN_infoPlaqueDown);
+	Cmd_AddCommand ("-infoplaque", IN_infoPlaqueUp);
 }
 

@@ -274,6 +274,12 @@ void CL_ParseUpdateInventory(void)
 	if (sc2 & H2_SC2_FLAGS)
 		MSG_ReadFloat();  // Player flags
 
+	// Mission pack objectives (protocol 19+)
+	if (sc2 & H2_SC2_OBJ)
+		cl.info_mask = MSG_ReadLong();
+	if (sc2 & H2_SC2_OBJ2)
+		cl.info_mask2 = MSG_ReadLong();
+
 	// Rebuild inventory order if any artifact counts changed
 	if (sc1 & (H2_SC1_CNT_TORCH | H2_SC1_CNT_H_BOOST | H2_SC1_CNT_SH_BOOST |
 			   H2_SC1_CNT_MANA_BOOST | H2_SC1_CNT_TELEPORT | H2_SC1_CNT_TOME |

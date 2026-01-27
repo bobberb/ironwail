@@ -804,6 +804,10 @@ void CL_ParseClientdata (void)
 	else
 		cl.idealpitch = 0;
 
+	// H2: idealroll for swimming/movement roll effect
+	if (hexen2_mode && (bits & H2_SU_IDEALROLL))
+		cl.idealroll = MSG_ReadChar ();
+
 	// preserve initial angles (mostly for savegames)
 	if (cls.signon < SIGNONS)
 		V_StopPitchDrift ();

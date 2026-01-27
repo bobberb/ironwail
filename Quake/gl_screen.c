@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "steam.h"
+#include "cl_string_hexen2.h"
 #include <time.h>
 
 /*
@@ -348,6 +349,158 @@ void SCR_CheckDrawCenterString (void)
 void SCR_ClearCenterString (void)
 {
 	scr_centertime_off = 0;
+}
+
+//=============================================================================
+// H2: Mission pack objectives (infoplaque) display
+//=============================================================================
+
+extern qboolean h2_info_up;  // cl_input.c
+
+#define INFOPLAQUE_WIDTH	34
+#define INFOPLAQUE_MAXLINES	27
+
+static int info_lines;
+static int info_startc[INFOPLAQUE_MAXLINES], info_endc[INFOPLAQUE_MAXLINES];
+static char info_message[1024];
+
+/*
+====================
+SCR_FindInfoTextBreaks
+
+Parse text for line breaks based on width and @ delimiters
+====================
+*/
+static void SCR_FindInfoTextBreaks (const char *message, int width)
+{
+	int pos, start, lastspace, oldlast;
+
+	info_lines = pos = start = 0;
+	lastspace = -1;
+
+	while (1)
+	{
+		if (pos - start >= width || message[pos] == '@' || message[pos] == 0)
+		{
+			oldlast = lastspace;
+			if (message[pos] == '@' || lastspace == -1 || message[pos] == 0)
+				lastspace = pos;
+
+			info_startc[info_lines] = start;
+			info_endc[info_lines] = lastspace;
+			info_lines++;
+			if (info_lines == INFOPLAQUE_MAXLINES)
+				return;
+			if (message[pos] == '@')
+				start = pos + 1;
+			else if (oldlast == -1)
+				start = lastspace;
+			else
+				start = lastspace + 1;
+			lastspace = -1;
+			if (message[pos] == 0)
+				break;
+		}
+		else if (message[pos] == ' ')
+		{
+			lastspace = pos;
+		}
+		pos++;
+	}
+}
+
+/*
+====================
+SCR_UpdateInfoMessage
+
+Build the objectives message from info_mask bits
+====================
+*/
+static void SCR_UpdateInfoMessage (void)
+{
+	unsigned int i, check;
+	const char *newmessage;
+	int count = CL_GetInfoStringCount();
+
+	q_strlcpy(info_message, "Objectives:", sizeof(info_message));
+
+	if (!count)
+		return;
+
+	for (i = 0; i < 32; i++)
+	{
+		check = (1 << i);
+
+		if (cl.info_mask & check)
+		{
+			newmessage = CL_GetInfoString(i);
+			q_strlcat(info_message, "@@", sizeof(info_message));
+			q_strlcat(info_message, newmessage, sizeof(info_message));
+		}
+	}
+
+	for (i = 0; i < 32; i++)
+	{
+		check = (1 << i);
+
+		if (cl.info_mask2 & check)
+		{
+			newmessage = CL_GetInfoString(i + 32);
+			q_strlcat(info_message, "@@", sizeof(info_message));
+			q_strlcat(info_message, newmessage, sizeof(info_message));
+		}
+	}
+}
+
+/*
+====================
+SCR_DrawInfoPlaque
+
+Draw the mission objectives overlay when +infoplaque is held
+====================
+*/
+void SCR_DrawInfoPlaque (void)
+{
+	int i, cnt;
+	int bx, by;
+	char temp[80];
+	int count;
+
+	if (!hexen2_mode)
+		return;
+
+	if (!h2_info_up)
+		return;
+
+	if (scr_con_current == vid.height)
+		return;  // console is full screen
+
+	count = CL_GetInfoStringCount();
+	if (!count || !info_message[0])
+		return;
+
+	SCR_UpdateInfoMessage();
+	SCR_FindInfoTextBreaks(info_message, INFOPLAQUE_WIDTH + 4);
+
+	if (info_lines == INFOPLAQUE_MAXLINES)
+	{
+		Con_DPrintf("SCR_DrawInfoPlaque: line overflow\n");
+		info_lines = INFOPLAQUE_MAXLINES - 1;
+	}
+
+	by = (25 - info_lines) * 8 / 2 + ((200 - 200) >> 1);
+	M_DrawTextBox(15, by - 16, INFOPLAQUE_WIDTH + 4 + 4, info_lines + 2);
+
+	for (i = 0; i < info_lines; i++, by += 8)
+	{
+		cnt = info_endc[i] - info_startc[i];
+		if (cnt >= (int)sizeof(temp))
+			cnt = sizeof(temp) - 1;
+		memcpy(temp, &info_message[info_startc[i]], cnt);
+		temp[cnt] = 0;
+		bx = (40 - strlen(temp)) * 8 / 2;
+		M_Print(bx, by, temp);
+	}
 }
 
 //=============================================================================
@@ -2163,6 +2316,7 @@ void SCR_UpdateScreen (void)
 		SCR_DrawTurtle ();
 		SCR_DrawPause ();
 		SCR_CheckDrawCenterString ();
+		SCR_DrawInfoPlaque (); // H2: Mission objectives overlay
 		Sbar_Draw ();
 		SCR_DrawDevStats (); //johnfitz
 		SCR_DrawClock (); //johnfitz

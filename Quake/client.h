@@ -281,6 +281,8 @@ typedef struct
 	float		ring_water;			// H2: Ring of water breathing power
 	float		ring_turning;		// H2: Ring of turning power
 	float		ring_regeneration;	// H2: Ring of regeneration power
+	unsigned int info_mask;			// H2: Mission pack objectives 0-31
+	unsigned int info_mask2;		// H2: Mission pack objectives 32-63
 	// Note: Additional H2 stats (mana, artifacts, etc.) stored in stats[] array
 } client_state_t;
 
