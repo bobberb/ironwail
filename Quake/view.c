@@ -187,7 +187,9 @@ void V_DriftPitch (void)
 {
 	float		delta, move;
 
-	if (noclip_anglehack || !cl.onground || cls.demoplayback )
+	// H2: Also disable drift when flying or noclipping
+	if (noclip_anglehack || !cl.onground || cls.demoplayback ||
+		(hexen2_mode && (cl.movetype == MOVETYPE_FLY || cl.movetype == MOVETYPE_NOCLIP)))
 	//FIXME: noclip_anglehack is set on the server, so in a nonlocal game this won't work.
 	{
 		cl.driftmove = 0;
@@ -263,7 +265,8 @@ void V_DriftRoll (void)
 	if (!hexen2_mode)
 		return;
 
-	if (noclip_anglehack || cls.demoplayback)
+	// H2: Also disable roll drift when noclipping
+	if (noclip_anglehack || cls.demoplayback || cl.movetype == MOVETYPE_NOCLIP)
 		return;
 
 	delta = cl.idealroll - cl.viewangles[ROLL];
@@ -931,7 +934,11 @@ void V_CalcRefdef (void)
 	ent->angles[YAW] = cl.viewangles[YAW];	// the model should face the view dir
 	ent->angles[PITCH] = -cl.viewangles[PITCH];	// the model should face the view dir
 
-	bob = V_CalcBob ();
+	// H2: No bobbing when flying
+	if (hexen2_mode && cl.movetype == MOVETYPE_FLY)
+		bob = 1;	// Minimal offset, no bob animation
+	else
+		bob = V_CalcBob ();
 
 // refresh position
 	VectorCopy (ent->origin, r_refdef.vieworg);

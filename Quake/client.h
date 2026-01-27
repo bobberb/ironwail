@@ -268,6 +268,7 @@ typedef struct
 	int			playerclass;		// H2: Player class (1-5)
 	float		idealroll;			// H2: Ideal roll for view
 	float		hasted;				// H2: Haste multiplier (1.0 = normal, >1 = faster)
+	int			movetype;			// H2: Movement type (affects drift and bobbing)
 	int			cameramode;			// H2: Camera mode (0=normal, nonzero=locked to entity)
 	int			inv_selected;		// H2: Selected inventory item
 	int			inv_count;			// H2: Number of items in inventory

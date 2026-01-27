@@ -215,7 +215,7 @@ void CL_ParseUpdateInventory(void)
 	if (sc1 & H2_SC1_ARTIFACT_LOW)
 		MSG_ReadFloat();  // Artifact low warning
 	if (sc1 & H2_SC1_MOVETYPE)
-		MSG_ReadByte();   // Movement type
+		cl.movetype = MSG_ReadByte();  // Movement type (affects drift and bob)
 	if (sc1 & H2_SC1_CAMERAMODE)
 		cl.cameramode = MSG_ReadByte();
 	if (sc1 & H2_SC1_HASTED)
