@@ -485,15 +485,24 @@ void CL_ParseUpdate (int bits)
 		bits |= (i<<8);
 	}
 
-	//johnfitz -- PROTOCOL_FITZQUAKE
-	if (cl.protocol == PROTOCOL_FITZQUAKE || cl.protocol == PROTOCOL_RMQ)
+	if (hexen2_mode)
 	{
-		if (bits & U_EXTEND1)
+		// H2: uses H2_U_MOREBITS2 for 3rd byte
+		if (bits & H2_U_MOREBITS2)
 			bits |= MSG_ReadByte() << 16;
-		if (bits & U_EXTEND2)
-			bits |= MSG_ReadByte() << 24;
 	}
-	//johnfitz
+	else
+	{
+		//johnfitz -- PROTOCOL_FITZQUAKE
+		if (cl.protocol == PROTOCOL_FITZQUAKE || cl.protocol == PROTOCOL_RMQ)
+		{
+			if (bits & U_EXTEND1)
+				bits |= MSG_ReadByte() << 16;
+			if (bits & U_EXTEND2)
+				bits |= MSG_ReadByte() << 24;
+		}
+		//johnfitz
+	}
 
 	if (bits & U_LONGENTITY)
 		num = MSG_ReadShort ();
@@ -516,7 +525,8 @@ void CL_ParseUpdate (int bits)
 
 	if (bits & U_MODEL)
 	{
-		modnum = MSG_ReadByte ();
+		// H2: model is always SHORT
+		modnum = hexen2_mode ? MSG_ReadShort() : MSG_ReadByte();
 		if (modnum >= MAX_MODELS)
 			Host_Error ("CL_ParseModel: bad modnum");
 	}
@@ -529,7 +539,8 @@ void CL_ParseUpdate (int bits)
 	else
 		ent->frame = ent->baseline.frame;
 
-	if (bits & U_COLORMAP)
+	// H2 uses different bit for COLORMAP
+	if (bits & (hexen2_mode ? H2_U_COLORMAP : U_COLORMAP))
 		i = MSG_ReadByte();
 	else
 		i = ent->baseline.colormap;
@@ -541,10 +552,11 @@ void CL_ParseUpdate (int bits)
 			Sys_Error ("i >= cl.maxclients");
 		ent->colormap = cl.scores[i-1].translations;
 	}
-	if (bits & U_SKIN)
+
+	// H2 uses different bit for SKIN and includes drawflags
+	if (bits & (hexen2_mode ? H2_U_SKIN : U_SKIN))
 	{
 		skin = MSG_ReadByte();
-		// H2: drawflags byte follows skin byte
 		if (hexen2_mode)
 			ent->drawflags = MSG_ReadByte();
 	}
@@ -560,7 +572,8 @@ void CL_ParseUpdate (int bits)
 		if (num > 0 && num <= cl.maxclients)
 			R_TranslateNewPlayerSkin (num - 1); //johnfitz -- was R_TranslatePlayerSkin
 	}
-	if (bits & U_EFFECTS)
+	// H2 uses different bit for EFFECTS
+	if (bits & (hexen2_mode ? H2_U_EFFECTS : U_EFFECTS))
 		ent->effects = MSG_ReadByte();
 	else
 		ent->effects = ent->baseline.effects;
@@ -606,8 +619,22 @@ void CL_ParseUpdate (int bits)
 		ent->lerpflags &= ~LERP_MOVESTEP;
 	//johnfitz
 
+	// H2: scale comes after origin/angles, uses H2_U_SCALE bit
+	if (hexen2_mode)
+	{
+		if (bits & H2_U_SCALE)
+		{
+			ent->scale = MSG_ReadByte();
+			ent->abslight = MSG_ReadByte();
+		}
+		else
+		{
+			ent->scale = ent->baseline.scale;
+			ent->abslight = ent->baseline.abslight;
+		}
+	}
 	//johnfitz -- PROTOCOL_FITZQUAKE and PROTOCOL_NEHAHRA
-	if (cl.protocol == PROTOCOL_FITZQUAKE || cl.protocol == PROTOCOL_RMQ)
+	else if (cl.protocol == PROTOCOL_FITZQUAKE || cl.protocol == PROTOCOL_RMQ)
 	{
 		if (bits & U_ALPHA)
 			ent->alpha = MSG_ReadByte();
@@ -616,15 +643,10 @@ void CL_ParseUpdate (int bits)
 		if (bits & U_SCALE)
 		{
 			ent->scale = MSG_ReadByte();
-			// H2: abslight byte follows scale byte
-			if (hexen2_mode)
-				ent->abslight = MSG_ReadByte();
 		}
 		else
 		{
 			ent->scale = ent->baseline.scale;
-			if (hexen2_mode)
-				ent->abslight = ent->baseline.abslight;
 		}
 		if (bits & U_FRAME2)
 			ent->frame = (ent->frame & 0x00FF) | (MSG_ReadByte() << 8);

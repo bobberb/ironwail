@@ -971,16 +971,23 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 			bits |= U_STEP;	// don't mess up the step animation
 
 		if (ent->baseline.colormap != ENT_FLOAT(ent, colormap))
-			bits |= U_COLORMAP;
+			bits |= hexen2_mode ? H2_U_COLORMAP : U_COLORMAP;
 
 		if (ent->baseline.skin != ENT_SKIN(ent))
-			bits |= U_SKIN;
+			bits |= hexen2_mode ? H2_U_SKIN : U_SKIN;
+		// H2: also check drawflags for U_SKIN
+		if (hexen2_mode)
+		{
+			eval_t *df = GetEdictFieldValueByName(ent, "drawflags");
+			if (df && ent->baseline.drawflags != (int)df->_float)
+				bits |= H2_U_SKIN;
+		}
 
 		if (ent->baseline.frame != ENT_FRAME(ent))
 			bits |= U_FRAME;
 
 		if ((ent->baseline.effects ^ (int)ENT_EFFECTS(ent)) & qcvm->effects_mask)
-			bits |= U_EFFECTS;
+			bits |= hexen2_mode ? H2_U_EFFECTS : U_EFFECTS;
 
 		if (ent->baseline.modelindex != ENT_MODELINDEX(ent))
 			bits |= U_MODEL;
@@ -1016,14 +1023,26 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		//johnfitz -- PROTOCOL_FITZQUAKE
 		if (sv.protocol != PROTOCOL_NETQUAKE)
 		{
-
-			if (ent->baseline.alpha != ent->alpha) bits |= U_ALPHA;
-			if (ent->baseline.scale != ent->scale) bits |= U_SCALE;
-			if (bits & U_FRAME && (int)ENT_FRAME(ent) & 0xFF00) bits |= U_FRAME2;
-			if (bits & U_MODEL && (int)ENT_MODELINDEX(ent) & 0xFF00) bits |= U_MODEL2;
-			if (ent->sendinterval) bits |= U_LERPFINISH;
-			if (bits >= 65536) bits |= U_EXTEND1;
-			if (bits >= 16777216) bits |= U_EXTEND2;
+			if (hexen2_mode)
+			{
+				// H2: check scale and abslight for H2_U_SCALE
+				if (ent->baseline.scale != ent->scale)
+					bits |= H2_U_SCALE;
+				// Also check abslight
+				eval_t *ab = GetEdictFieldValueByName(ent, "abslight");
+				if (ab && ent->baseline.abslight != (int)(ab->_float * 255.0f))
+					bits |= H2_U_SCALE;
+			}
+			else
+			{
+				if (ent->baseline.alpha != ent->alpha) bits |= U_ALPHA;
+				if (ent->baseline.scale != ent->scale) bits |= U_SCALE;
+				if (bits & U_FRAME && (int)ENT_FRAME(ent) & 0xFF00) bits |= U_FRAME2;
+				if (bits & U_MODEL && (int)ENT_MODELINDEX(ent) & 0xFF00) bits |= U_MODEL2;
+				if (ent->sendinterval) bits |= U_LERPFINISH;
+				if (bits >= 65536) bits |= U_EXTEND1;
+				if (bits >= 16777216) bits |= U_EXTEND2;
+			}
 		}
 		//johnfitz
 
@@ -1033,6 +1052,10 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		if (bits >= 256)
 			bits |= U_MOREBITS;
 
+		// H2: 3rd byte of bits
+		if (hexen2_mode && bits >= 65536)
+			bits |= H2_U_MOREBITS2;
+
 	//
 	// write the message
 	//
@@ -1041,69 +1064,102 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		if (bits & U_MOREBITS)
 			MSG_WriteByte (msg, bits>>8);
 
-		//johnfitz -- PROTOCOL_FITZQUAKE
-		if (bits & U_EXTEND1)
-			MSG_WriteByte(msg, bits>>16);
-		if (bits & U_EXTEND2)
-			MSG_WriteByte(msg, bits>>24);
-		//johnfitz
+		if (hexen2_mode)
+		{
+			// H2: 3rd byte uses H2_U_MOREBITS2
+			if (bits & H2_U_MOREBITS2)
+				MSG_WriteByte(msg, bits>>16);
+		}
+		else
+		{
+			//johnfitz -- PROTOCOL_FITZQUAKE
+			if (bits & U_EXTEND1)
+				MSG_WriteByte(msg, bits>>16);
+			if (bits & U_EXTEND2)
+				MSG_WriteByte(msg, bits>>24);
+			//johnfitz
+		}
 
 		if (bits & U_LONGENTITY)
 			MSG_WriteShort (msg,e);
 		else
 			MSG_WriteByte (msg,e);
 
-		if (bits & U_MODEL)
-			MSG_WriteByte (msg, ENT_MODELINDEX(ent));
-		if (bits & U_FRAME)
-			MSG_WriteByte (msg, ENT_FRAME(ent));
-		if (bits & U_COLORMAP)
-			MSG_WriteByte (msg, ENT_FLOAT(ent, colormap));
-		if (bits & U_SKIN)
+		if (hexen2_mode)
 		{
-			MSG_WriteByte (msg, ENT_SKIN(ent));
-			// H2: drawflags byte follows skin
-			if (hexen2_mode)
+			// H2 message order: MODEL(short), FRAME, COLORMAP, SKIN+DRAWFLAGS, EFFECTS, origins/angles, SCALE+ABSLIGHT
+			if (bits & U_MODEL)
+				MSG_WriteShort (msg, ENT_MODELINDEX(ent));  // H2: always short
+			if (bits & U_FRAME)
+				MSG_WriteByte (msg, ENT_FRAME(ent));
+			if (bits & H2_U_COLORMAP)
+				MSG_WriteByte (msg, ENT_FLOAT(ent, colormap));
+			if (bits & H2_U_SKIN)
 			{
-				eval_t *val = GetEdictFieldValueByName(ent, "drawflags");
-				MSG_WriteByte(msg, val ? (int)val->_float : 0);
+				MSG_WriteByte (msg, ENT_SKIN(ent));
+				eval_t *df = GetEdictFieldValueByName(ent, "drawflags");
+				MSG_WriteByte(msg, df ? (int)df->_float : 0);
+			}
+			if (bits & H2_U_EFFECTS)
+				MSG_WriteByte (msg, (int)ENT_EFFECTS(ent) & qcvm->effects_mask);
+			if (bits & U_ORIGIN1)
+				MSG_WriteCoord (msg, ENT_ORIGIN(ent)[0], sv.protocolflags);
+			if (bits & U_ANGLE1)
+				MSG_WriteAngle(msg, ENT_ANGLES(ent)[0], sv.protocolflags);
+			if (bits & U_ORIGIN2)
+				MSG_WriteCoord (msg, ENT_ORIGIN(ent)[1], sv.protocolflags);
+			if (bits & U_ANGLE2)
+				MSG_WriteAngle(msg, ENT_ANGLES(ent)[1], sv.protocolflags);
+			if (bits & U_ORIGIN3)
+				MSG_WriteCoord (msg, ENT_ORIGIN(ent)[2], sv.protocolflags);
+			if (bits & U_ANGLE3)
+				MSG_WriteAngle(msg, ENT_ANGLES(ent)[2], sv.protocolflags);
+			if (bits & H2_U_SCALE)
+			{
+				MSG_WriteByte(msg, ent->scale);
+				eval_t *ab = GetEdictFieldValueByName(ent, "abslight");
+				MSG_WriteByte(msg, ab ? (int)(ab->_float * 255.0f) & 255 : 0);
 			}
 		}
-		if (bits & U_EFFECTS)
-			MSG_WriteByte (msg, (int)ENT_EFFECTS(ent) & qcvm->effects_mask);
-		if (bits & U_ORIGIN1)
-			MSG_WriteCoord (msg, ENT_ORIGIN(ent)[0], sv.protocolflags);
-		if (bits & U_ANGLE1)
-			MSG_WriteAngle(msg, ENT_ANGLES(ent)[0], sv.protocolflags);
-		if (bits & U_ORIGIN2)
-			MSG_WriteCoord (msg, ENT_ORIGIN(ent)[1], sv.protocolflags);
-		if (bits & U_ANGLE2)
-			MSG_WriteAngle(msg, ENT_ANGLES(ent)[1], sv.protocolflags);
-		if (bits & U_ORIGIN3)
-			MSG_WriteCoord (msg, ENT_ORIGIN(ent)[2], sv.protocolflags);
-		if (bits & U_ANGLE3)
-			MSG_WriteAngle(msg, ENT_ANGLES(ent)[2], sv.protocolflags);
+		else
+		{
+			// Q1/Fitz message order
+			if (bits & U_MODEL)
+				MSG_WriteByte (msg, ENT_MODELINDEX(ent));
+			if (bits & U_FRAME)
+				MSG_WriteByte (msg, ENT_FRAME(ent));
+			if (bits & U_COLORMAP)
+				MSG_WriteByte (msg, ENT_FLOAT(ent, colormap));
+			if (bits & U_SKIN)
+				MSG_WriteByte (msg, ENT_SKIN(ent));
+			if (bits & U_EFFECTS)
+				MSG_WriteByte (msg, (int)ENT_EFFECTS(ent) & qcvm->effects_mask);
+			if (bits & U_ORIGIN1)
+				MSG_WriteCoord (msg, ENT_ORIGIN(ent)[0], sv.protocolflags);
+			if (bits & U_ANGLE1)
+				MSG_WriteAngle(msg, ENT_ANGLES(ent)[0], sv.protocolflags);
+			if (bits & U_ORIGIN2)
+				MSG_WriteCoord (msg, ENT_ORIGIN(ent)[1], sv.protocolflags);
+			if (bits & U_ANGLE2)
+				MSG_WriteAngle(msg, ENT_ANGLES(ent)[1], sv.protocolflags);
+			if (bits & U_ORIGIN3)
+				MSG_WriteCoord (msg, ENT_ORIGIN(ent)[2], sv.protocolflags);
+			if (bits & U_ANGLE3)
+				MSG_WriteAngle(msg, ENT_ANGLES(ent)[2], sv.protocolflags);
 
-		//johnfitz -- PROTOCOL_FITZQUAKE
-		if (bits & U_ALPHA)
-			MSG_WriteByte(msg, ent->alpha);
-		if (bits & U_SCALE)
-		{
-			MSG_WriteByte(msg, ent->scale);
-			// H2: abslight byte follows scale
-			if (hexen2_mode)
-			{
-				eval_t *val = GetEdictFieldValueByName(ent, "abslight");
-				MSG_WriteByte(msg, val ? (int)(val->_float * 255.0f) & 255 : 0);
-			}
+			//johnfitz -- PROTOCOL_FITZQUAKE
+			if (bits & U_ALPHA)
+				MSG_WriteByte(msg, ent->alpha);
+			if (bits & U_SCALE)
+				MSG_WriteByte(msg, ent->scale);
+			if (bits & U_FRAME2)
+				MSG_WriteByte(msg, (int)ENT_FRAME(ent) >> 8);
+			if (bits & U_MODEL2)
+				MSG_WriteByte(msg, (int)ENT_MODELINDEX(ent) >> 8);
+			if (bits & U_LERPFINISH)
+				MSG_WriteByte(msg, (byte)(Q_rint((ENT_NEXTTHINK(ent)-qcvm->time)*255)));
+			//johnfitz
 		}
-		if (bits & U_FRAME2)
-			MSG_WriteByte(msg, (int)ENT_FRAME(ent) >> 8);
-		if (bits & U_MODEL2)
-			MSG_WriteByte(msg, (int)ENT_MODELINDEX(ent) >> 8);
-		if (bits & U_LERPFINISH)
-			MSG_WriteByte(msg, (byte)(Q_rint((ENT_NEXTTHINK(ent)-qcvm->time)*255)));
-		//johnfitz
 	}
 
 	//johnfitz -- devstats

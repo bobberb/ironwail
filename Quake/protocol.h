@@ -76,6 +76,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define U_TRANS			(1<<15)
 //johnfitz
 
+// Hexen II entity update bits - different layout than Quake!
+// Bits 0-10, 14 are the same as Quake
+#define	H2_U_CLEAR_ENT		(1<<11)		// H2: clear entity (not colormap)
+#define	H2_U_ENT_OFF		(1<<13)		// H2: entity off (not effects)
+#define	H2_U_MOREBITS2		(1<<15)		// H2: more bits follow (3rd byte)
+#define	H2_U_SKIN			(1<<16)		// H2: skin + drawflags
+#define	H2_U_EFFECTS		(1<<17)		// H2: effects
+#define	H2_U_SCALE			(1<<18)		// H2: scale + abslight
+#define	H2_U_COLORMAP		(1<<19)		// H2: colormap
+
 #define	SU_VIEWHEIGHT	(1<<0)
 #define	SU_IDEALPITCH	(1<<1)
 #define	SU_PUNCH1		(1<<2)
