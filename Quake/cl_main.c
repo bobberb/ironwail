@@ -1020,6 +1020,33 @@ void V_Water_f (void)
 
 /*
 =================
+CL_Sensitivity_save_f
+
+H2: Save and restore mouse sensitivity (useful for camera modes)
+=================
+*/
+static void CL_Sensitivity_save_f (void)
+{
+	static float save_sensitivity = 3.0f;
+
+	if (Cmd_Argc() != 2)
+	{
+		Con_Printf ("sensitivity_save <save|restore>\n");
+		return;
+	}
+
+	if (q_strcasecmp(Cmd_Argv(1), "save") == 0)
+	{
+		save_sensitivity = sensitivity.value;
+	}
+	else if (q_strcasecmp(Cmd_Argv(1), "restore") == 0)
+	{
+		Cvar_SetValueQuick (&sensitivity, save_sensitivity);
+	}
+}
+
+/*
+=================
 CL_Init
 =================
 */
@@ -1084,5 +1111,8 @@ void CL_Init (void)
 	Cmd_AddCommand_ServerCommand ("sts", CL_SetStatString_f);
 
 	Cmd_AddCommand_ServerCommand ("v_water", V_Water_f);
+
+	// H2: Sensitivity save/restore for camera modes
+	Cmd_AddCommand ("sensitivity_save", CL_Sensitivity_save_f);
 }
 
