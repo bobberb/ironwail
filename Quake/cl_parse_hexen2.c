@@ -506,3 +506,45 @@ void CL_ParseSkybox(void)
 		Con_DPrintf("Skybox loaded: %s\n", skybox_name);
 	}
 }
+
+/*
+================
+CL_ParseCutscene
+
+Parse svc_h2_cutscene message
+Sets intermission mode 3 and displays center message
+================
+*/
+void CL_ParseCutscene(void)
+{
+	cl.intermission = 3;
+	cl.completed_time = cl.time;
+	vid.recalc_refdef = true;
+	SCR_CenterPrint(MSG_ReadString());
+}
+
+/*
+================
+CL_ParseSetViewFlags
+
+Parse svc_h2_set_view_flags message
+ORs flags into viewmodel's drawflags
+================
+*/
+void CL_ParseSetViewFlags(void)
+{
+	cl.viewent.drawflags |= MSG_ReadByte();
+}
+
+/*
+================
+CL_ParseClearViewFlags
+
+Parse svc_h2_clear_view_flags message
+ANDs out flags from viewmodel's drawflags
+================
+*/
+void CL_ParseClearViewFlags(void)
+{
+	cl.viewent.drawflags &= ~MSG_ReadByte();
+}

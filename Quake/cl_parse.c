@@ -1269,6 +1269,15 @@ void CL_ParseServerMessage (void)
 				case svc_h2_skybox:
 					CL_ParseSkybox();
 					break;
+				case svc_h2_cutscene:
+					CL_ParseCutscene();
+					break;
+				case svc_h2_set_view_flags:
+					CL_ParseSetViewFlags();
+					break;
+				case svc_h2_clear_view_flags:
+					CL_ParseClearViewFlags();
+					break;
 				default:
 					Host_Error ("Illegible server message %d (previous was %s)", cmd, svc_strings[lastcmd]);
 					break;

@@ -38,5 +38,8 @@ void CL_ParseRainEffect(void);
 void CL_ParseSoundUpdatePos(void);
 void CL_ParseModName(void);
 void CL_ParseSkybox(void);
+void CL_ParseCutscene(void);
+void CL_ParseSetViewFlags(void);
+void CL_ParseClearViewFlags(void);
 
 #endif /* _CL_PARSE_HEXEN2_H */
