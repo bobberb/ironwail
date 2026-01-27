@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+/* Defined in pr_cmds.c - sets trace globals from a trace result */
+extern void PR_SetTraceGlobals (trace_t *trace);
+
 #define	STEPSIZE	18
 
 /*
@@ -107,9 +110,12 @@ Called by monster program code.
 The move will be adjusted for slopes and stairs, but if the move isn't
 possible, no move is done, false is returned, and
 pr_global_struct->trace_normal is set to the normal of the blocking wall
+
+set_trace: If true, sets trace globals (trace_ent, etc.) from the movement trace.
+           Used by H2's walkmove() to allow monsters to detect what they touched.
 =============
 */
-qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
+qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink, qboolean set_trace)
 {
 	float		dz;
 	vec3_t		oldorg, neworg, end;
@@ -138,6 +144,8 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 					neworg[2] += 8;
 			}
 			trace = SV_Move (ENT_ORIGIN(ent), ENT_MINS(ent), ENT_MAXS(ent), neworg, false, ent);
+			if (set_trace)
+				PR_SetTraceGlobals (&trace);
 
 			if (trace.fraction == 1)
 			{
@@ -163,6 +171,8 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 	end[2] -= STEPSIZE*2;
 
 	trace = SV_Move (neworg, ENT_MINS(ent), ENT_MAXS(ent), end, false, ent);
+	if (set_trace)
+		PR_SetTraceGlobals (&trace);
 
 	if (trace.allsolid)
 		return false;
@@ -171,6 +181,8 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 	{
 		neworg[2] -= STEPSIZE;
 		trace = SV_Move (neworg, ENT_MINS(ent), ENT_MAXS(ent), end, false, ent);
+		if (set_trace)
+			PR_SetTraceGlobals (&trace);
 		if (trace.allsolid || trace.startsolid)
 			return false;
 	}
@@ -246,7 +258,7 @@ qboolean SV_StepDirection (edict_t *ent, float yaw, float dist)
 	move[2] = 0;
 
 	VectorCopy (ENT_ORIGIN(ent), oldorigin);
-	if (SV_movestep (ent, move, false))
+	if (SV_movestep (ent, move, false, false))
 	{
 		delta = ENT_ANGLES(ent)[YAW] - ENT_IDEAL_YAW(ent);
 		if (delta > 45 && delta < 315)

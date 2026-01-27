@@ -527,6 +527,7 @@ void H2_SetupGlobals (void)
 	f->hull = ED_FindFieldOffset("hull");
 	f->playerclass = ED_FindFieldOffset("playerclass");
 	f->gravity = ED_FindFieldOffset("gravity");
+	f->proj_ofs = ED_FindFieldOffset("proj_ofs");
 
 	// H2-specific global variable offsets
 	if (hexen2_mode)

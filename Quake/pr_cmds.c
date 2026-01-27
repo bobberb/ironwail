@@ -1255,12 +1255,14 @@ static void PF_eprint (void)
 PF_walkmove
 
 float(float yaw, float dist) walkmove
+H2: float(float yaw, float dist, float set_trace) walkmove
 ===============
 */
 static void PF_walkmove (void)
 {
 	edict_t	*ent;
 	float	yaw, dist;
+	qboolean set_trace;
 	vec3_t	move;
 	dfunction_t	*oldf;
 	int	oldself;
@@ -1268,6 +1270,8 @@ static void PF_walkmove (void)
 	ent = PROG_TO_EDICT(pr_global_struct->self);
 	yaw = G_FLOAT(OFS_PARM0);
 	dist = G_FLOAT(OFS_PARM1);
+	// H2 has a third parameter: set_trace (whether to set trace globals)
+	set_trace = hexen2_mode ? (G_FLOAT(OFS_PARM2) != 0) : false;
 
 	if ( !( (int)ENT_FLAGS(ent) & (FL_ONGROUND|FL_FLY|FL_SWIM) ) )
 	{
@@ -1285,7 +1289,7 @@ static void PF_walkmove (void)
 	oldf = qcvm->xfunction;
 	oldself = pr_global_struct->self;
 
-	G_FLOAT(OFS_RETURN) = SV_movestep(ent, move, true);
+	G_FLOAT(OFS_RETURN) = SV_movestep(ent, move, true, set_trace);
 
 
 // restore program state

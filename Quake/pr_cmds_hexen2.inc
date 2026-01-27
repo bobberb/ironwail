@@ -402,8 +402,7 @@ PF_h2_movestep
 Monster move step - used by monster AI for movement
 float movestep(float x, float y, float z, float set_trace) = #82
 
-The set_trace param is currently ignored since Q1's SV_movestep
-doesn't support it directly.
+If set_trace is true, trace globals (trace_ent, etc.) are set from the move.
 =================
 */
 static void PF_h2_movestep (void)
@@ -412,19 +411,20 @@ static void PF_h2_movestep (void)
 	edict_t			*ent;
 	dfunction_t		*oldf;
 	int				oldself;
+	qboolean		set_trace;
 
 	ent = PROG_TO_EDICT(pr_global_struct->self);
 
 	move[0] = G_FLOAT(OFS_PARM0);
 	move[1] = G_FLOAT(OFS_PARM1);
 	move[2] = G_FLOAT(OFS_PARM2);
-	/* set_trace = G_FLOAT(OFS_PARM3); -- ignored for now */
+	set_trace = (G_FLOAT(OFS_PARM3) != 0);
 
 	/* Save program state, because SV_movestep may call other progs */
 	oldf = qcvm->xfunction;
 	oldself = pr_global_struct->self;
 
-	G_FLOAT(OFS_RETURN) = SV_movestep(ent, move, true);
+	G_FLOAT(OFS_RETURN) = SV_movestep(ent, move, true, set_trace);
 
 	/* Restore program state */
 	qcvm->xfunction = oldf;

@@ -306,7 +306,7 @@ void SV_BroadcastPrintf (const char *fmt, ...) FUNC_PRINTF(1,2);
 void SV_Physics (void);
 
 qboolean SV_CheckBottom (edict_t *ent);
-qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink);
+qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink, qboolean set_trace);
 
 void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg);
 

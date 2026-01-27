@@ -402,6 +402,7 @@ typedef struct
 	int		hull;			/* H2 only - collision hull selection */
 	int		playerclass;	/* H2 only - player class (0-3) */
 	int		gravity;		/* H2/extension gravity field */
+	int		proj_ofs;		/* H2 only - vec3, projectile origin offset for attacks */
 } entfield_offsets_t;
 
 /* Hexen II specific global and entity field pointers - set up when loading H2 progs */
