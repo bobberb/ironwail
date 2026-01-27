@@ -1230,6 +1230,12 @@ void CL_ParseServerMessage (void)
 				case svc_h2_particle2:
 					CL_ParseParticle2();
 					break;
+				case svc_h2_particle3:
+					CL_ParseParticle3();
+					break;
+				case svc_h2_particle4:
+					CL_ParseParticle4();
+					break;
 				case svc_h2_midi_name:
 					CL_ParseMidiName();
 					break;

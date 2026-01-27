@@ -44,6 +44,9 @@ static int ramp10[16] = { 432, 432+1, 432+2, 432+3, 432+4, 432+5, 432+6, 432+7, 
 static int ramp11[8] = { 424, 424+1, 424+2, 424+3, 424+4, 424+5, 424+6, 424+7 };
 static int ramp12[8] = { 136, 137, 138, 139, 140, 141, 142, 143 };
 
+// H2: Target origin for Rider's Death and Gravity Well particle effects
+static vec3_t rider_origin;
+
 particle_t	*particles;
 int			r_numparticles, r_numactiveparticles;
 
@@ -735,6 +738,84 @@ void R_RunParticleEffect4 (vec3_t org, float radius, int color, ptype_t effect, 
 
 /*
 ===============
+R_RiderParticle
+
+H2: Rider's Death effect particles - spiral toward rider_origin
+===============
+*/
+void R_RiderParticle (int count, vec3_t origin)
+{
+	int			i;
+	particle_t	*p;
+	float		radius, angle, s, c;
+
+	VectorCopy (origin, rider_origin);
+
+	for (i = 0; i < count; i++)
+	{
+		if (!(p = R_AllocParticle ()))
+			return;
+
+		p->die = cl.time + 4;
+		p->color = 256 + 16 + 15;
+		p->type = pt_rd;
+		p->ramp = 0;
+
+		angle = (rand() % 360) / (2 * M_PI);
+		radius = 300 + (rand() & 255);
+		s = sin(angle);
+		c = cos(angle);
+		p->org[0] = origin[0] + c * radius;
+		p->org[1] = origin[1] + s * radius;
+		p->org[2] = origin[2] + (rand() & 255) - 30;
+
+		p->vel[0] = (rand() & 255) - 127;
+		p->vel[1] = (rand() & 255) - 127;
+		p->vel[2] = (rand() & 255) - 127;
+	}
+}
+
+/*
+===============
+R_GravityWellParticle
+
+H2: Gravity Well effect particles - spiral toward rider_origin
+===============
+*/
+void R_GravityWellParticle (int count, vec3_t origin, int color)
+{
+	int			i;
+	particle_t	*p;
+	float		radius, angle, s, c;
+
+	VectorCopy (origin, rider_origin);
+
+	for (i = 0; i < count; i++)
+	{
+		if (!(p = R_AllocParticle ()))
+			return;
+
+		p->die = cl.time + 4;
+		p->color = color + (rand() & 15);
+		p->type = pt_gravwell;
+		p->ramp = 0;
+
+		angle = (rand() % 360) / (2 * M_PI);
+		radius = 300 + (rand() & 255);
+		s = sin(angle);
+		c = cos(angle);
+		p->org[0] = origin[0] + c * radius;
+		p->org[1] = origin[1] + s * radius;
+		p->org[2] = origin[2] + (rand() & 255) - 30;
+
+		p->vel[0] = (rand() & 255) - 127;
+		p->vel[1] = (rand() & 255) - 127;
+		p->vel[2] = (rand() & 255) - 127;
+	}
+}
+
+/*
+===============
 R_SunStaffTrail
 
 H2: Sun staff weapon trail
@@ -1280,11 +1361,49 @@ void CL_RunParticles (void)
 			}
 			break;
 
-		case pt_gravwell:
 		case pt_rd:
-			// Gravity well/Rider death - particles spiral toward origin
-			// Note: Full implementation requires tracking target origin
-			p->vel[2] -= grav * 0.3f;
+			// Rider's death - particles spiral toward rider_origin
+			if (frametime)
+			{
+				vec3_t diff;
+				float vel0;
+
+				p->ramp += frametime * 50;  // ~1 unit per 0.02s
+				if ((int)p->ramp > 50)
+				{
+					p->ramp = 50;
+					p->die = -1;
+				}
+				p->color = 256 + 16 + 16 - (int)(p->ramp / (50.0f/16.0f));
+
+				VectorSubtract (rider_origin, p->org, diff);
+				vel0 = 1.0f / (51 - p->ramp);
+				p->org[0] += diff[0] * vel0;
+				p->org[1] += diff[1] * vel0;
+				p->org[2] += diff[2] * vel0;
+			}
+			break;
+
+		case pt_gravwell:
+			// Gravity well - particles spiral toward rider_origin
+			if (frametime)
+			{
+				vec3_t diff;
+				float vel0;
+
+				p->ramp += frametime * 50;  // ~1 unit per 0.02s
+				if ((int)p->ramp > 35)
+				{
+					p->ramp = 35;
+					p->die = -1;
+				}
+
+				VectorSubtract (rider_origin, p->org, diff);
+				vel0 = 1.0f / (36 - p->ramp);
+				p->org[0] += diff[0] * vel0;
+				p->org[1] += diff[1] * vel0;
+				p->org[2] += diff[2] * vel0;
+			}
 			break;
 		}
 

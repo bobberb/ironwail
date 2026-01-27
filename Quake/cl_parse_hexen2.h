@@ -32,6 +32,8 @@ void CL_ParseSetViewTint(void);
 void CL_ParseUpdateInventory(void);
 void CL_ParsePlaque(void);
 void CL_ParseParticle2(void);
+void CL_ParseParticle3(void);
+void CL_ParseParticle4(void);
 void CL_ParseRainEffect(void);
 void CL_ParseSoundUpdatePos(void);
 void CL_ParseModName(void);

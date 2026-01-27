@@ -323,30 +323,72 @@ void CL_ParsePlaque(void)
 CL_ParseParticle2
 
 Parse svc_h2_particle2 message
-Extended particle effect
+Extended particle with min/max bounds
 ================
 */
 void CL_ParseParticle2(void)
 {
-	vec3_t org, dir;
-	int color, count;
+	vec3_t org, dmin, dmax;
+	int i, color, count, effect;
 
-	org[0] = MSG_ReadCoord(cl.protocolflags);
-	org[1] = MSG_ReadCoord(cl.protocolflags);
-	org[2] = MSG_ReadCoord(cl.protocolflags);
-	dir[0] = MSG_ReadChar() * 0.0625f;
-	dir[1] = MSG_ReadChar() * 0.0625f;
-	dir[2] = MSG_ReadChar() * 0.0625f;
-	color = MSG_ReadByte();
+	for (i = 0; i < 3; i++)
+		org[i] = MSG_ReadCoord(cl.protocolflags);
+	for (i = 0; i < 3; i++)
+		dmin[i] = MSG_ReadFloat();
+	for (i = 0; i < 3; i++)
+		dmax[i] = MSG_ReadFloat();
+	color = MSG_ReadShort();
 	count = MSG_ReadByte();
+	effect = MSG_ReadByte();
 
-	// H2 extended particle effect
-	{
-		vec3_t dmin, dmax;
-		VectorScale(dir, -1, dmin);
-		VectorCopy(dir, dmax);
-		R_RunParticleEffect2(org, dmin, dmax, color, pt_static, count);
-	}
+	R_RunParticleEffect2(org, dmin, dmax, color, (ptype_t)effect, count);
+}
+
+/*
+================
+CL_ParseParticle3
+
+Parse svc_h2_particle3 message
+Extended particle with box bounds
+================
+*/
+void CL_ParseParticle3(void)
+{
+	vec3_t org, box;
+	int i, color, count, effect;
+
+	for (i = 0; i < 3; i++)
+		org[i] = MSG_ReadCoord(cl.protocolflags);
+	for (i = 0; i < 3; i++)
+		box[i] = MSG_ReadByte();
+	color = MSG_ReadShort();
+	count = MSG_ReadByte();
+	effect = MSG_ReadByte();
+
+	R_RunParticleEffect3(org, box, color, (ptype_t)effect, count);
+}
+
+/*
+================
+CL_ParseParticle4
+
+Parse svc_h2_particle4 message
+Extended particle with radius
+================
+*/
+void CL_ParseParticle4(void)
+{
+	vec3_t org;
+	int i, radius, color, count, effect;
+
+	for (i = 0; i < 3; i++)
+		org[i] = MSG_ReadCoord(cl.protocolflags);
+	radius = MSG_ReadByte();
+	color = MSG_ReadShort();
+	count = MSG_ReadByte();
+	effect = MSG_ReadByte();
+
+	R_RunParticleEffect4(org, (float)radius, color, (ptype_t)effect, count);
 }
 
 /*

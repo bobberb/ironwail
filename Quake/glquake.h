@@ -515,6 +515,8 @@ void R_RunParticleEffect2 (vec3_t org, vec3_t dmin, vec3_t dmax, int color, ptyp
 void R_RunParticleEffect3 (vec3_t org, vec3_t box, int color, ptype_t effect, int count);
 void R_RunParticleEffect4 (vec3_t org, float radius, int color, ptype_t effect, int count);
 void R_SunStaffTrail (vec3_t source, vec3_t dest);
+void R_RiderParticle (int count, vec3_t origin);
+void R_GravityWellParticle (int count, vec3_t origin, int color);
 
 void R_TranslatePlayerSkin (int playernum);
 void R_TranslateNewPlayerSkin (int playernum); //johnfitz -- this handles cases when the actual texture changes
