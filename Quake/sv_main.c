@@ -616,6 +616,17 @@ void SV_ConnectClient (int clientnum)
 	client->message.maxsize = sizeof(client->msgbuf);
 	client->message.allowoverflow = true;		// we can catch it
 
+	// H2: Initialize playerclass from the _cl_playerclass cvar
+	// This is needed because the playerclass command from the menu runs before
+	// the server is active, so host_client->playerclass wasn't set
+	if (hexen2_mode)
+	{
+		extern cvar_t cl_playerclass;
+		client->playerclass = (int)cl_playerclass.value;
+		if (client->playerclass < 1 || client->playerclass > 5)
+			client->playerclass = 1;  // Default to Paladin
+	}
+
 	if (sv.loadgame)
 		memcpy (client->spawn_parms, spawn_parms, sizeof(spawn_parms));
 	else

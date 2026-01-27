@@ -3166,6 +3166,12 @@ static void Host_Spawn_f (void)
 		ENT_FLOAT(ent, team) = (host_client->colors & 15) + 1;
 		ENT_NETNAME_T(ent) = PR_SetEngineString(host_client->name);
 
+		// H2: Copy playerclass from client struct to entity - this must be done
+		// BEFORE ClientConnect/PutClientInServer, otherwise progs sees playerclass=0
+		// and randomizes the class
+		if (hexen2_mode && h2_globals.fields.playerclass >= 0)
+			((float *)&ent->v)[h2_globals.fields.playerclass] = (float)host_client->playerclass;
+
 		// copy spawn parms out of the client_t
 		for (i=0 ; i< NUM_SPAWN_PARMS ; i++)
 		{
