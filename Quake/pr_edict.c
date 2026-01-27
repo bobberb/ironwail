@@ -578,12 +578,16 @@ void H2_SetupGlobals (void)
 		Con_DPrintf("H2_SetupGlobals: function offsets: StartFrame=%d PlayerPreThink=%d PlayerPostThink=%d\n",
 			h2_globals.ofs_StartFrame, h2_globals.ofs_PlayerPreThink, h2_globals.ofs_PlayerPostThink);
 
-		// Initialize cl_playerclass to 1 (Paladin) if it exists - this is required for v1.12 progs
+		// Initialize cl_playerclass from the _cl_playerclass cvar - this is required for v1.12 progs
 		// to avoid "You must choose a playerclass!" errors during entity spawning
 		if (h2_globals.ofs_cl_playerclass >= 0)
 		{
-			qcvm->globals[h2_globals.ofs_cl_playerclass] = 1.0f;  // 1 = Paladin
-			Con_DPrintf("H2_SetupGlobals: initialized cl_playerclass to 1 (Paladin)\n");
+			extern cvar_t cl_playerclass;
+			float playerclass_val = cl_playerclass.value;
+			if (playerclass_val < 1.0f || playerclass_val > 5.0f)
+				playerclass_val = 1.0f;  // Default to Paladin if invalid
+			qcvm->globals[h2_globals.ofs_cl_playerclass] = playerclass_val;
+			Con_DPrintf("H2_SetupGlobals: initialized cl_playerclass to %d\n", (int)playerclass_val);
 		}
 	}
 
