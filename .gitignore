@@ -9,3 +9,7 @@ Quake/ironwail
 build/
 /.vs
 /out/
+
+# Build artifacts
+qconsole.log
+result
