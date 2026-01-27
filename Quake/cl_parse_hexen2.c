@@ -185,37 +185,30 @@ void CL_ParseUpdateInventory(void)
 	if (sc1 & H2_SC1_EXPERIENCE)
 		MSG_ReadLong();  // Experience points
 
-	// Artifact counts
-	if (sc1 & H2_SC1_CNT_TORCH)
-		cl.inv_cnt[H2_INV_TORCH] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_H_BOOST)
-		cl.inv_cnt[H2_INV_HP_BOOST] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_SH_BOOST)
-		cl.inv_cnt[H2_INV_SUPER_HP_BOOST] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_MANA_BOOST)
-		cl.inv_cnt[H2_INV_MANA_BOOST] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_TELEPORT)
-		cl.inv_cnt[H2_INV_TELEPORT] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_TOME)
-		cl.inv_cnt[H2_INV_TOME] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_SUMMON)
-		cl.inv_cnt[H2_INV_SUMMON] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_INVISIBILITY)
-		cl.inv_cnt[H2_INV_INVISIBILITY] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_GLYPH)
-		cl.inv_cnt[H2_INV_GLYPH] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_HASTE)
-		cl.inv_cnt[H2_INV_HASTE] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_BLAST)
-		cl.inv_cnt[H2_INV_BLAST] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_POLYMORPH)
-		cl.inv_cnt[H2_INV_POLYMORPH] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_FLIGHT)
-		cl.inv_cnt[H2_INV_FLIGHT] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_CUBEOFFORCE)
-		cl.inv_cnt[H2_INV_CUBEOFFORCE] = MSG_ReadByte();
-	if (sc1 & H2_SC1_CNT_INVINCIBILITY)
-		cl.inv_cnt[H2_INV_INVINCIBILITY] = MSG_ReadByte();
+	// Artifact counts - track acquisition time for blinking effect
+#define UPDATE_INV_CNT(flag, idx) \
+	if (sc1 & flag) { \
+		int newcnt = MSG_ReadByte(); \
+		if (newcnt > cl.inv_cnt[idx]) \
+			cl.inv_gettime[idx] = cl.time; \
+		cl.inv_cnt[idx] = newcnt; \
+	}
+	UPDATE_INV_CNT(H2_SC1_CNT_TORCH, H2_INV_TORCH);
+	UPDATE_INV_CNT(H2_SC1_CNT_H_BOOST, H2_INV_HP_BOOST);
+	UPDATE_INV_CNT(H2_SC1_CNT_SH_BOOST, H2_INV_SUPER_HP_BOOST);
+	UPDATE_INV_CNT(H2_SC1_CNT_MANA_BOOST, H2_INV_MANA_BOOST);
+	UPDATE_INV_CNT(H2_SC1_CNT_TELEPORT, H2_INV_TELEPORT);
+	UPDATE_INV_CNT(H2_SC1_CNT_TOME, H2_INV_TOME);
+	UPDATE_INV_CNT(H2_SC1_CNT_SUMMON, H2_INV_SUMMON);
+	UPDATE_INV_CNT(H2_SC1_CNT_INVISIBILITY, H2_INV_INVISIBILITY);
+	UPDATE_INV_CNT(H2_SC1_CNT_GLYPH, H2_INV_GLYPH);
+	UPDATE_INV_CNT(H2_SC1_CNT_HASTE, H2_INV_HASTE);
+	UPDATE_INV_CNT(H2_SC1_CNT_BLAST, H2_INV_BLAST);
+	UPDATE_INV_CNT(H2_SC1_CNT_POLYMORPH, H2_INV_POLYMORPH);
+	UPDATE_INV_CNT(H2_SC1_CNT_FLIGHT, H2_INV_FLIGHT);
+	UPDATE_INV_CNT(H2_SC1_CNT_CUBEOFFORCE, H2_INV_CUBEOFFORCE);
+	UPDATE_INV_CNT(H2_SC1_CNT_INVINCIBILITY, H2_INV_INVINCIBILITY);
+#undef UPDATE_INV_CNT
 
 	if (sc1 & H2_SC1_ARTIFACT_ACTIVE)
 		cl.artifact_active = (int)MSG_ReadFloat();

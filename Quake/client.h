@@ -273,6 +273,7 @@ typedef struct
 	int			inv_startpos;		// H2: Starting position for inventory display
 	int			inv_order[15];		// H2: Order of artifacts in inventory
 	int			inv_cnt[15];		// H2: Count of each artifact type
+	float		inv_gettime[15];	// H2: cl.time of acquiring artifact, for blinking
 	char		puzzle_pieces[8][10]; // H2: Puzzle piece names (8 slots)
 	int			artifact_active;	// H2: Active artifact flags (for powerup effects)
 	int			rings_active;		// H2: Active ring flags

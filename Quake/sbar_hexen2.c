@@ -495,9 +495,21 @@ Draw an artifact icon in the inventory bar
 static void Sbar_H2_DrawBarArtifactIcon(int x, int y, int artifact)
 {
 	int count;
+	float flashtime;
+	int flashon;
 
 	if (artifact < 0 || artifact >= H2_INV_MAX)
 		return;
+
+	// Check if item was recently acquired (blink for 1 second)
+	flashtime = cl.time - cl.inv_gettime[artifact];
+	if (flashtime >= 0 && flashtime < 1)
+	{
+		// Flash on/off 5 times per second
+		flashon = (int)(flashtime * 10) % 2;
+		if (!flashon)
+			return;	// Don't draw during "off" phase of blink
+	}
 
 	Sbar_H2_DrawTransPic(x, y, sb_h2_arti[artifact]);
 
