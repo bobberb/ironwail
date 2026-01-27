@@ -676,6 +676,11 @@ static void R_DrawAliasModel_Real (entity_t *e, qboolean showtris)
 
 		// Build transform without entity scale (we handle it ourselves)
 		R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, 100);
+
+		// H2: EF_ROTATE items have floating motion
+		if (hexen2_mode && (e->model->flags & EF_ROTATE))
+			origin_z += sinf(e->origin[0] + e->origin[1] + (cl.time * 3.0f)) * 5.5f;
+
 		ApplyTranslation (model_matrix, origin_x, origin_y * fovscale, origin_z * fovscale);
 		ApplyScale (model_matrix, scale_x, scale_y, scale_z);
 	}
@@ -684,7 +689,13 @@ static void R_DrawAliasModel_Real (entity_t *e, qboolean showtris)
 		// Standard Quake/non-scaled transform
 		// R_EntityMatrix uses R_DecodeEntityScale which handles both Q1 and H2 formats
 		R_EntityMatrix (model_matrix, lerpdata.origin, lerpdata.angles, e->scale);
-		ApplyTranslation (model_matrix, paliashdr->scale_origin[0], paliashdr->scale_origin[1] * fovscale, paliashdr->scale_origin[2] * fovscale);
+
+		// H2: EF_ROTATE items have floating motion
+		float z_offset = paliashdr->scale_origin[2];
+		if (hexen2_mode && (e->model->flags & EF_ROTATE))
+			z_offset += sinf(e->origin[0] + e->origin[1] + (cl.time * 3.0f)) * 5.5f;
+
+		ApplyTranslation (model_matrix, paliashdr->scale_origin[0], paliashdr->scale_origin[1] * fovscale, z_offset * fovscale);
 		ApplyScale (model_matrix, paliashdr->scale[0], paliashdr->scale[1] * fovscale, paliashdr->scale[2] * fovscale);
 	}
 

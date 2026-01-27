@@ -2394,6 +2394,29 @@ void COM_AddGameDirectory (const char *dir)
 	searchpath_t *search;
 	pack_t *pak;
 	char pakfile[MAX_OSPATH];
+	char testpath[MAX_OSPATH];
+
+	// Check if this directory is already in the search path to avoid duplicates
+	// This can happen with commands like "-game data1 -portals" where data1 is
+	// already added as the base directory for Hexen II
+	for (search = com_searchpaths; search; search = search->next)
+	{
+		if (!search->pack)
+		{
+			// Extract just the directory name from the full path
+			const char *searchdir = strrchr(search->filename, '/');
+			if (searchdir)
+				searchdir++;
+			else
+				searchdir = search->filename;
+
+			if (!q_strcasecmp(searchdir, dir))
+			{
+				Con_DPrintf("COM_AddGameDirectory: skipping duplicate '%s'\n", dir);
+				return;
+			}
+		}
+	}
 
 	if (*com_gamenames)
 		q_strlcat(com_gamenames, ";", sizeof(com_gamenames));
