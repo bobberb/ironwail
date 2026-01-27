@@ -62,6 +62,9 @@ kbutton_t	in_up, in_down;
 static kbutton_t	in_infoplaque;
 qboolean	h2_info_up = false;	// H2: True when infoplaque key is held
 
+// H2: Crouch input
+static kbutton_t	in_crouch;
+
 int			in_impulse;
 
 
@@ -178,6 +181,18 @@ void IN_UseDown (void) {KeyDown(&in_use);}
 void IN_UseUp (void) {KeyUp(&in_use);}
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
+
+// H2: Crouch key handlers
+static void IN_CrouchDown (void)
+{
+	if (key_dest == key_game)
+		KeyDown(&in_crouch);
+}
+
+static void IN_CrouchUp (void)
+{
+	KeyUp(&in_crouch);
+}
 
 // H2: Infoplaque key handlers for mission objectives display
 static void IN_infoPlaqueDown (void)
@@ -517,6 +532,10 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("+jump", IN_JumpDown);
 	Cmd_AddCommand ("-jump", IN_JumpUp);
 	Cmd_AddCommand ("impulse", IN_Impulse);
+
+	// H2: Crouch command
+	Cmd_AddCommand ("+crouch", IN_CrouchDown);
+	Cmd_AddCommand ("-crouch", IN_CrouchUp);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);
 	Cmd_AddCommand ("+mlook", IN_MLookDown);
