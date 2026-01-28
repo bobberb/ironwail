@@ -407,6 +407,12 @@ typedef struct
 	int		oldskin;		/* H2 only - saved skin for transformations (sheep, imp, etc.) */
 	int		monsterclass;	/* H2 only - monster classification (CLASS_GRUNT, CLASS_BOSS, etc.) */
 	int		flags2;			/* H2 only - additional entity flags (FL2_CROUCHED, etc.) */
+	int		idealroll;		/* H2 only - server-side roll angle sent to client */
+	int		hoverz;			/* H2 only - vertical hover bobbing for flying entities */
+	int		friction;		/* H2 only - per-entity friction multiplier */
+	int		movechain;		/* H2 only - next entity in movement chain */
+	int		chainmoved;		/* H2 only - callback function for chained movement */
+	int		cameramode;		/* H2 only - camera entity mode */
 } entfield_offsets_t;
 
 /* Hexen II flags2 bits */

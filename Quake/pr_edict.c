@@ -533,6 +533,12 @@ void H2_SetupGlobals (void)
 	f->oldskin = ED_FindFieldOffset("oldskin");
 	f->monsterclass = ED_FindFieldOffset("monsterclass");
 	f->flags2 = ED_FindFieldOffset("flags2");
+	f->idealroll = ED_FindFieldOffset("idealroll");
+	f->hoverz = ED_FindFieldOffset("hoverz");
+	f->friction = ED_FindFieldOffset("friction");
+	f->movechain = ED_FindFieldOffset("movechain");
+	f->chainmoved = ED_FindFieldOffset("chainmoved");
+	f->cameramode = ED_FindFieldOffset("cameramode");
 
 	// H2-specific global variable offsets
 	if (hexen2_mode)
