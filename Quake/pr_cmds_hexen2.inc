@@ -1154,7 +1154,6 @@ The entity's fields are used as follows:
   .view_ofs   - glow offset from origin
   .health     - glow radius
   .max_health - cast light radius
-  .style      - light style
 
 Returns 1.0 on success, 0.0 on failure
 =================
@@ -1209,12 +1208,59 @@ static void PF_h2_pimpmodel (void)
 	if ((spawnflags & 1) || (spawnflags & 2))  // PIMP_SPIN or PIMP_FLOAT
 		mod->flags |= EF_ROTATE;
 
+	// Store in server-side array for late-join support
+	{
+		int slot = -1;
+		int free_slot = -1;
+
+		// Find existing entry or first free slot
+		for (i = 0; i < MAX_SV_MODELPIMP; i++)
+		{
+			if (sv.modelpimp[i].active)
+			{
+				if (!strcmp(sv.modelpimp[i].modelname, modelname))
+				{
+					slot = i;
+					break;
+				}
+			}
+			else if (free_slot < 0)
+			{
+				free_slot = i;
+			}
+		}
+
+		if (slot < 0)
+			slot = free_slot;
+
+		if (slot >= 0)
+		{
+			// Clear mechanism: if both flags are 0, deactivate the entry
+			if (spawnflags == 0 && modelflags == 0)
+			{
+				sv.modelpimp[slot].active = false;
+			}
+			else
+			{
+				q_strlcpy(sv.modelpimp[slot].modelname, modelname, MAX_QPATH);
+				sv.modelpimp[slot].spawnflags = spawnflags;
+				sv.modelpimp[slot].modelflags = modelflags;
+				VectorCopy(glow_color, sv.modelpimp[slot].glow_color);
+				sv.modelpimp[slot].abslight = abslight;
+				VectorCopy(view_ofs, sv.modelpimp[slot].view_ofs);
+				sv.modelpimp[slot].glow_radius = glow_radius;
+				sv.modelpimp[slot].light_radius = light_radius;
+				sv.modelpimp[slot].active = true;
+			}
+		}
+	}
+
 	// Send pimp settings to all connected clients via stufftext
 	// Format: "modelpimp <model> <spawnflags> <flags> <r> <g> <b> <abslight> <ox> <oy> <oz> <glow_r> <light_r>"
 	// Clients parse this and store in their cl_modelpimp table
 	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
 	{
-		if (!client->active && !client->spawned)
+		if (!client->active || !client->spawned)
 			continue;
 
 		MSG_WriteByte(&client->message, svc_stufftext);

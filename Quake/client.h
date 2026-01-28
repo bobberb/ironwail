@@ -401,7 +401,7 @@ void	CL_SetLightstyle (int i, const char *str);
 // Model pimp functions (modding extension, not native H2)
 modelpimp_t *CL_FindModelPimp (const char *modelname);
 void CL_ClearModelPimp (void);
-void CL_ApplyModelPimpEffects (entity_t *ent);
+void CL_ApplyModelPimpEffects (entity_t *ent, int entnum);
 
 void CL_Init (void);
 

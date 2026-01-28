@@ -89,6 +89,21 @@ typedef struct
 	} customstats[MAX_CL_STATS*2];	//strings or numeric...
 	size_t		numcustomstats;
 
+	// Server-side modelpimp storage for late-join support
+	#define MAX_SV_MODELPIMP 64
+	struct sv_modelpimp_s
+	{
+		char		modelname[MAX_QPATH];
+		int			spawnflags;
+		int			modelflags;
+		vec3_t		glow_color;
+		float		abslight;
+		vec3_t		view_ofs;
+		float		glow_radius;
+		float		light_radius;
+		qboolean	active;
+	} modelpimp[MAX_SV_MODELPIMP];
+
 	char		lastsave[MAX_OSPATH];
 	qboolean	autoloading;
 

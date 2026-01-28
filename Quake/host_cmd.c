@@ -3716,6 +3716,8 @@ Host_Begin_f
 */
 static void Host_Begin_f (void)
 {
+	int i;
+
 	if (cmd_source == src_command)
 	{
 		Con_Printf ("begin is not valid from the console\n");
@@ -3723,6 +3725,27 @@ static void Host_Begin_f (void)
 	}
 
 	host_client->spawned = true;
+
+	// Send all active modelpimp settings to the newly spawned client (late-join support)
+	if (hexen2_mode)
+	{
+		for (i = 0; i < MAX_SV_MODELPIMP; i++)
+		{
+			if (!sv.modelpimp[i].active)
+				continue;
+
+			MSG_WriteByte(&host_client->message, svc_stufftext);
+			MSG_WriteString(&host_client->message, va("modelpimp \"%s\" %d %d %g %g %g %g %g %g %g %g %g\n",
+				sv.modelpimp[i].modelname,
+				sv.modelpimp[i].spawnflags,
+				sv.modelpimp[i].modelflags,
+				sv.modelpimp[i].glow_color[0], sv.modelpimp[i].glow_color[1], sv.modelpimp[i].glow_color[2],
+				sv.modelpimp[i].abslight,
+				sv.modelpimp[i].view_ofs[0], sv.modelpimp[i].view_ofs[1], sv.modelpimp[i].view_ofs[2],
+				sv.modelpimp[i].glow_radius,
+				sv.modelpimp[i].light_radius));
+		}
+	}
 }
 
 //===========================================================================

@@ -416,16 +416,18 @@ modelpimp_t *CL_FindModelPimp (const char *modelname)
 ===============
 CL_ApplyModelPimpEffects
 
-Apply model pimp glow/light effects for an entity
-Called during entity linking
+Apply model pimp glow/light effects for an entity.
+Called during entity linking. Uses entity index for stable dlight keys
+to prevent flickering from reallocating new lights each frame.
 ===============
 */
-void CL_ApplyModelPimpEffects (entity_t *ent)
+void CL_ApplyModelPimpEffects (entity_t *ent, int entnum)
 {
 	int i;
 	modelpimp_t *mp;
 	dlight_t *dl;
 	vec3_t org;
+	int glow_key, light_key;
 
 	if (!ent->model)
 		return;
@@ -445,6 +447,11 @@ void CL_ApplyModelPimpEffects (entity_t *ent)
 	// Calculate effect origin (entity origin + offset)
 	VectorAdd (ent->origin, mp->view_ofs, org);
 
+	// Use stable dlight keys based on entity number to avoid flickering
+	// Use negative keys to avoid collision with entity-based dlights
+	glow_key = -(entnum + 1) * 2;
+	light_key = -(entnum + 1) * 2 - 1;
+
 	// Apply glow orb effect (uses particle system or sprite)
 	if (mp->spawnflags & PIMP_GLOW)
 	{
@@ -456,7 +463,7 @@ void CL_ApplyModelPimpEffects (entity_t *ent)
 
 		// Simple implementation: use a dynamic light with small radius
 		// A more sophisticated implementation would use particles
-		dl = CL_AllocDlight (0);
+		dl = CL_AllocDlight (glow_key);
 		VectorCopy (org, dl->origin);
 		dl->radius = radius;
 		dl->die = cl.time + 0.001f;
@@ -475,7 +482,7 @@ void CL_ApplyModelPimpEffects (entity_t *ent)
 		if (radius <= 0)
 			radius = 200.0f;
 
-		dl = CL_AllocDlight (0);
+		dl = CL_AllocDlight (light_key);
 		VectorCopy (org, dl->origin);
 		dl->radius = radius;
 		dl->die = cl.time + 0.001f;
@@ -827,7 +834,7 @@ void CL_RelinkEntities (void)
 
 		// Apply modelpimp custom effects (H2 modding extension)
 		if (hexen2_mode)
-			CL_ApplyModelPimpEffects (ent);
+			CL_ApplyModelPimpEffects (ent, i);
 
 		if (ent->model->flags & EF_GIB)
 			CL_RocketTrail (ent, 2);
@@ -1214,6 +1221,14 @@ void CL_ModelPimp_f (void)
 	mp->view_ofs[2] = atof(Cmd_Argv(10));
 	mp->glow_radius = atof(Cmd_Argv(11));
 	mp->light_radius = atof(Cmd_Argv(12));
+
+	// Clear mechanism: deactivate entry if no effects are set
+	if (mp->spawnflags == 0 && mp->modelflags == 0)
+	{
+		Con_DPrintf("ModelPimp: clearing '%s'\n", modelname);
+		mp->active = false;
+		return;
+	}
 
 	Con_DPrintf("ModelPimp: '%s' spawnflags=%d flags=%d glow=(%.1f,%.1f,%.1f)\n",
 		modelname, mp->spawnflags, mp->modelflags,
