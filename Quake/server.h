@@ -201,6 +201,7 @@ typedef enum
 	SOLID_BBOX					= 2,	// touch on edge, block
 	SOLID_SLIDEBOX				= 3,	// touch on edge, but not an onground
 	SOLID_BSP					= 4,	// bsp clip, touch on edge, block
+	SOLID_PHASE					= 5,	// H2: pass through FL_MONSTER entities without slowing
 } esolid_t;
 
 // edict->deadflag values

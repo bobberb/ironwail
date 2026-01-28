@@ -1513,6 +1513,15 @@ void SV_Physics_Toss (edict_t *ent)
 	if (ent->free)
 		return;
 
+	// H2: SOLID_PHASE missiles pass through monsters without bouncing
+	if (hexen2_mode && ENT_MOVETYPE(ent) == MOVETYPE_BOUNCEMISSILE
+	    && ENT_FLOAT(ent, solid) == SOLID_PHASE)
+	{
+		if (((int)ENT_FLAGS(trace.ent) & FL_MONSTER) ||
+		    ENT_MOVETYPE(trace.ent) == MOVETYPE_WALK)
+			return;  // Pass through without interaction
+	}
+
 	// BOUNCE and H2's BOUNCEMISSILE use 1.5 backoff for bouncier reflections
 	if (ENT_MOVETYPE(ent) == MOVETYPE_BOUNCE ||
 	    (hexen2_mode && ENT_MOVETYPE(ent) == MOVETYPE_BOUNCEMISSILE))
