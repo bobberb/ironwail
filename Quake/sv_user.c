@@ -470,6 +470,10 @@ void SV_ReadClientMove (usercmd_t *move)
 	i = MSG_ReadByte ();
 	if (i)
 		ENT_FLOAT(host_client->edict, impulse) = i;
+
+	// H2: Read light level for monster AI visibility
+	if (hexen2_mode && h2_globals.fields.light_level >= 0)
+		E_FLOAT(host_client->edict, h2_globals.fields.light_level) = MSG_ReadByte ();
 }
 
 /*

@@ -291,6 +291,8 @@ typedef struct
 	float	forwardmove;
 	float	sidemove;
 	float	upmove;
+
+	byte	lightlevel;		// H2: player's ambient light level for monster AI
 } usercmd_t;
 
 #endif	/* _QUAKE_PROTOCOL_H */

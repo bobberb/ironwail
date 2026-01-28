@@ -403,6 +403,7 @@ typedef struct
 	int		playerclass;	/* H2 only - player class (0-3) */
 	int		gravity;		/* H2/extension gravity field */
 	int		proj_ofs;		/* H2 only - vec3, projectile origin offset for attacks */
+	int		light_level;	/* H2 only - player ambient light for monster AI visibility */
 } entfield_offsets_t;
 
 /* Hexen II specific global and entity field pointers - set up when loading H2 progs */

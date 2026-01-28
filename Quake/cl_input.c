@@ -424,6 +424,12 @@ void CL_BaseMove (usercmd_t *cmd)
 		cmd->sidemove *= cl.hasted;
 		cmd->upmove *= cl.hasted;
 	}
+
+//
+// H2: Copy light level for monster AI visibility
+//
+	if (hexen2_mode)
+		cmd->lightlevel = cl.light_level;
 }
 
 
@@ -483,6 +489,10 @@ void CL_SendMove (const usercmd_t *cmd)
 
 		MSG_WriteByte (&buf, in_impulse);
 		in_impulse = 0;
+
+		// H2: Send light level for monster AI visibility
+		if (hexen2_mode)
+			MSG_WriteByte (&buf, cmd->lightlevel);
 	}
 
 //

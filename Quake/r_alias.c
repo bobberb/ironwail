@@ -313,6 +313,15 @@ void R_SetupAliasLighting (entity_t	*e)
 			lightcolor[1] += add;
 			lightcolor[2] += add;
 		}
+
+		// H2: capture player's light level for monster AI visibility
+		if (hexen2_mode)
+		{
+			int level = (int)(lightcolor[0] + lightcolor[1] + lightcolor[2]) / 3;
+			if (level > 255)
+				level = 255;
+			cl.light_level = level;
+		}
 	}
 
 	// minimum light value on players (8)

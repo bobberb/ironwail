@@ -222,6 +222,8 @@ typedef struct
 	int			lasting_time;		// H2: how long intermission lasts (0 = until keypress)
 	int			intermission_next;	// H2: next intermission to chain to (0 = none)
 
+	int			light_level;		// H2: player's ambient light level for monster AI visibility
+
 	double		mtime[2];		// the timestamp of last two messages
 	double		time;			// clients view of time, should be between
 								// servertime and oldservertime to generate
