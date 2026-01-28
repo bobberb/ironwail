@@ -1246,15 +1246,8 @@ void CL_ParseServerMessage (void)
 				case svc_h2_updateclass:
 					CL_ParseUpdateClass();
 					break;
-				case svc_h2_start_effect:
-					CL_ParseEffect();
-					break;
-				case svc_h2_end_effect:
-					CL_EndEffect();
-					break;
-				case svc_h2_plaque:
-					CL_ParsePlaque();
-					break;
+				/* svc_h2_start_effect (42), svc_h2_end_effect (43), svc_h2_plaque (44)
+				 * are handled in outer switch due to protocol conflict with FitzQuake */
 				case svc_h2_particle_explosion:
 					CL_ParseParticleExplosion();
 					break;
@@ -1316,6 +1309,21 @@ void CL_ParseServerMessage (void)
 				case svc_h2_update_kingofhill:
 					// Deathmatch: update which player is king of the hill
 					h2_kingofhill = MSG_ReadShort() - 1;  // Server sends 1-indexed, store 0-indexed (-1 = none)
+					break;
+				case svc_h2_reference:
+					// H2 delta compression: read and discard (not implemented)
+					// Format: byte frame, byte sequence
+					MSG_ReadByte();
+					MSG_ReadByte();
+					break;
+				case svc_h2_clear_edicts:
+					// H2 delta compression: read and discard entity removal list
+					// Format: byte count, then count * short entity indices
+					{
+						int clear_count = MSG_ReadByte();
+						for (i = 0; i < clear_count; i++)
+							MSG_ReadShort();
+					}
 					break;
 				default:
 					Host_Error ("Illegible server message %d (previous was %s)", cmd, svc_strings[lastcmd]);
@@ -1578,17 +1586,32 @@ void CL_ParseServerMessage (void)
 			Fog_ParseServerMessage ();
 			break;
 
-		case svc_spawnbaseline2: //PROTOCOL_FITZQUAKE
+		case svc_spawnbaseline2: //PROTOCOL_FITZQUAKE (42) - conflicts with svc_h2_start_effect
+			if (hexen2_mode)
+			{
+				CL_ParseEffect();	// H2: svc_h2_start_effect
+				break;
+			}
 			i = MSG_ReadShort ();
 			// must use CL_EntityNum() to force cl.num_entities up
 			CL_ParseBaseline (CL_EntityNum(i), 2);
 			break;
 
-		case svc_spawnstatic2: //PROTOCOL_FITZQUAKE
+		case svc_spawnstatic2: //PROTOCOL_FITZQUAKE (43) - conflicts with svc_h2_end_effect
+			if (hexen2_mode)
+			{
+				CL_EndEffect();		// H2: svc_h2_end_effect
+				break;
+			}
 			CL_ParseStatic (2);
 			break;
 
-		case svc_spawnstaticsound2: //PROTOCOL_FITZQUAKE
+		case svc_spawnstaticsound2: //PROTOCOL_FITZQUAKE (44) - conflicts with svc_h2_plaque
+			if (hexen2_mode)
+			{
+				CL_ParsePlaque();	// H2: svc_h2_plaque
+				break;
+			}
 			CL_ParseStaticSound (2);
 			break;
 		//johnfitz

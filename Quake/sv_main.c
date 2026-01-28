@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "sv_effect_hexen2.h"
+#include "host_string.h"
 
 server_t	sv;
 server_static_t	svs;
@@ -502,6 +503,32 @@ static qboolean SV_IsLocalClient (client_t *client)
 
 /*
 ================
+SV_GetLevelname
+
+Returns the level name string for the current map.
+For Hexen II: uses the strings.txt index stored in world.message,
+falling back to world.netname if not found.
+================
+*/
+static const char *SV_GetLevelname (void)
+{
+	if (hexen2_mode)
+	{
+		/* H2: message field is an index into strings.txt (1-based) */
+		int idx = (int)ENT_FLOAT(qcvm->edicts, message);
+		if (idx > 0 && idx <= host_string_count)
+			return Host_GetString(idx - 1);
+
+		/* Fall back to netname if strings.txt lookup fails */
+		return PR_GetString(ENT_FLOAT(qcvm->edicts, netname));
+	}
+
+	/* Quake: message field is a progs string offset */
+	return PR_GetString(ENT_FLOAT(qcvm->edicts, message));
+}
+
+/*
+================
 SV_SendServerinfo
 
 Sends the first message from the server to a connected client.
@@ -534,7 +561,7 @@ void SV_SendServerinfo (client_t *client)
 	else
 		MSG_WriteByte (&client->message, GAME_COOP);
 
-	MSG_WriteString (&client->message, PR_GetString(ENT_FLOAT(qcvm->edicts, message)));
+	MSG_WriteString (&client->message, SV_GetLevelname());
 
 	//johnfitz -- only send the first 256 model and sound precaches if protocol is 15
 	for (i = 1, s = sv.model_precache+1; *s; s++,i++)
