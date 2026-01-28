@@ -296,6 +296,69 @@ void SV_WaterJump (void)
 
 /*
 ===================
+SV_FlightMove
+
+Hexen II: Player movement when flying (MOVETYPE_FLY).
+Similar to SV_WaterMove but with full 3D movement using upmove.
+Port from uhexen2/engine/hexen2/sv_user.c
+===================
+*/
+static void SV_FlightMove (void)
+{
+	int		i;
+	vec3_t	wishvel;
+	float	speed, newspeed, wishspeed, addspeed, accelspeed;
+
+//
+// user intentions - full 3D movement
+//
+	AngleVectors (ENT_V_ANGLE(sv_player), forward, right, up);
+
+	for (i = 0; i < 3; i++)
+		wishvel[i] = forward[i]*cmd.forwardmove + right[i]*cmd.sidemove + up[i]*cmd.upmove;
+
+	wishspeed = VectorLength(wishvel);
+	if (wishspeed > sv_maxspeed.value)
+	{
+		VectorScale (wishvel, sv_maxspeed.value/wishspeed, wishvel);
+		wishspeed = sv_maxspeed.value;
+	}
+
+//
+// friction
+//
+	speed = VectorLength (velocity);
+	if (speed)
+	{
+		newspeed = speed - host_frametime * speed * sv_friction.value;
+		if (newspeed < 0)
+			newspeed = 0;
+		VectorScale (velocity, newspeed/speed, velocity);
+	}
+	else
+		newspeed = 0;
+
+//
+// acceleration
+//
+	if (!wishspeed)
+		return;
+
+	addspeed = wishspeed - newspeed;
+	if (addspeed <= 0)
+		return;
+
+	VectorNormalize (wishvel);
+	accelspeed = sv_accelerate.value * wishspeed * host_frametime;
+	if (accelspeed > addspeed)
+		accelspeed = addspeed;
+
+	for (i = 0; i < 3; i++)
+		velocity[i] += accelspeed * wishvel[i];
+}
+
+/*
+===================
 SV_NoclipMove -- johnfitz
 
 new, alternate noclip. old noclip is still handled in SV_AirMove
@@ -424,6 +487,8 @@ void SV_ClientThink (void)
 		SV_NoclipMove ();
 	else if (ENT_WATERLEVEL(sv_player) >= 2 && ENT_MOVETYPE(sv_player) != MOVETYPE_NOCLIP)
 		SV_WaterMove ();
+	else if (hexen2_mode && ENT_MOVETYPE(sv_player) == MOVETYPE_FLY)
+		SV_FlightMove ();	// H2: Full 3D flight movement
 	else
 		SV_AirMove ();
 	//johnfitz
