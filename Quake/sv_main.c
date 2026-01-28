@@ -1272,6 +1272,14 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (ENT_IDEALPITCH(ent))
 		bits |= SU_IDEALPITCH;
 
+	// H2: Send idealroll for view tilting during flight
+	if (hexen2_mode && h2_globals.fields.idealroll >= 0)
+	{
+		float idealroll = E_FLOAT(ent, h2_globals.fields.idealroll);
+		if (idealroll)
+			bits |= H2_SU_IDEALROLL;
+	}
+
 // stuff the sigil bits into the high bits of items for sbar, or else
 // mix in items2
 	val = GetEdictFieldValueByName(ent, "items2");
@@ -1346,6 +1354,10 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 
 	if (bits & SU_IDEALPITCH)
 		MSG_WriteChar (msg, ENT_IDEALPITCH(ent));
+
+	// H2: Send idealroll for view tilting
+	if (bits & H2_SU_IDEALROLL)
+		MSG_WriteChar (msg, (int)E_FLOAT(ent, h2_globals.fields.idealroll));
 
 	for (i=0 ; i<3 ; i++)
 	{
