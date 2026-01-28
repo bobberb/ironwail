@@ -3570,9 +3570,8 @@ builtindef_t pr_builtindefs[] =
 	{"concatv",					PF_BOTH(PF_h2_concatv),			91},	// H2: string(vector...) = #91
 	{"GetString",				PF_BOTH(PF_h2_GetString),		92},	// H2: string(float) = #92
 	{"SpawnTemp",				PF_SSQC(PF_h2_SpawnTemp),		93},	// H2: entity() = #93
-
-	// NOTE: H2 has v_factor/v_factorrange at #94-95, but Quake 2021 re-release has min/max here
-	// For now, keep Quake builtins - will need runtime switching later
+	{"v_factor",				PF_SSQC(PF_h2_v_factor),		94},	// H2: vector(vector) = #94 (overrides min in H2 mode)
+	{"v_factorrange",			PF_SSQC(PF_h2_v_factorrange),	95},	// H2: vector(vector, vector) = #95 (overrides max in H2 mode)
 
 	{"stof",					PF_BOTH(PF_stof),				81,		FRIK_FILE},			// float(string)
 

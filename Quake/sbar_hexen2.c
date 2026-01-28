@@ -79,9 +79,6 @@ static qpic_t *sb_h2_rhlthcvr;
 // Artifact icons (loaded dynamically)
 static qpic_t *sb_h2_arti[H2_INV_MAX];
 
-// Class weapon icons
-static qpic_t *sb_h2_weapons[5][4];	// [class][weapon]
-
 // State
 static float ChainPosition = 0;
 static int inv_flg = 0;			// Inventory visible flag
@@ -179,9 +176,6 @@ void Sbar_H2_Init(void)
 		q_snprintf(name, sizeof(name), "gfx/arti%02d.lmp", i);
 		sb_h2_arti[i] = Draw_CachePic(name);
 	}
-
-	// Class weapons would be loaded per-class
-	// TODO: Load weapon icons for each class
 
 	sb_h2_loaded = true;
 	Con_DPrintf("Hexen II HUD graphics loaded\n");
