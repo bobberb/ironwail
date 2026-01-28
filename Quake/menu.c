@@ -7549,10 +7549,14 @@ void M_Mousemove (int screenx, int screeny)
 		return;
 
 	case m_main:
+		if (hexen2_mode)
+			return;	// H2 uses different cursor/layout
 		M_Main_Mousemove (x, y);
 		return;
 
 	case m_singleplayer:
+		if (hexen2_mode)
+			return;	// H2 uses different cursor/layout
 		M_SinglePlayer_Mousemove (x, y);
 		return;
 
@@ -7573,10 +7577,14 @@ void M_Mousemove (int screenx, int screeny)
 		return;
 
 	case m_multiplayer:
+		if (hexen2_mode)
+			return;	// H2 uses different cursor/layout
 		M_MultiPlayer_Mousemove (x, y);
 		return;
 
 	case m_setup:
+		if (hexen2_mode)
+			return;	// H2 uses different cursor/layout
 		M_Setup_Mousemove (x, y);
 		return;
 
