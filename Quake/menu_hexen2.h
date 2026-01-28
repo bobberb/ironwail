@@ -52,6 +52,7 @@ void M_H2_DrawBigCharacter(int x, int y, int num);
 
 // Animated title support
 void M_H2_ScrollTitle(const char *name);
+void M_H2_ResetScrollTitle(void);
 
 // Menu initialization
 void M_H2_Init(void);

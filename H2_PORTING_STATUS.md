@@ -153,7 +153,8 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 | Feature | Status | uhexen2 Source | Ironwail File |
 |---------|--------|----------------|---------------|
 | H2 status bar | [x] | `hexen2/sbar.c` | `sbar_hexen2.c` |
-| Mana bars | [x] | `hexen2/sbar.c` | `sbar_hexen2.c` |
+| Mana bars (actual max_mana) | [x] | `hexen2/sbar.c` | `sbar_hexen2.c` |
+| Armor display (per-piece) | [x] | `hexen2/sbar.c` | `sbar_hexen2.c` |
 | Artifact inventory | [x] | `hexen2/sbar.c` | `sbar_hexen2.c` |
 | Ring status | [x] | `hexen2/sbar.c` | `sbar_hexen2.c` |
 | Puzzle display | [x] | `hexen2/sbar.c` | `sbar_hexen2.c` |
@@ -165,6 +166,18 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 | Difficulty selection | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
 | Portals expansion detect | [x] | `hexen2/menu.c` | `menu_hexen2.c` |
 | Demoness class (5th) | [x] | `hexen2/menu.c` | `menu_hexen2.c` (auto-detected via portals) |
+
+**HUD Fixes (2026-01-27):**
+- Mana bars now use actual `cl.max_mana` from server instead of hardcoded 100
+- Armor display now shows individual armor pieces from `cl.armor_*` fields instead of threshold guessing
+- Server now sends armor values via SC2 protocol (`sv_inventory_hexen2.c`)
+- Added `max_mana`, `max_health`, and `armor_*` fields to client struct
+
+**Server Sync Additions (2026-01-27):**
+- Ring times (flight, water, turning, regeneration) now synced via SC2
+- Max health and max mana now synced via SC2
+- Puzzle pieces (8 slots) now synced via SC2 with string hashing for delta detection
+- Server uses oldstats_i[60-77] for SC2 delta tracking
 
 ---
 
@@ -180,6 +193,30 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 | H2 model formats | [x] | `hexen2/model.c` | `gl_model.c` (RAPO v50 loader) |
 | H2 texture loading | [x] | `hexen2/r_texture.c` | `gl_draw.c`, `wad.c` (gfx.wad + .lmp files) |
 | Puzzle strings | [x] | `hexen2/pr_edict.c` | `host_string.c` (strings.txt loading) |
+
+---
+
+## 5b. HUB SYSTEM (Phase 5b) - COMPLETE
+
+| Feature | Status | uhexen2 Source | Ironwail File |
+|---------|--------|----------------|---------------|
+| sv.startspot field | [x] | `hexen2/server.h` | `server.h` |
+| SV_SpawnServer startspot param | [x] | `hexen2/sv_main.c:1934` | `sv_main.c` |
+| startspot global (offset 35) | [x] | `hexen2/sv_main.c:2089` | `sv_main.c` |
+| SFL_NEW_UNIT/EPISODE flags | [x] | `hexen2/server.h:234-235` | `server.h` |
+| PF_changelevel hub routing | [x] | `h2shared/pr_cmds.c:2752` | `pr_cmds.c` |
+| changelevel2 command | [x] | `hexen2/host_cmd.c:350` | `host_cmd.c` |
+| SaveGamestate | [x] | `hexen2/host_cmd.c:842` | `host_cmd.c` (H2_SaveGamestate) |
+| LoadGamestate | [x] | `hexen2/host_cmd.c:986` | `host_cmd.c` (H2_LoadGamestate) |
+| RestoreClients | [x] | `hexen2/host_cmd.c:944` | `host_cmd.c` (H2_RestoreClients) |
+| SV_SaveEffects/LoadEffects | [x] | `hexen2/sv_effect.c:612,846` | `sv_effect_hexen2.c` |
+
+**Implementation complete:**
+- H2_SaveGamestate: saves level state to mapname.gip (entities, lightstyles, effects, globals)
+- H2_LoadGamestate: restores full level state including entity data from .gip files
+- H2_LoadClientsState: loads client state from clients.gip
+- H2_RestoreClients: calls ClientReEnter in progs for returning players
+- changelevel2 command: complete hub transition workflow (save state, load new/cached level, restore clients)
 
 ---
 
@@ -214,6 +251,9 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 ### Low Priority (polish)
 1. ~~**Effects load from save** - Full string buffer parsing needed for load side~~ ✅ COMPLETE
 2. ~~**svc_mod_name** - UQE v1.13 extension for music files~~ ✅ Already implemented
+
+### Known Issues (under investigation)
+1. **Spider melee attack not triggering** (`claudedir-re7`) - Spider approaches but doesn't attack. Debug output added to traceline, needs testing with `developer 2`.
 
 ---
 
@@ -289,7 +329,7 @@ hexen2/snd_dma.c        - Sound system
 - `sbar.c` - H2 HUD redirect
 - `menu.h` - Added m_class, m_difficulty states
 - `menu.c` - H2 menu dispatch, M_H2_Init call
-- `client.h` - H2 client state
+- `client.h` - H2 client state (max_mana, max_health, armor_amulet/bracer/breastplate/helmet)
 - `render.h` - drawflags/abslight
 - `glquake.h` - H2 particle/trail types
 - `Makefile` - Added sv_effect_hexen2.o, sv_inventory_hexen2.o, menu_hexen2.o

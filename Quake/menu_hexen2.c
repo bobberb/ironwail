@@ -28,11 +28,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Menu cursor animation
 #define H2_CURSOR_FRAMES	8
 
-// Title scrolling animation
-static float title_start_time;
-static const char *title_name;
-static qboolean title_active;
-static qpic_t *title_pic;
+// Title scrolling animation (matches uhexen2 behavior)
+static float TitlePercent = 0;
+static float TitleTargetPercent = 0;
+static float LogoPercent = 0;
+static float LogoTargetPercent = 0;
+static const char *LastTitleName = "";
+static qboolean CanSwitchTitle = true;
 
 // Bigfont kerning table: 27 chars (A-Z plus /) x 27 chars
 // Value = number of pixels to move left for the second character
@@ -321,65 +323,94 @@ void M_H2_DrawBigString(int x, int y, const char *str)
 ================
 M_H2_ScrollTitle
 
-Set up animated title that scrolls down from top of screen
+Animated title that scrolls down from top of screen
+Based on uhexen2's ScrollTitle implementation
 ================
 */
 void M_H2_ScrollTitle(const char *name)
 {
-	title_name = name;
-	title_start_time = realtime;
-	title_active = true;
-	title_pic = Draw_CachePic(name);
+	qpic_t *p;
+	float delta;
+	int finaly;
+
+	// Animate title percentage toward target
+	if (TitlePercent < TitleTargetPercent)
+	{
+		delta = ((TitleTargetPercent - TitlePercent) / 0.5f) * host_frametime;
+		if (delta < 0.004f)
+			delta = 0.004f;
+		TitlePercent += delta;
+		if (TitlePercent > TitleTargetPercent)
+			TitlePercent = TitleTargetPercent;
+	}
+	else if (TitlePercent > TitleTargetPercent)
+	{
+		delta = ((TitlePercent - TitleTargetPercent) / 0.15f) * host_frametime;
+		if (delta < 0.02f)
+			delta = 0.02f;
+		TitlePercent -= delta;
+		if (TitlePercent <= TitleTargetPercent)
+		{
+			TitlePercent = TitleTargetPercent;
+			CanSwitchTitle = true;
+		}
+	}
+
+	// Animate logo percentage toward target
+	if (LogoPercent < LogoTargetPercent)
+	{
+		delta = ((LogoTargetPercent - LogoPercent) / 0.15f) * host_frametime;
+		if (delta < 0.02f)
+			delta = 0.02f;
+		LogoPercent += delta;
+		if (LogoPercent > LogoTargetPercent)
+			LogoPercent = LogoTargetPercent;
+	}
+
+	// If title changed, start scrolling old one out
+	if (q_strcasecmp(LastTitleName, name) != 0 && TitleTargetPercent != 0)
+		TitleTargetPercent = 0;
+
+	// When ready to switch, set new title and start scrolling in
+	if (CanSwitchTitle)
+	{
+		LastTitleName = name;
+		CanSwitchTitle = false;
+		TitleTargetPercent = 1;
+		LogoTargetPercent = 1;
+	}
+
+	// Draw the title
+	p = Draw_CachePic(LastTitleName);
+	if (p)
+	{
+		finaly = (int)((float)p->height * TitlePercent) - p->height;
+		M_DrawTransPicCropped((320 - p->width) / 2, finaly, p);
+	}
+
+	// Draw the plaque/logo (not during keys menu)
+	if (m_state != m_keys && h2_plaque)
+	{
+		finaly = (int)((float)h2_plaque->height * LogoPercent) - h2_plaque->height;
+		M_DrawTransPicCropped(10, finaly, h2_plaque);
+	}
 }
 
 /*
 ================
-M_H2_DrawTitle
+M_H2_ResetScrollTitle
 
-Draw the currently active scrolling title
-Returns the Y position where menu content should start
+Reset the scroll animation state (call when entering menus)
 ================
 */
-static int M_H2_DrawTitle(void)
+void M_H2_ResetScrollTitle(void)
 {
-	int y;
-	float elapsed;
-	float scroll_time = 0.5f;  // Time to complete scroll animation
-
-	if (!title_active || !title_pic)
-		return 28;  // Default starting position
-
-	elapsed = realtime - title_start_time;
-
-	if (elapsed < scroll_time)
-	{
-		// Animate from -title_pic->height to 0
-		y = (int)(-title_pic->height * (1.0f - elapsed / scroll_time));
-	}
-	else
-	{
-		y = 0;
-	}
-
-	M_DrawTransPic((320 - title_pic->width) / 2, y, title_pic);
-
-	// Return y position for menu content (below title)
-	if (elapsed < scroll_time)
-		return 28;  // While animating, use fixed position
-	return title_pic->height + 4;
-}
-
-/*
-================
-M_H2_DrawPlaque
-
-Draw the Hexen II plaque logo
-================
-*/
-static void M_H2_DrawPlaque(void)
-{
-	if (h2_plaque)
-		M_DrawTransPic(10, 4, h2_plaque);
+	TitlePercent = 0;
+	TitleTargetPercent = 0;
+	LogoPercent = 0;
+	LogoTargetPercent = 0;
+	LastTitleName = "";
+	CanSwitchTitle = true;
 }
 
 /*
@@ -527,39 +558,26 @@ MAIN MENU
 static void M_H2_Main_Draw(void)
 {
 	int y;
-	int cursor_offset;
 
-	// Draw plaque
-	M_H2_DrawPlaque();
+	// Draw animated title and plaque
+	M_H2_ScrollTitle("gfx/menu/title0.lmp");
 
-	// Draw/animate title
-	if (h2_titles[0])
-	{
-		M_H2_ScrollTitle("gfx/menu/title0.lmp");
-		y = M_H2_DrawTitle();
-	}
-	else
-	{
-		y = 28;
-	}
-
-	// Draw menu items using bigfont
+	// Menu items start at fixed position (title scrolls in from top)
+	y = 60;
+	M_H2_DrawBigString(72, y, "SINGLE PLAYER");
 	y += 20;
-	M_H2_DrawBigString(88, y, "SINGLE PLAYER");
-	y += 26;
-	M_H2_DrawBigString(88, y, "MULTIPLAYER");
-	y += 26;
-	M_H2_DrawBigString(88, y, "OPTIONS");
-	y += 26;
-	M_H2_DrawBigString(88, y, "MODS");
-	y += 26;
-	M_H2_DrawBigString(88, y, "HELP");
-	y += 26;
-	M_H2_DrawBigString(88, y, "QUIT");
+	M_H2_DrawBigString(72, y, "MULTIPLAYER");
+	y += 20;
+	M_H2_DrawBigString(72, y, "OPTIONS");
+	y += 20;
+	M_H2_DrawBigString(72, y, "MODS");
+	y += 20;
+	M_H2_DrawBigString(72, y, "HELP");
+	y += 20;
+	M_H2_DrawBigString(72, y, "QUIT");
 
-	// Draw cursor
-	cursor_offset = 48 + h2_main_cursor * 26;  // Adjusted for title position
-	M_H2_DrawCursor(56, cursor_offset);
+	// Draw cursor (matches uhexen2 positioning)
+	M_H2_DrawCursor(43, 54 + h2_main_cursor * 20);
 }
 
 static void M_H2_Main_Key(int key)
@@ -641,30 +659,19 @@ static void M_H2_SinglePlayer_Draw(void)
 {
 	int y;
 
-	// Draw plaque
-	M_H2_DrawPlaque();
+	// Draw animated title and plaque
+	M_H2_ScrollTitle("gfx/menu/title1.lmp");
 
-	// Draw title
-	if (h2_titles[1])
-	{
-		M_H2_ScrollTitle("gfx/menu/title1.lmp");
-		y = M_H2_DrawTitle();
-	}
-	else
-	{
-		y = 28;
-	}
-
-	// Draw menu items
+	// Menu items
+	y = 60;
+	M_H2_DrawBigString(72, y, "NEW GAME");
 	y += 20;
-	M_H2_DrawBigString(88, y, "NEW GAME");
-	y += 26;
-	M_H2_DrawBigString(88, y, "LOAD");
-	y += 26;
-	M_H2_DrawBigString(88, y, "SAVE");
+	M_H2_DrawBigString(72, y, "LOAD");
+	y += 20;
+	M_H2_DrawBigString(72, y, "SAVE");
 
 	// Draw cursor
-	M_H2_DrawCursor(56, 48 + h2_sp_cursor * 26);
+	M_H2_DrawCursor(43, 54 + h2_sp_cursor * 20);
 }
 
 static void M_H2_SinglePlayer_Key(int key)
@@ -731,54 +738,38 @@ void M_Menu_H2_Class_f(void)
 	h2_class_cursor = h2_player_class - 1;  // Convert 1-based to 0-based
 	if (h2_class_cursor < 0)
 		h2_class_cursor = 0;
-	title_active = false;
+	M_H2_ResetScrollTitle();
 }
 
 static void M_H2_Class_Draw(void)
 {
 	int y, i;
 	int num_classes;
-	int portrait_x, portrait_y;
 
-	// Draw plaque
-	M_H2_DrawPlaque();
-
-	// Draw title
-	if (h2_titles[2])
-	{
-		M_H2_ScrollTitle("gfx/menu/title2.lmp");
-		y = M_H2_DrawTitle();
-	}
-	else
-	{
-		y = 28;
-	}
+	// Draw animated title and plaque
+	M_H2_ScrollTitle("gfx/menu/title2.lmp");
 
 	num_classes = M_H2_GetNumClasses();
 
 	// Draw class list
-	y = 64;
+	y = 60;
 	for (i = 0; i < num_classes; i++)
 	{
-		M_H2_DrawBigString(88, y, h2_class_names_upper[i]);
-		y += 26;
+		M_H2_DrawBigString(72, y, h2_class_names_upper[i]);
+		y += 20;
 	}
 
 	// Draw cursor
-	M_H2_DrawCursor(56, 64 + h2_class_cursor * 26);
+	M_H2_DrawCursor(43, 54 + h2_class_cursor * 20);
 
-	// Draw class portrait on the right side
-	portrait_x = 220;
-	portrait_y = 64;
-
-	// Draw frame first, then portrait inside
+	// Draw class portrait frame and portrait on the right side
 	if (h2_frame)
-		M_DrawTransPic(portrait_x, portrait_y, h2_frame);
+		M_DrawTransPic(242, 54, h2_frame);
 
-	if (h2_portraits[h2_class_cursor])
+	if (h2_class_cursor >= 0 && h2_class_cursor < 5 && h2_portraits[h2_class_cursor])
 	{
-		// Portrait goes inside the frame (offset by frame border)
-		M_DrawTransPic(portrait_x + 8, portrait_y + 8, h2_portraits[h2_class_cursor]);
+		// Portrait goes inside the frame
+		M_DrawTransPic(246, 58, h2_portraits[h2_class_cursor]);
 	}
 }
 
@@ -831,47 +822,36 @@ void M_Menu_H2_Difficulty_f(void)
 	key_dest = key_menu;
 	m_state = m_difficulty;
 	m_entersound = true;
-	title_active = false;
+	M_H2_ResetScrollTitle();
 }
 
 static void M_H2_Difficulty_Draw(void)
 {
 	int y, i;
+	int class_idx;
 	const char **diff_names;
 
-	// Draw plaque
-	M_H2_DrawPlaque();
+	// Draw animated title and plaque (title5.lmp for difficulty)
+	M_H2_ScrollTitle("gfx/menu/title5.lmp");
 
-	// Draw title (title5.lmp for difficulty in H2)
-	if (h2_titles[5])
-	{
-		M_H2_ScrollTitle("gfx/menu/title5.lmp");
-		y = M_H2_DrawTitle();
-	}
-	else
-	{
-		y = 28;
-	}
-
-	// Show class name at top
-	y = 50;
-	M_Print(72, y, "Playing as:");
-	y += 12;
-	M_H2_DrawBigString(72, y, h2_class_names_upper[h2_player_class - 1]);
-	y += 36;
+	// Clamp class index
+	class_idx = h2_player_class - 1;
+	if (class_idx < 0 || class_idx >= H2_MAX_PLAYER_CLASS)
+		class_idx = 0;
 
 	// Get class-specific difficulty names
-	diff_names = h2_diff_names[h2_player_class - 1];
+	diff_names = h2_diff_names[class_idx];
 
 	// Draw difficulty options
+	y = 60;
 	for (i = 0; i < H2_NUM_DIFFLEVELS; i++)
 	{
-		M_H2_DrawBigString(88, y, diff_names[i]);
-		y += 26;
+		M_H2_DrawBigString(72, y, diff_names[i]);
+		y += 20;
 	}
 
 	// Draw cursor
-	M_H2_DrawCursor(56, 98 + h2_diff_cursor * 26);
+	M_H2_DrawCursor(43, 54 + h2_diff_cursor * 20);
 }
 
 static void M_H2_Difficulty_Key(int key)

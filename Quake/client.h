@@ -285,7 +285,12 @@ typedef struct
 	float		ring_regeneration;	// H2: Ring of regeneration power
 	unsigned int info_mask;			// H2: Mission pack objectives 0-31
 	unsigned int info_mask2;		// H2: Mission pack objectives 32-63
-	// Note: Additional H2 stats (mana, artifacts, etc.) stored in stats[] array
+	int			max_mana;			// H2: Max mana (varies by class and level)
+	int			max_health;			// H2: Max health (varies by class and level)
+	int			armor_amulet;		// H2: Amulet armor level
+	int			armor_bracer;		// H2: Bracer armor level
+	int			armor_breastplate;	// H2: Breastplate armor level
+	int			armor_helmet;		// H2: Helmet armor level
 } client_state_t;
 
 

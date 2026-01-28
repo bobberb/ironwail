@@ -806,6 +806,16 @@ static void PF_traceline (void)
 	trace = SV_Move (v1, vec3_origin, vec3_origin, v2, nomonsters, ent);
 
 	PR_SetTraceGlobals (&trace);
+
+	// H2 debug: trace results for melee attacks
+	if (hexen2_mode && developer.value >= 2)
+	{
+		const char *classname = trace.ent ? PR_GetString(trace.ent->v.classname) : "NULL";
+		float takedmg = trace.ent ? E_FLOAT(trace.ent, h2_globals.fields.takedamage) : 0;
+		Con_DPrintf("traceline: v1(%0.1f %0.1f %0.1f) v2(%0.1f %0.1f %0.1f) frac=%0.2f ent=%d(%s) takedmg=%0.0f\n",
+			v1[0], v1[1], v1[2], v2[0], v2[1], v2[2],
+			trace.fraction, trace.ent ? NUM_FOR_EDICT(trace.ent) : 0, classname, takedmg);
+	}
 }
 
 /*
@@ -1843,19 +1853,43 @@ static void PF_setspawnparms (void)
 /*
 ==============
 PF_changelevel
+
+In Hexen II mode, this takes 2 parameters (map, startspot) and uses changelevel2
+for hub transitions (same unit) vs changelevel for new unit/episode.
 ==============
 */
 static void PF_changelevel (void)
 {
-	const char	*s;
+	const char	*s1, *s2;
 
 // make sure we don't issue two changelevels
 	if (svs.changelevel_issued)
 		return;
 	svs.changelevel_issued = true;
 
-	s = G_STRING(OFS_PARM0);
-	Cbuf_AddText (va("changelevel %s\n",s));
+	s1 = G_STRING(OFS_PARM0);
+
+	if (hexen2_mode)
+	{
+		int flags;
+
+		s2 = G_STRING(OFS_PARM1);
+
+		// Get serverflags to determine if new unit/episode
+		if (h2_globals.ofs_serverflags >= 0)
+			flags = (int)qcvm->globals[h2_globals.ofs_serverflags];
+		else
+			flags = svs.serverflags;
+
+		if (flags & (SFL_NEW_UNIT | SFL_NEW_EPISODE))
+			Cbuf_AddText (va("changelevel %s %s\n", s1, s2));
+		else
+			Cbuf_AddText (va("changelevel2 %s %s\n", s1, s2));
+	}
+	else
+	{
+		Cbuf_AddText (va("changelevel %s\n", s1));
+	}
 }
 
 /*

@@ -236,25 +236,33 @@ svc_sound_update_pos = 53
 
 ### 4.1 Status Bar ✅ **COMPLETED**
 - [x] Implement Hexen II stat bar layout
-- [x] Add dual mana bars (blue/green)
+- [x] Add dual mana bars (blue/green) with actual max_mana
 - [x] Display artifact inventory (15 slots)
 - [x] Show ring status (4 rings)
 - [x] Add puzzle piece display (8 slots)
+- [x] Add per-piece armor display (amulet/bracer/breastplate/helmet)
 - [ ] Implement class-specific HUD elements - DEFERRED (weapon icons)
 
 **Files created/modified:**
 - `sbar_hexen2.c` - Created H2-specific HUD implementation (700+ lines)
 - `sbar_hexen2.h` - Created H2 HUD header with ring/artifact defines
 - `sbar.c` - Added hexen2_mode redirect to H2 HUD functions
-- `client.h` - Added inventory and ring state fields
+- `client.h` - Added inventory, ring, max_mana, max_health, and armor_* fields
+- `sv_inventory_hexen2.c` - Added armor syncing via SC2 protocol
 
 **What works:**
-- Top bar with health chain, mana bars
-- Bottom bar with class icon, armor slots
+- Top bar with health chain, mana bars (uses actual max_mana from server)
+- Bottom bar with class icon, armor slots (uses actual armor_* values)
 - Ring status with power indicators
 - Artifact inventory display with selection
 - Puzzle piece display (8 slots)
 - Inventory navigation commands (+inv_left, +inv_right, +inv_use)
+
+**Recent fixes (2026-01-27):**
+- Mana bars now use `cl.max_mana` from server instead of hardcoded 100
+- Armor display now uses individual `cl.armor_*` fields instead of threshold approximation
+- Server now sends armor values via SC2 protocol bits
+- Added `max_mana`, `max_health`, `armor_amulet/bracer/breastplate/helmet` to client struct
 
 ### 4.2 Inventory System ✅ **COMPLETED**
 - [x] Implement artifact inventory (15 items max)
@@ -264,17 +272,19 @@ svc_sound_update_pos = 53
 - [x] Handle artifact usage/depletion
 
 **Files modified:**
-- `cl_parse_hexen2.c` - Full svc_update_inv parsing with SC1/SC2 bitfields
-- `sbar_hexen2.c` - Added Sbar_H2_InvChanged() to rebuild inventory order
+- `cl_parse_hexen2.c` - Full svc_update_inv parsing with SC1/SC2 bitfields, stores max_mana, max_health, armor_* values
+- `sbar_hexen2.c` - Added Sbar_H2_InvChanged() to rebuild inventory order, uses actual max_mana and armor values
 - `sbar_hexen2.h` - Added Sbar_H2_InvChanged declaration
 - `sbar.c` - Registered inventory commands (invleft, invright, invuse, invoff)
+- `sv_inventory_hexen2.c` - Added armor piece syncing via SC2 protocol
 
 **What works:**
-- Full H2 stats parsing (health, mana, armor, rings, artifacts)
+- Full H2 stats parsing (health, mana, max_mana, max_health, armor pieces, rings, artifacts)
 - Artifact count tracking in cl.inv_cnt[] array
 - Automatic inventory order rebuilding when counts change
 - Inventory commands with wrapping selection
 - Ring power tracking for HUD display
+- Armor display shows actual equipped armor pieces (not threshold guessing)
 
 ### 4.3 Menu Extensions ✅ **COMPLETED**
 - [ ] Add class selection menu - DEFERRED (use "playerclass X" command)
@@ -524,12 +534,15 @@ GitHub: https://github.com/sezero/uhexen2-hcode_archive
 - [x] Can load and play original Hexen II levels [bead: ironwail-4mv] ✅
 - [x] Can load and play Portal of Praevus [bead: ironwail-hu3.19] ✅
 - [ ] All 4 character classes functional
-- [ ] Mana/artifact/ring systems working
+- [x] Mana/artifact/ring systems working ✅ (server sync, HUD display)
 - [ ] Particles and effects rendering correctly
-- [ ] HUD displays all game state properly
+- [x] HUD displays all game state properly ✅ (health, mana with max_mana, armor pieces, artifacts, rings, puzzles)
 - [ ] Quake compatibility maintained (no regressions)
 - [ ] Performance comparable to Ironwail's Quake mode
 - [ ] Can switch between Quake and H2 without restart [bead: ironwail-hu3.25]
+
+### Known Issues
+- **Spider melee attack not triggering** (`claudedir-re7`) - Spider approaches but doesn't attack. Debug output added to traceline in `pr_cmds.c`, needs testing with `developer 2`.
 
 ## Estimated Effort
 

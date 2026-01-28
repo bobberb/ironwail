@@ -1988,7 +1988,7 @@ static void Host_Map_f (void)
 	if (p && p[4] == '\0')
 		*p = '\0';
 	PR_SwitchQCVM(&sv.qcvm);
-	SV_SpawnServer (name);
+	SV_SpawnServer (name, NULL);
 	PR_SwitchQCVM(NULL);
 	if (!sv.active)
 		return;
@@ -2083,16 +2083,19 @@ static qboolean Host_AutoLoad (void)
 ==================
 Host_Changelevel_f
 
-Goes to a new map, taking all clients along
+Goes to a new map, taking all clients along.
+In H2 mode, accepts optional startspot parameter.
 ==================
 */
 static void Host_Changelevel_f (void)
 {
 	char	level[MAX_QPATH];
+	char	_startspot[MAX_QPATH];
+	char	*startspot = NULL;
 
-	if (Cmd_Argc() != 2)
+	if (Cmd_Argc() < 2)
 	{
-		Con_Printf ("changelevel <levelname> : continue game on a new level\n");
+		Con_Printf ("changelevel <levelname> [startspot] : continue game on a new level\n");
 		return;
 	}
 	if (!sv.active || cls.demoplayback)
@@ -2108,6 +2111,14 @@ static void Host_Changelevel_f (void)
 	//johnfitz
 
 	q_strlcpy (level, Cmd_Argv(1), sizeof(level));
+
+	// H2: optional startspot parameter
+	if (Cmd_Argc() >= 3)
+	{
+		q_strlcpy (_startspot, Cmd_Argv(2), sizeof(_startspot));
+		startspot = _startspot;
+	}
+
 	if (!strcmp (sv.name, level) && Host_AutoLoad ())
 		return;
 
@@ -2116,11 +2127,433 @@ static void Host_Changelevel_f (void)
 	key_dest = key_game;	// remove console or menu
 	PR_SwitchQCVM(&sv.qcvm);
 	SV_SaveSpawnparms ();
-	SV_SpawnServer (level);
+	SV_SpawnServer (level, startspot);
 	PR_SwitchQCVM(NULL);
 	// also issue an error if spawn failed -- O.S.
 	if (!sv.active)
 		Host_Error ("cannot run map %s", level);
+}
+
+/*
+==================
+Host_Changelevel2_f
+
+Hexen II hub system: Goes to a new map within the same unit, preserving state.
+For now, this is a basic implementation that passes the startspot to the new level.
+TODO: Add SaveGamestate/LoadGamestate for full hub system support.
+==================
+*/
+static void Host_Changelevel2_f (void)
+{
+	char	level[MAX_QPATH];
+	char	_startspot[MAX_QPATH];
+	char	*startspot;
+
+	if (Cmd_Argc() < 2)
+	{
+		Con_Printf ("changelevel2 <levelname> [startspot] : continue game on a new level in the unit\n");
+		return;
+	}
+	if (!sv.active || cls.demoplayback)
+	{
+		Con_Printf ("Only the server may changelevel\n");
+		return;
+	}
+
+	// Check for map existence
+	q_snprintf (level, sizeof(level), "maps/%s.bsp", Cmd_Argv(1));
+	if (!COM_FileExists(level, NULL))
+		Host_Error ("cannot find map %s", level);
+
+	q_strlcpy (level, Cmd_Argv(1), sizeof(level));
+	if (Cmd_Argc() == 2)
+		startspot = NULL;
+	else
+	{
+		q_strlcpy (_startspot, Cmd_Argv(2), sizeof(_startspot));
+		startspot = _startspot;
+	}
+
+	if (cls.state != ca_dedicated)
+		IN_Activate();
+	key_dest = key_game;	// remove console or menu
+	PR_SwitchQCVM(&sv.qcvm);
+	SV_SaveSpawnparms ();
+
+	/* H2 hub system: save current level state before transitioning */
+	old_svtime = qcvm->time;
+	H2_SaveGamestate(false);
+
+	/* Try to load saved state for the destination level */
+	if (H2_LoadGamestate(level, startspot) != 0)
+	{
+		/* No saved state - spawn fresh */
+		SV_SpawnServer(level, startspot);
+	}
+
+	if (!sv.active)
+	{
+		PR_SwitchQCVM(NULL);
+		Host_Error ("cannot run map %s", level);
+	}
+
+	/* Restore clients - calls ClientReEnter in progs */
+	H2_RestoreClients();
+
+	PR_SwitchQCVM(NULL);
+}
+
+/*
+==================
+H2_SaveGamestate
+
+Hexen II hub system: Save level state to mapname.gip for later restoration.
+Called when leaving a level via changelevel2 (same unit).
+
+Uses a temporary savedata_t structure to leverage the existing save infrastructure.
+==================
+*/
+static double	old_svtime;	/* sv.time of previous level, used by RestoreClients */
+
+static int H2_SaveGamestate (qboolean clients_only)
+{
+	char		savepath[MAX_OSPATH];
+	FILE		*f;
+	edict_t		*ent;
+	savedata_t	hubsave;
+	int			i, start, end;
+
+	if (!hexen2_mode)
+		return 0;
+
+	if (clients_only)
+	{
+		start = 1;
+		end = svs.maxclients + 1;
+		q_snprintf(savepath, sizeof(savepath), "%s/clients.gip", com_gamedir);
+	}
+	else
+	{
+		start = 1;
+		end = qcvm->num_edicts;
+		q_snprintf(savepath, sizeof(savepath), "%s/%s.gip", com_gamedir, sv.name);
+	}
+
+	f = Sys_fopen(savepath, "w");
+	if (!f)
+	{
+		Con_Printf("H2_SaveGamestate: couldn't open %s for writing\n", savepath);
+		return -1;
+	}
+
+	/* Set up a temporary savedata_t pointing to live data */
+	memset(&hubsave, 0, sizeof(hubsave));
+	hubsave.file = f;
+	hubsave.edicts = qcvm->edicts;
+	hubsave.num_edicts = qcvm->num_edicts;
+	hubsave.globals = qcvm->globals;
+	hubsave.knownstrings = qcvm->knownstrings;
+	hubsave.numknownstrings = qcvm->numknownstrings;
+	for (i = 0; i < MAX_LIGHTSTYLES; i++)
+		hubsave.lightstyles[i] = sv.lightstyles[i] ? sv.lightstyles[i] : "m";
+
+	fprintf(f, "%d\n", SAVEGAME_VERSION);
+
+	if (!clients_only)
+	{
+		fprintf(f, "%f\n", skill.value);
+		fprintf(f, "%s\n", sv.name);
+		fprintf(f, "%f\n", qcvm->time);
+
+		/* lightstyles */
+		for (i = 0; i < MAX_LIGHTSTYLES; i++)
+			fprintf(f, "%s\n", hubsave.lightstyles[i]);
+
+		/* effects */
+		SV_SaveEffects(f);
+		fprintf(f, "-1\n");
+
+		/* globals */
+		ED_WriteGlobals(&hubsave);
+	}
+
+	/* entities */
+	for (i = start; i < end; i++)
+	{
+		ent = EDICT_NUM(i);
+		if ((int)ENT_FLAGS(ent) & FL_ARCHIVE_OVERRIDE)
+			continue;
+		if (clients_only)
+		{
+			if (i <= svs.maxclients && svs.clients[i-1].active)
+			{
+				fprintf(f, "%d\n", i);
+				ED_Write(&hubsave, ent);
+			}
+		}
+		else
+		{
+			fprintf(f, "%d\n", i);
+			ED_Write(&hubsave, ent);
+		}
+	}
+
+	fclose(f);
+	Con_DPrintf("Saved game state to %s\n", savepath);
+	return 0;
+}
+
+/*
+==================
+H2_LoadGamestate
+
+Hexen II hub system: Load level state from mapname.gip if it exists.
+Returns 0 on success, -1 if no saved state exists.
+
+Follows the same pattern as Host_Loadgame_f: spawn server first (which loads
+entities from BSP), then overwrite with saved entity state.
+==================
+*/
+static int H2_LoadGamestate (const char *level, const char *startspot)
+{
+	char		savepath[MAX_OSPATH];
+	char		*filedata, *data;
+	char		mapname[MAX_QPATH];
+	int			version, i, entnum;
+	float		sk, playtime;
+	edict_t		*ent;
+
+	if (!hexen2_mode)
+		return -1;
+
+	q_snprintf(savepath, sizeof(savepath), "%s/%s.gip", com_gamedir, level);
+
+	filedata = (char *)COM_LoadMallocFile_TextMode_OSPath(savepath, NULL);
+	if (!filedata)
+		return -1;  /* No saved state - spawn fresh */
+
+	data = filedata;
+
+	/* Parse version */
+	data = COM_ParseIntNewline(data, &version);
+	if (version != SAVEGAME_VERSION)
+	{
+		free(filedata);
+		Con_Printf("H2_LoadGamestate: bad version %d in %s\n", version, savepath);
+		return -1;
+	}
+
+	/* Parse skill */
+	data = COM_ParseFloatNewline(data, &sk);
+	Cvar_SetValue("skill", sk);
+
+	/* Parse map name (should match level) */
+	data = COM_ParseStringNewline(data);
+	q_strlcpy(mapname, com_token, sizeof(mapname));
+
+	/* Parse time */
+	data = COM_ParseFloatNewline(data, &playtime);
+
+	/* Spawn the server - loads BSP and creates entities from BSP */
+	SV_SpawnServer(level, startspot);
+	if (!sv.active)
+	{
+		free(filedata);
+		return -1;
+	}
+
+	sv.loadgame = true;  /* Tell engine we're restoring state */
+
+	/* Parse and restore lightstyles */
+	for (i = 0; i < MAX_LIGHTSTYLES; i++)
+	{
+		data = COM_ParseStringNewline(data);
+		sv.lightstyles[i] = (const char *)Hunk_Strdup(com_token, "lightstyles");
+	}
+
+	/* Parse and restore effects */
+	data = SV_LoadEffects(data);
+
+	/* Skip the -1 marker before globals */
+	data = COM_Parse(data);
+	if (strcmp(com_token, "-1") == 0)
+		data = COM_Parse(data);  /* Get the '{' */
+
+	/* Parse globals */
+	if (com_token[0] == '{')
+		data = ED_ParseGlobals(data);
+
+	/* Parse entities - overwrites BSP-spawned entities with saved state */
+	entnum = 1;  /* Start after world entity */
+	while (data && *data)
+	{
+		/* Parse entity number */
+		data = COM_ParseIntNewline(data, &entnum);
+		if (entnum < 0)
+			break;
+
+		/* Parse entity data - expect '{' */
+		data = COM_Parse(data);
+		if (!com_token[0])
+			break;
+		if (strcmp(com_token, "{") != 0)
+		{
+			Con_Printf("H2_LoadGamestate: expected '{', got '%s'\n", com_token);
+			break;
+		}
+
+		ent = EDICT_NUM(entnum);
+		if (entnum < qcvm->num_edicts)
+			ED_ClearEdict(ent);
+		else
+		{
+			memset(ent, 0, qcvm->edict_size);
+			ent->baseline.scale = ENTSCALE_DEFAULT;
+		}
+
+		data = ED_ParseEdict(data, ent);
+
+		/* Link into world if not free */
+		if (!ent->free)
+			SV_LinkEdict(ent, false);
+	}
+
+	/* Clear extra edicts that were in BSP but not in save */
+	for (i = entnum + 1; i < qcvm->num_edicts; i++)
+		ED_ClearEdict(EDICT_NUM(i));
+
+	if (entnum > 0)
+		qcvm->num_edicts = entnum + 1;
+
+	/* Restore time */
+	qcvm->time = playtime;
+
+	free(filedata);
+	Con_DPrintf("Loaded game state from %s (%d entities)\n", savepath, entnum);
+	return 0;
+}
+
+/*
+==================
+H2_LoadClientsState
+
+Hexen II hub system: Load client state from clients.gip
+Used to restore client position/inventory when returning to a hub level.
+==================
+*/
+static int H2_LoadClientsState (void)
+{
+	char		savepath[MAX_OSPATH];
+	char		*filedata, *data;
+	int			version, i, entnum;
+	edict_t		*ent;
+
+	if (!hexen2_mode)
+		return -1;
+
+	q_snprintf(savepath, sizeof(savepath), "%s/clients.gip", com_gamedir);
+
+	filedata = (char *)COM_LoadMallocFile_TextMode_OSPath(savepath, NULL);
+	if (!filedata)
+		return -1;
+
+	data = filedata;
+
+	/* Parse version */
+	data = COM_ParseIntNewline(data, &version);
+	if (version != SAVEGAME_VERSION)
+	{
+		free(filedata);
+		return -1;
+	}
+
+	/* Parse entities (client entities only) */
+	while (data && *data)
+	{
+		data = COM_ParseIntNewline(data, &entnum);
+		if (entnum < 0 || entnum > svs.maxclients)
+			break;
+
+		data = COM_Parse(data);
+		if (strcmp(com_token, "{") != 0)
+			break;
+
+		ent = EDICT_NUM(entnum);
+		data = ED_ParseEdict(data, ent);
+	}
+
+	free(filedata);
+	return 0;
+}
+
+/*
+==================
+H2_RestoreClients
+
+Hexen II hub system: Restore clients after returning to a hub level.
+Calls ClientReEnter in progs with the time difference since leaving.
+==================
+*/
+static void H2_RestoreClients (void)
+{
+	int			i, j;
+	edict_t		*ent;
+	double		time_diff;
+	func_t		clientreenter;
+
+	if (!hexen2_mode)
+		return;
+
+	/* Check if ClientReEnter function exists */
+	if (h2_globals.ofs_ClientReEnter < 0)
+	{
+		Con_DPrintf("H2_RestoreClients: ClientReEnter function not found\n");
+		return;
+	}
+	clientreenter = ((func_t *)qcvm->globals)[h2_globals.ofs_ClientReEnter];
+	if (!clientreenter)
+		return;
+
+	/* Load client state from clients.gip */
+	H2_LoadClientsState();
+
+	/* Calculate time difference */
+	time_diff = qcvm->time - old_svtime;
+
+	/* Call ClientReEnter for each active client */
+	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+	{
+		if (!host_client->active)
+			continue;
+
+		ent = host_client->edict;
+
+		/* Restore client info on entity */
+		if (h2_globals.fields.team >= 0)
+			E_FLOAT(ent, h2_globals.fields.team) = (host_client->colors & 15) + 1;
+		if (h2_globals.fields.netname >= 0)
+			E_INT(ent, h2_globals.fields.netname) = PR_SetEngineString(host_client->name);
+		if (h2_globals.fields.playerclass >= 0)
+			E_FLOAT(ent, h2_globals.fields.playerclass) = host_client->playerclass;
+
+		/* Copy spawn parms to globals */
+		if (h2_globals.ofs_parm1 >= 0)
+		{
+			for (j = 0; j < NUM_SPAWN_PARMS; j++)
+				qcvm->globals[h2_globals.ofs_parm1 + j] = host_client->spawn_parms[j];
+		}
+
+		/* Set self and time globals */
+		pr_global_struct->self = EDICT_TO_PROG(ent);
+		pr_global_struct->time = qcvm->time;
+
+		/* Call ClientReEnter(time_diff) */
+		G_FLOAT(OFS_PARM0) = (float)time_diff;
+		PR_ExecuteProgram(clientreenter);
+	}
+
+	/* Save clients.gip for next hub transition */
+	H2_SaveGamestate(true);
 }
 
 /*
@@ -2145,7 +2578,7 @@ static void Host_Restart_f (void)
 
 	q_strlcpy (mapname, sv.name, sizeof(mapname));	// mapname gets cleared in spawnserver
 	PR_SwitchQCVM(&sv.qcvm);
-	SV_SpawnServer (mapname);
+	SV_SpawnServer (mapname, NULL);
 	PR_SwitchQCVM(NULL);
 	if (!sv.active)
 		Host_Error ("cannot restart map %s", mapname);
@@ -2620,7 +3053,7 @@ static void Host_Loadgame_f (void)
 		Host_ShutdownServer (false);
 
 	PR_SwitchQCVM(&sv.qcvm);
-	SV_SpawnServer (mapname);
+	SV_SpawnServer (mapname, NULL);
 
 	if (!sv.active)
 	{
@@ -3910,6 +4343,7 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("map", Host_Map_f);
 	Cmd_AddCommand ("restart", Host_Restart_f);
 	Cmd_AddCommand ("changelevel", Host_Changelevel_f);
+	Cmd_AddCommand ("changelevel2", Host_Changelevel2_f);  // H2 hub system
 	Cmd_AddCommand ("connect", Host_Connect_f);
 	Cmd_AddCommand_Console ("reconnect", Host_Reconnect_f);
 	Cmd_AddCommand_ClientCommand ("name", Host_Name_f);

@@ -472,6 +472,36 @@ void M_DrawSubpic (int x, int y, qpic_t *pic, int left, int top, int width, int 
 	Draw_SubPic (x, y, width, height, pic, s1, t1, s2, t2, NULL, 1.f);
 }
 
+/*
+================
+M_DrawTransPicCropped
+
+Draw a pic, cropping if y is negative (for scroll-in animations)
+================
+*/
+void M_DrawTransPicCropped (int x, int y, qpic_t *pic)
+{
+	int top, height;
+
+	if (!pic)
+		return;
+
+	if (y >= 0)
+	{
+		// Normal draw
+		M_DrawTransPic(x, y, pic);
+		return;
+	}
+
+	// y is negative - crop the top portion of the image
+	top = -y;  // How many pixels to skip from top
+	if (top >= pic->height)
+		return;  // Entire image is off-screen
+
+	height = pic->height - top;
+	M_DrawSubpic(x, 0, pic, 0, top, pic->width, height);
+}
+
 void M_DrawTransPicTranslate (int x, int y, qpic_t *pic, int top, int bottom) //johnfitz -- more parameters
 {
 	Draw_TransPicTranslate (x, y, pic, top, bottom); //johnfitz -- simplified becuase centering is handled elsewhere
@@ -1232,6 +1262,10 @@ void M_Menu_Main_f (void)
 	key_dest = key_menu;
 	m_state = m_main;
 	m_entersound = true;
+
+	// Reset H2 scroll title animation when entering main menu
+	if (hexen2_mode)
+		M_H2_ResetScrollTitle();
 
 	// When switching to a mod with a custom UI the 'Mods' option
 	// is no longer available in the main menu, so we move the cursor

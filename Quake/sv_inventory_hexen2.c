@@ -65,6 +65,54 @@ void SV_H2_WriteInventoryUpdate(client_t *client, edict_t *ent, sizebuf_t *msg)
 	val = GetEdictFieldValueByName(ent, "rings_active");
 	if (val) rings_active = (int)val->_float;
 
+	// Get individual armor values
+	int armor_amulet = 0, armor_bracer = 0, armor_breastplate = 0, armor_helmet = 0;
+	val = GetEdictFieldValueByName(ent, "armor_amulet");
+	if (val) armor_amulet = (int)val->_float;
+	val = GetEdictFieldValueByName(ent, "armor_bracer");
+	if (val) armor_bracer = (int)val->_float;
+	val = GetEdictFieldValueByName(ent, "armor_breastplate");
+	if (val) armor_breastplate = (int)val->_float;
+	val = GetEdictFieldValueByName(ent, "armor_helmet");
+	if (val) armor_helmet = (int)val->_float;
+
+	// Get ring time values
+	int ring_flight = 0, ring_water = 0, ring_turning = 0, ring_regen = 0;
+	val = GetEdictFieldValueByName(ent, "ring_flight");
+	if (val) ring_flight = (int)val->_float;
+	val = GetEdictFieldValueByName(ent, "ring_water");
+	if (val) ring_water = (int)val->_float;
+	val = GetEdictFieldValueByName(ent, "ring_turning");
+	if (val) ring_turning = (int)val->_float;
+	val = GetEdictFieldValueByName(ent, "ring_regeneration");
+	if (val) ring_regen = (int)val->_float;
+
+	// Get max health and max mana
+	int max_health = 0, max_mana = 0;
+	val = GetEdictFieldValueByName(ent, "max_health");
+	if (val) max_health = (int)val->_float;
+	val = GetEdictFieldValueByName(ent, "max_mana");
+	if (val) max_mana = (int)val->_float;
+
+	// Get puzzle piece names
+	const char *puzzle[8] = {NULL};
+	val = GetEdictFieldValueByName(ent, "puzzle_inv1");
+	if (val) puzzle[0] = PR_GetString(val->string);
+	val = GetEdictFieldValueByName(ent, "puzzle_inv2");
+	if (val) puzzle[1] = PR_GetString(val->string);
+	val = GetEdictFieldValueByName(ent, "puzzle_inv3");
+	if (val) puzzle[2] = PR_GetString(val->string);
+	val = GetEdictFieldValueByName(ent, "puzzle_inv4");
+	if (val) puzzle[3] = PR_GetString(val->string);
+	val = GetEdictFieldValueByName(ent, "puzzle_inv5");
+	if (val) puzzle[4] = PR_GetString(val->string);
+	val = GetEdictFieldValueByName(ent, "puzzle_inv6");
+	if (val) puzzle[5] = PR_GetString(val->string);
+	val = GetEdictFieldValueByName(ent, "puzzle_inv7");
+	if (val) puzzle[6] = PR_GetString(val->string);
+	val = GetEdictFieldValueByName(ent, "puzzle_inv8");
+	if (val) puzzle[7] = PR_GetString(val->string);
+
 	// Compare to old values and build SC1/SC2 bitmasks
 	// We use the oldstats arrays for tracking changes
 
@@ -108,6 +156,80 @@ void SV_H2_WriteInventoryUpdate(client_t *client, edict_t *ent, sizebuf_t *msg)
 	{
 		sc1 |= H2_SC1_RINGS_ACTIVE;
 		client->oldstats_i[31] = rings_active;
+	}
+
+	// Armor pieces -> SC2 bits 1-4, oldstats_i[60-63]
+	if (armor_amulet != client->oldstats_i[60])
+	{
+		sc2 |= H2_SC2_AMULET;
+		client->oldstats_i[60] = armor_amulet;
+	}
+	if (armor_bracer != client->oldstats_i[61])
+	{
+		sc2 |= H2_SC2_BRACER;
+		client->oldstats_i[61] = armor_bracer;
+	}
+	if (armor_breastplate != client->oldstats_i[62])
+	{
+		sc2 |= H2_SC2_BREASTPLATE;
+		client->oldstats_i[62] = armor_breastplate;
+	}
+	if (armor_helmet != client->oldstats_i[63])
+	{
+		sc2 |= H2_SC2_HELMET;
+		client->oldstats_i[63] = armor_helmet;
+	}
+
+	// Ring times -> SC2 bits 5-8, oldstats_i[64-67]
+	if (ring_flight != client->oldstats_i[64])
+	{
+		sc2 |= H2_SC2_FLIGHT_T;
+		client->oldstats_i[64] = ring_flight;
+	}
+	if (ring_water != client->oldstats_i[65])
+	{
+		sc2 |= H2_SC2_WATER_T;
+		client->oldstats_i[65] = ring_water;
+	}
+	if (ring_turning != client->oldstats_i[66])
+	{
+		sc2 |= H2_SC2_TURNING_T;
+		client->oldstats_i[66] = ring_turning;
+	}
+	if (ring_regen != client->oldstats_i[67])
+	{
+		sc2 |= H2_SC2_REGEN_T;
+		client->oldstats_i[67] = ring_regen;
+	}
+
+	// Max health/mana -> SC2 bits 19-20, oldstats_i[68-69]
+	if (max_health != client->oldstats_i[68])
+	{
+		sc2 |= H2_SC2_MAXHEALTH;
+		client->oldstats_i[68] = max_health;
+	}
+	if (max_mana != client->oldstats_i[69])
+	{
+		sc2 |= H2_SC2_MAXMANA;
+		client->oldstats_i[69] = max_mana;
+	}
+
+	// Puzzle pieces -> SC2 bits 11-18, oldstats_i[70-77]
+	// Use simple hash for string comparison
+	for (i = 0; i < 8; i++)
+	{
+		const char *cur = puzzle[i] ? puzzle[i] : "";
+		// Simple string hash: sum of chars
+		int hash = 0;
+		const char *p = cur;
+		while (*p) hash += (unsigned char)*p++;
+		hash = hash * 31 + (int)strlen(cur);  // Include length for uniqueness
+
+		if (hash != client->oldstats_i[70 + i])
+		{
+			sc2 |= (H2_SC2_PUZZLE1 << i);
+			client->oldstats_i[70 + i] = hash;
+		}
 	}
 
 	// Get artifact counts from entity
@@ -214,4 +336,49 @@ void SV_H2_WriteInventoryUpdate(client_t *client, edict_t *ent, sizebuf_t *msg)
 		MSG_WriteFloat(msg, (float)artifact_active);
 	if (sc1 & H2_SC1_RINGS_ACTIVE)
 		MSG_WriteFloat(msg, (float)rings_active);
+
+	// Write SC2 values in protocol order
+	// Armor pieces (bits 1-4)
+	if (sc2 & H2_SC2_AMULET)
+		MSG_WriteByte(msg, armor_amulet);
+	if (sc2 & H2_SC2_BRACER)
+		MSG_WriteByte(msg, armor_bracer);
+	if (sc2 & H2_SC2_BREASTPLATE)
+		MSG_WriteByte(msg, armor_breastplate);
+	if (sc2 & H2_SC2_HELMET)
+		MSG_WriteByte(msg, armor_helmet);
+
+	// Ring times (bits 5-8)
+	if (sc2 & H2_SC2_FLIGHT_T)
+		MSG_WriteByte(msg, ring_flight);
+	if (sc2 & H2_SC2_WATER_T)
+		MSG_WriteByte(msg, ring_water);
+	if (sc2 & H2_SC2_TURNING_T)
+		MSG_WriteByte(msg, ring_turning);
+	if (sc2 & H2_SC2_REGEN_T)
+		MSG_WriteByte(msg, ring_regen);
+
+	// Puzzle pieces (bits 11-18)
+	if (sc2 & H2_SC2_PUZZLE1)
+		MSG_WriteString(msg, puzzle[0] ? puzzle[0] : "");
+	if (sc2 & H2_SC2_PUZZLE2)
+		MSG_WriteString(msg, puzzle[1] ? puzzle[1] : "");
+	if (sc2 & H2_SC2_PUZZLE3)
+		MSG_WriteString(msg, puzzle[2] ? puzzle[2] : "");
+	if (sc2 & H2_SC2_PUZZLE4)
+		MSG_WriteString(msg, puzzle[3] ? puzzle[3] : "");
+	if (sc2 & H2_SC2_PUZZLE5)
+		MSG_WriteString(msg, puzzle[4] ? puzzle[4] : "");
+	if (sc2 & H2_SC2_PUZZLE6)
+		MSG_WriteString(msg, puzzle[5] ? puzzle[5] : "");
+	if (sc2 & H2_SC2_PUZZLE7)
+		MSG_WriteString(msg, puzzle[6] ? puzzle[6] : "");
+	if (sc2 & H2_SC2_PUZZLE8)
+		MSG_WriteString(msg, puzzle[7] ? puzzle[7] : "");
+
+	// Max health/mana (bits 19-20)
+	if (sc2 & H2_SC2_MAXHEALTH)
+		MSG_WriteShort(msg, max_health);
+	if (sc2 & H2_SC2_MAXMANA)
+		MSG_WriteByte(msg, max_mana);
 }

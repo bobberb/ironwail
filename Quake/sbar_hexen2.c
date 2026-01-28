@@ -397,8 +397,12 @@ static void Sbar_H2_DrawTopBar(void)
 
 	// Draw mana bars
 	// Blue mana at x=190, green at x=232
-	Sbar_H2_DrawManaBar(190, 26, cl.stats[STAT_SHELLS], 100, true);	// Using STAT_SHELLS as placeholder
-	Sbar_H2_DrawManaBar(232, 26, cl.stats[STAT_NAILS], 100, false);	// Using STAT_NAILS as placeholder
+	// H2 stores mana in STAT_SHELLS (blue) and STAT_NAILS (green) slots
+	{
+		int maxmana = cl.max_mana > 0 ? cl.max_mana : 100;
+		Sbar_H2_DrawManaBar(190, 26, cl.stats[STAT_SHELLS], maxmana, true);
+		Sbar_H2_DrawManaBar(232, 26, cl.stats[STAT_NAILS], maxmana, false);
+	}
 
 	// Draw health chain
 	Sbar_H2_DrawHealthChain();
@@ -416,19 +420,15 @@ Draw the armor slots
 */
 static void Sbar_H2_DrawArmor(void)
 {
-	// H2 has individual armor values (armor_amulet, armor_bracer, etc.)
-	// which require entity-level data syncing to display accurately.
-	// Using threshold-based approximation based on total armor value.
-	int armor = cl.stats[STAT_ARMOR];
-
-	if (armor > 0)
-		Sbar_H2_DrawPic(164, 115, sb_h2_armor[0]);	// Amulet
-	if (armor > 50)
-		Sbar_H2_DrawPic(205, 115, sb_h2_armor[1]);	// Bracer
-	if (armor > 100)
-		Sbar_H2_DrawPic(246, 115, sb_h2_armor[2]);	// Breastplate
-	if (armor > 150)
-		Sbar_H2_DrawPic(285, 115, sb_h2_armor[3]);	// Helmet
+	// Draw each armor piece if player has it equipped
+	if (cl.armor_amulet > 0)
+		Sbar_H2_DrawPic(164, 115, sb_h2_armor[0]);
+	if (cl.armor_bracer > 0)
+		Sbar_H2_DrawPic(205, 115, sb_h2_armor[1]);
+	if (cl.armor_breastplate > 0)
+		Sbar_H2_DrawPic(246, 115, sb_h2_armor[2]);
+	if (cl.armor_helmet > 0)
+		Sbar_H2_DrawPic(285, 115, sb_h2_armor[3]);
 }
 
 /*

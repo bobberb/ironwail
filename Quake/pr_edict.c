@@ -434,6 +434,7 @@ void H2_SetupGlobals (void)
 	h2_globals.ofs_ClientDisconnect = -1;
 	h2_globals.ofs_SetNewParms = -1;
 	h2_globals.ofs_SetChangeParms = -1;
+	h2_globals.ofs_ClientReEnter = -1;
 
 	/*
 	 * Look up ALL entity field offsets from the loaded progs.
@@ -575,6 +576,7 @@ void H2_SetupGlobals (void)
 		h2_globals.ofs_ClientDisconnect = ED_FindGlobalOffset("ClientDisconnect");
 		h2_globals.ofs_SetNewParms = ED_FindGlobalOffset("SetNewParms");
 		h2_globals.ofs_SetChangeParms = ED_FindGlobalOffset("SetChangeParms");
+		h2_globals.ofs_ClientReEnter = ED_FindGlobalOffset("ClientReEnter");
 
 		Con_DPrintf("H2_SetupGlobals: function offsets: StartFrame=%d PlayerPreThink=%d PlayerPostThink=%d\n",
 			h2_globals.ofs_StartFrame, h2_globals.ofs_PlayerPreThink, h2_globals.ofs_PlayerPostThink);

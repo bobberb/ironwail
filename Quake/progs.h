@@ -449,6 +449,7 @@ typedef struct
 	int		ofs_ClientDisconnect;
 	int		ofs_SetNewParms;
 	int		ofs_SetChangeParms;
+	int		ofs_ClientReEnter;		/* H2 hub system - called when returning to a level */
 } h2_globals_t;
 
 /* Accessor macros for H2 globals - use runtime offsets instead of struct */

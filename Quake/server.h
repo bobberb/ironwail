@@ -34,6 +34,10 @@ typedef struct
 	qboolean	changelevel_issued;	// cleared when at SV_SpawnServer
 } server_static_t;
 
+/* Hexen II serverflags - used for hub system changelevel decisions */
+#define	SFL_NEW_UNIT		16
+#define	SFL_NEW_EPISODE		32
+
 //=============================================================================
 
 #define MAX_SIGNON_BUFFERS 256
@@ -54,6 +58,7 @@ typedef struct
 	qcvm_t		qcvm;				// Spike: entire qcvm state
 
 	char		name[64];			// map name
+	char		startspot[64];		// H2: spawn point name for hub system
 	char		modelname[64];		// maps/<name>.bsp, for model_precache[0]
 	struct qmodel_s	*worldmodel;
 	const char	*model_precache[MAX_MODELS];	// NULL terminated
@@ -318,6 +323,6 @@ void SV_MoveToGoal (void);
 void SV_CheckForNewClients (void);
 void SV_RunClients (void);
 void SV_SaveSpawnparms (void);
-void SV_SpawnServer (const char *server);
+void SV_SpawnServer (const char *server, const char *startspot);
 
 #endif	/* QUAKE_SERVER_H */

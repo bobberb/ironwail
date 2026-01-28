@@ -224,7 +224,7 @@ void CL_ParseUpdateInventory(void)
 	if (sc1 & H2_SC1_HASTED)
 		cl.hasted = MSG_ReadFloat();  // Haste movement multiplier
 	if (sc1 & H2_SC1_INVENTORY)
-		MSG_ReadByte();   // Selected inventory
+		cl.inv_selected = MSG_ReadByte();
 	if (sc1 & H2_SC1_RINGS_ACTIVE)
 		cl.rings_active = (int)MSG_ReadFloat();
 
@@ -232,13 +232,13 @@ void CL_ParseUpdateInventory(void)
 	if (sc2 & H2_SC2_RINGS_LOW)
 		MSG_ReadFloat();  // Rings low warning
 	if (sc2 & H2_SC2_AMULET)
-		MSG_ReadByte();   // Amulet armor
+		cl.armor_amulet = MSG_ReadByte();
 	if (sc2 & H2_SC2_BRACER)
-		MSG_ReadByte();   // Bracer armor
+		cl.armor_bracer = MSG_ReadByte();
 	if (sc2 & H2_SC2_BREASTPLATE)
-		MSG_ReadByte();   // Breastplate armor
+		cl.armor_breastplate = MSG_ReadByte();
 	if (sc2 & H2_SC2_HELMET)
-		MSG_ReadByte();   // Helmet armor
+		cl.armor_helmet = MSG_ReadByte();
 	if (sc2 & H2_SC2_FLIGHT_T)
 		cl.ring_flight = MSG_ReadByte();
 	if (sc2 & H2_SC2_WATER_T)
@@ -271,9 +271,9 @@ void CL_ParseUpdateInventory(void)
 		q_strlcpy(cl.puzzle_pieces[7], MSG_ReadString(), sizeof(cl.puzzle_pieces[7]));
 
 	if (sc2 & H2_SC2_MAXHEALTH)
-		MSG_ReadShort();  // Max health
+		cl.max_health = MSG_ReadShort();
 	if (sc2 & H2_SC2_MAXMANA)
-		MSG_ReadByte();   // Max mana
+		cl.max_mana = MSG_ReadByte();
 	if (sc2 & H2_SC2_FLAGS)
 		MSG_ReadFloat();  // Player flags
 

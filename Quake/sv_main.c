@@ -2239,7 +2239,7 @@ This is called at the start of each level
 ================
 */
 extern float		scr_centertime_off;
-void SV_SpawnServer (const char *server)
+void SV_SpawnServer (const char *server, const char *startspot)
 {
 	static char	dummy[8] = { 0,0,0,0,0,0,0,0 };
 	edict_t		*ent;
@@ -2285,6 +2285,10 @@ void SV_SpawnServer (const char *server)
 	SV_ClearEffects ();	// Clear Hexen II effects on level change
 
 	q_strlcpy (sv.name, server, sizeof(sv.name));
+	if (startspot)
+		q_strlcpy (sv.startspot, startspot, sizeof(sv.startspot));
+	else
+		sv.startspot[0] = '\0';
 	if (developer.value || map_checks.value)
 		sv.mapchecks.active = true;
 
@@ -2388,6 +2392,10 @@ void SV_SpawnServer (const char *server)
 	}
 
 	pr_global_struct->mapname = PR_SetEngineString(sv.name);  // mapname offset is same in Q1/H2
+
+	// H2: Set startspot global (offset 35, right after mapname)
+	if (hexen2_mode)
+		((string_t *)qcvm->globals)[35] = PR_SetEngineString(sv.startspot);
 
 // serverflags are for cross level information (sigils)
 	if (hexen2_mode && h2_globals.ofs_serverflags >= 0)
