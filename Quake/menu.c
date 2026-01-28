@@ -7312,7 +7312,10 @@ void M_Draw (void)
 		break;
 
 	case m_setup:
-		M_Setup_Draw ();
+		if (hexen2_mode)
+			M_H2_Draw();
+		else
+			M_Setup_Draw ();
 		break;
 
 	case m_net:
@@ -7451,7 +7454,10 @@ void M_Keydown (int key)
 		return;
 
 	case m_setup:
-		M_Setup_Key (key);
+		if (hexen2_mode)
+			M_H2_Keydown(key);
+		else
+			M_Setup_Key (key);
 		return;
 
 	case m_net:
@@ -7616,7 +7622,10 @@ void M_Charinput (int key)
 	switch (M_GetBaseState (m_state))
 	{
 	case m_setup:
-		M_Setup_Char (key);
+		if (hexen2_mode)
+			M_H2_Charinput(key);
+		else
+			M_Setup_Char (key);
 		return;
 	case m_quit:
 		M_Quit_Char (key);
@@ -7647,7 +7656,10 @@ textmode_t M_TextEntry (void)
 	switch (M_GetBaseState (m_state))
 	{
 	case m_setup:
-		return M_Setup_TextEntry ();
+		if (hexen2_mode)
+			return M_H2_TextEntry();
+		else
+			return M_Setup_TextEntry ();
 	case m_quit:
 		return M_Quit_TextEntry ();
 	case m_lanconfig:

@@ -60,6 +60,8 @@ void M_H2_Init(void);
 // Main menu handlers
 void M_H2_Draw(void);
 void M_H2_Keydown(int key);
+void M_H2_Charinput(int key);
+enum textmode_t M_H2_TextEntry(void);
 
 // Hexen II specific menus
 void M_Menu_H2_Class_f(void);

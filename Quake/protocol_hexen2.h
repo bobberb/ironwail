@@ -388,6 +388,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //==================
 extern qboolean hexen2_mode;
 extern qboolean hexen2_missionpack;	// Portal of Praevus detected
+extern qboolean hexen2_demo;		// Demo version (only Paladin/Assassin available)
 extern int h2_kingofhill;			// Deathmatch: current king of the hill (-1 = none)
 
 //==================

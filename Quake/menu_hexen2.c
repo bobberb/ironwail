@@ -107,6 +107,7 @@ static void M_H2_Help_Draw(void);
 static void M_H2_Help_Key(int key);
 static void M_H2_DrawCursor(int x, int y);
 static int M_H2_GetNumClasses(void);
+void M_Menu_H2_Setup_f(void);
 
 /*
 ================
@@ -648,27 +649,47 @@ SINGLE PLAYER MENU
 ================================================================================
 */
 
-#define H2_SP_ITEMS		3
+#define H2_SP_BASE_ITEMS	3
+#define H2_SP_PORTALS_ITEMS	2	// Extra items when Portals detected
 #define H2_SP_NEWGAME		0
 #define H2_SP_LOADGAME		1
 #define H2_SP_SAVEGAME		2
+#define H2_SP_OLDMISSION	3	// Portals only: start base H2
+#define H2_SP_VIEWINTRO		4	// Portals only: play intro demo
 
 static int h2_sp_cursor;
+static int h2_enter_portals;	// 1 = starting Portals campaign, 0 = base H2
+
+static int M_H2_GetSPItems(void)
+{
+	return M_H2_HasPortals() ? (H2_SP_BASE_ITEMS + H2_SP_PORTALS_ITEMS) : H2_SP_BASE_ITEMS;
+}
 
 static void M_H2_SinglePlayer_Draw(void)
 {
 	int y;
+	qboolean has_portals = M_H2_HasPortals();
 
 	// Draw animated title and plaque
 	M_H2_ScrollTitle("gfx/menu/title1.lmp");
 
 	// Menu items
 	y = 60;
-	M_H2_DrawBigString(72, y, "NEW GAME");
+	// Portals: "NEW MISSION", Base: "NEW GAME"
+	M_H2_DrawBigString(72, y, has_portals ? "NEW MISSION" : "NEW GAME");
 	y += 20;
 	M_H2_DrawBigString(72, y, "LOAD");
 	y += 20;
 	M_H2_DrawBigString(72, y, "SAVE");
+
+	// Portals-only options
+	if (has_portals)
+	{
+		y += 20;
+		M_H2_DrawBigString(72, y, "OLD MISSION");
+		y += 20;
+		M_H2_DrawBigString(72, y, "VIEW INTRO");
+	}
 
 	// Draw cursor
 	M_H2_DrawCursor(43, 54 + h2_sp_cursor * 20);
@@ -676,6 +697,8 @@ static void M_H2_SinglePlayer_Draw(void)
 
 static void M_H2_SinglePlayer_Key(int key)
 {
+	int num_items = M_H2_GetSPItems();
+
 	switch (key)
 	{
 	case K_ESCAPE:
@@ -687,7 +710,7 @@ static void M_H2_SinglePlayer_Key(int key)
 	case K_DOWNARROW:
 	case K_MWHEELDOWN:
 		M_H2_NavSound();
-		if (++h2_sp_cursor >= H2_SP_ITEMS)
+		if (++h2_sp_cursor >= num_items)
 			h2_sp_cursor = 0;
 		break;
 
@@ -695,7 +718,7 @@ static void M_H2_SinglePlayer_Key(int key)
 	case K_MWHEELUP:
 		M_H2_NavSound();
 		if (--h2_sp_cursor < 0)
-			h2_sp_cursor = H2_SP_ITEMS - 1;
+			h2_sp_cursor = num_items - 1;
 		break;
 
 	case K_ENTER:
@@ -703,10 +726,29 @@ static void M_H2_SinglePlayer_Key(int key)
 	case K_ABUTTON:
 	case K_MOUSE1:
 		m_entersound = true;
+		h2_enter_portals = 0;  // Default to base H2 campaign
 
 		switch (h2_sp_cursor)
 		{
 		case H2_SP_NEWGAME:
+			// If Portals detected, NEW MISSION starts Portals campaign
+			if (M_H2_HasPortals())
+				h2_enter_portals = 1;
+			// Fall through to start new game
+		case H2_SP_OLDMISSION:
+			// OLD MISSION keeps h2_enter_portals = 0 (base campaign)
+			// Confirm if game in progress
+			if (sv.active)
+			{
+				// TODO: Add confirmation dialog like uhexen2
+				// For now, just disconnect and start
+				Cbuf_AddText("disconnect\n");
+			}
+			// Clear any saved hub state
+			// Host_RemoveGIPFiles(NULL);  // TODO: implement if needed
+			Cbuf_AddText("maxplayers 1\n");
+			Cbuf_AddText("coop 0\n");
+			Cbuf_AddText("deathmatch 0\n");
 			M_Menu_H2_Class_f();
 			break;
 
@@ -717,6 +759,16 @@ static void M_H2_SinglePlayer_Key(int key)
 		case H2_SP_SAVEGAME:
 			if (sv.active)
 				M_Menu_Save_f();
+			break;
+
+		case H2_SP_VIEWINTRO:
+			// Play the Portals intro demo
+			if (M_H2_HasPortals())
+			{
+				key_dest = key_game;
+				m_state = m_none;
+				Cbuf_AddText("playdemo t9\n");
+			}
 			break;
 		}
 		break;
@@ -729,6 +781,27 @@ CLASS SELECTION MENU
 ================================================================================
 */
 
+/*
+================
+M_H2_IsClassAvailable
+
+Check if a class is available (demo restricts to Paladin/Assassin)
+Class indices: 0=Paladin, 1=Crusader, 2=Necromancer, 3=Assassin, 4=Demoness
+================
+*/
+static qboolean M_H2_IsClassAvailable(int class_index)
+{
+	// Demo only allows Paladin (0) and Assassin (3)
+	if (hexen2_demo)
+		return (class_index == 0 || class_index == 3);
+
+	// Non-Portals doesn't have Demoness (4)
+	if (!M_H2_HasPortals() && class_index == 4)
+		return false;
+
+	return true;
+}
+
 void M_Menu_H2_Class_f(void)
 {
 	IN_DeactivateForMenu();
@@ -738,6 +811,9 @@ void M_Menu_H2_Class_f(void)
 	h2_class_cursor = h2_player_class - 1;  // Convert 1-based to 0-based
 	if (h2_class_cursor < 0)
 		h2_class_cursor = 0;
+	// Ensure cursor is on an available class
+	if (!M_H2_IsClassAvailable(h2_class_cursor))
+		h2_class_cursor = 0;	// Default to Paladin
 	M_H2_ResetScrollTitle();
 }
 
@@ -755,7 +831,10 @@ static void M_H2_Class_Draw(void)
 	y = 60;
 	for (i = 0; i < num_classes; i++)
 	{
-		M_H2_DrawBigString(72, y, h2_class_names_upper[i]);
+		if (M_H2_IsClassAvailable(i))
+			M_H2_DrawBigString(72, y, h2_class_names_upper[i]);
+		else
+			M_Print(76, y + 4, h2_class_names_upper[i]);	// Grayed out (smallfont)
 		y += 20;
 	}
 
@@ -776,6 +855,7 @@ static void M_H2_Class_Draw(void)
 static void M_H2_Class_Key(int key)
 {
 	int num_classes = M_H2_GetNumClasses();
+	int i;
 
 	switch (key)
 	{
@@ -788,15 +868,27 @@ static void M_H2_Class_Key(int key)
 	case K_DOWNARROW:
 	case K_MWHEELDOWN:
 		M_H2_NavSound();
-		if (++h2_class_cursor >= num_classes)
-			h2_class_cursor = 0;
+		// Find next available class
+		for (i = 0; i < num_classes; i++)
+		{
+			if (++h2_class_cursor >= num_classes)
+				h2_class_cursor = 0;
+			if (M_H2_IsClassAvailable(h2_class_cursor))
+				break;
+		}
 		break;
 
 	case K_UPARROW:
 	case K_MWHEELUP:
 		M_H2_NavSound();
-		if (--h2_class_cursor < 0)
-			h2_class_cursor = num_classes - 1;
+		// Find previous available class
+		for (i = 0; i < num_classes; i++)
+		{
+			if (--h2_class_cursor < 0)
+				h2_class_cursor = num_classes - 1;
+			if (M_H2_IsClassAvailable(h2_class_cursor))
+				break;
+		}
 		break;
 
 	case K_ENTER:
@@ -892,11 +984,23 @@ static void M_H2_Difficulty_Key(int key)
 		key_dest = key_game;
 		m_state = m_none;
 
-		// Start the game - H2 uses demo1 as first map
+		// Start the game
 		if (sv.active)
 			Cbuf_AddText("disconnect\n");
 		Cbuf_AddText("maxplayers 1\n");
-		Cbuf_AddText("map demo1\n");
+
+		if (h2_enter_portals)
+		{
+			// Portals campaign: show intro intermission, then start keep1
+			// uhexen2 uses CL_SetupIntermission(12) then key press starts keep1
+			// For now, just start keep1 directly (TODO: add intermission 12)
+			Cbuf_AddText("map keep1\n");
+		}
+		else
+		{
+			// Base H2 campaign: start demo1
+			Cbuf_AddText("map demo1\n");
+		}
 		break;
 	}
 }
@@ -948,6 +1052,367 @@ static void M_H2_Help_Key(int key)
 
 /*
 ================================================================================
+MULTIPLAYER MENU
+================================================================================
+*/
+
+#define H2_MP_ITEMS		5
+#define H2_MP_JOIN		0
+#define H2_MP_NEWGAME	1
+#define H2_MP_SETUP		2
+#define H2_MP_LOAD		3
+#define H2_MP_SAVE		4
+
+static int h2_mp_cursor;
+
+static void M_H2_MultiPlayer_Draw(void)
+{
+	int y;
+
+	// Draw animated title and plaque (title4.lmp for multiplayer)
+	M_H2_ScrollTitle("gfx/menu/title4.lmp");
+
+	// Menu items
+	y = 60;
+	M_H2_DrawBigString(72, y, "JOIN A GAME");
+	y += 20;
+	M_H2_DrawBigString(72, y, "NEW GAME");
+	y += 20;
+	M_H2_DrawBigString(72, y, "SETUP");
+	y += 20;
+	M_H2_DrawBigString(72, y, "LOAD");
+	y += 20;
+	M_H2_DrawBigString(72, y, "SAVE");
+
+	// Draw cursor
+	M_H2_DrawCursor(43, 54 + h2_mp_cursor * 20);
+
+	// Check for network availability (like uhexen2)
+	if (!tcpipAvailable)
+		M_PrintWhite((320/2) - ((27*8)/2), 160, "No Communications Available");
+}
+
+static void M_H2_MultiPlayer_Key(int key)
+{
+	switch (key)
+	{
+	case K_ESCAPE:
+	case K_BBUTTON:
+	case K_MOUSE2:
+		M_Menu_Main_f();
+		break;
+
+	case K_DOWNARROW:
+	case K_MWHEELDOWN:
+		M_H2_NavSound();
+		if (++h2_mp_cursor >= H2_MP_ITEMS)
+			h2_mp_cursor = 0;
+		break;
+
+	case K_UPARROW:
+	case K_MWHEELUP:
+		M_H2_NavSound();
+		if (--h2_mp_cursor < 0)
+			h2_mp_cursor = H2_MP_ITEMS - 1;
+		break;
+
+	case K_ENTER:
+	case K_KP_ENTER:
+	case K_ABUTTON:
+	case K_MOUSE1:
+		m_entersound = true;
+
+		switch (h2_mp_cursor)
+		{
+		case H2_MP_JOIN:
+			// Join a game - go to LAN config
+			M_Menu_LanConfig_f();
+			break;
+
+		case H2_MP_NEWGAME:
+			// Host a new game - go to game options
+			M_Menu_GameOptions_f();
+			break;
+
+		case H2_MP_SETUP:
+			// Player setup (H2 version with class selection)
+			M_Menu_H2_Setup_f();
+			break;
+
+		case H2_MP_LOAD:
+			// Load multiplayer game
+			M_Menu_Load_f();
+			break;
+
+		case H2_MP_SAVE:
+			// Save multiplayer game
+			if (sv.active)
+				M_Menu_Save_f();
+			break;
+		}
+		break;
+	}
+}
+
+/*
+================================================================================
+PLAYER SETUP MENU (with class selection)
+================================================================================
+*/
+
+#define H2_SETUP_ITEMS		6
+#define H2_SETUP_HOSTNAME	0
+#define H2_SETUP_NAME		1
+#define H2_SETUP_CLASS		2
+#define H2_SETUP_TOP		3
+#define H2_SETUP_BOTTOM		4
+#define H2_SETUP_ACCEPT		5
+
+static int h2_setup_cursor;
+static int h2_setup_class;
+static int h2_setup_top, h2_setup_bottom;
+static int h2_setup_oldtop, h2_setup_oldbottom;
+static char h2_setup_hostname[16];
+static char h2_setup_myname[16];
+
+static int h2_setup_cursor_table[] = {40, 56, 80, 104, 128, 156};
+
+extern cvar_t cl_name;
+extern cvar_t hostname;
+extern cvar_t cl_color;
+
+void M_Menu_H2_Setup_f(void)
+{
+	IN_DeactivateForMenu();
+	key_dest = key_menu;
+	m_state = m_setup;
+	m_entersound = true;
+	M_H2_ResetScrollTitle();
+
+	q_strlcpy(h2_setup_myname, cl_name.string, sizeof(h2_setup_myname));
+	q_strlcpy(h2_setup_hostname, hostname.string, sizeof(h2_setup_hostname));
+	h2_setup_top = h2_setup_oldtop = ((int)cl_color.value) >> 4;
+	h2_setup_bottom = h2_setup_oldbottom = ((int)cl_color.value) & 15;
+
+	// Initialize class from playerclass cvar
+	h2_setup_class = h2_player_class;
+	if (h2_setup_class < 1 || h2_setup_class > H2_MAX_PLAYER_CLASS)
+		h2_setup_class = 1;
+
+	// Restrict class based on game version
+	if (hexen2_demo)
+	{
+		// Demo: only Paladin (1) and Assassin (4)
+		if (h2_setup_class != 1 && h2_setup_class != 4)
+			h2_setup_class = 1;
+	}
+	else if (!M_H2_HasPortals())
+	{
+		// No Portals: no Demoness
+		if (h2_setup_class > H2_NUM_BASE_CLASSES)
+			h2_setup_class = H2_NUM_BASE_CLASSES;
+	}
+}
+
+static void M_H2_Setup_Draw(void)
+{
+	// Draw animated title (title4 = multiplayer)
+	M_H2_ScrollTitle("gfx/menu/title4.lmp");
+
+	M_Print(64, 40, "Hostname");
+	M_DrawTextBox(160, 32, 16, 1);
+	M_Print(168, 40, h2_setup_hostname);
+
+	M_Print(64, 56, "Your name");
+	M_DrawTextBox(160, 48, 16, 1);
+	M_Print(168, 56, h2_setup_myname);
+
+	M_Print(64, 80, "Current Class:");
+	if (h2_setup_class >= 1 && h2_setup_class <= H2_MAX_PLAYER_CLASS)
+		M_Print(88, 88, h2_class_names_upper[h2_setup_class - 1]);
+
+	M_Print(64, 104, "First color patch");
+	M_Print(64, 128, "Second color patch");
+
+	M_DrawTextBox(64, 148, 14, 1);
+	M_Print(72, 156, "Accept Changes");
+
+	// Draw color patches
+	M_DrawTextBox(160, 80, 6, 2);
+	// Note: Would need translated player pic - for now show color values
+	M_Print(176, 98, va("top: %d", h2_setup_top));
+	M_Print(176, 106, va("btm: %d", h2_setup_bottom));
+
+	// Draw cursor
+	M_H2_DrawCursor(43, h2_setup_cursor_table[h2_setup_cursor] - 6);
+
+	// Draw text cursors for text fields
+	if (h2_setup_cursor == H2_SETUP_HOSTNAME)
+		M_DrawCharacter(168 + 8*strlen(h2_setup_hostname), 40, 10 + ((int)(realtime*4)&1));
+	if (h2_setup_cursor == H2_SETUP_NAME)
+		M_DrawCharacter(168 + 8*strlen(h2_setup_myname), 56, 10 + ((int)(realtime*4)&1));
+}
+
+static void M_H2_Setup_Key(int key)
+{
+	int l;
+
+	switch (key)
+	{
+	case K_ESCAPE:
+	case K_BBUTTON:
+	case K_MOUSE2:
+		M_Menu_MultiPlayer_f();
+		break;
+
+	case K_UPARROW:
+	case K_MWHEELUP:
+		M_H2_NavSound();
+		if (--h2_setup_cursor < 0)
+			h2_setup_cursor = H2_SETUP_ITEMS - 1;
+		break;
+
+	case K_DOWNARROW:
+	case K_MWHEELDOWN:
+		M_H2_NavSound();
+		if (++h2_setup_cursor >= H2_SETUP_ITEMS)
+			h2_setup_cursor = 0;
+		break;
+
+	case K_LEFTARROW:
+		if (h2_setup_cursor < H2_SETUP_CLASS)
+			return;
+		M_H2_NavSound();
+		if (h2_setup_cursor == H2_SETUP_CLASS)
+		{
+			// Cycle class backwards
+			if (hexen2_demo)
+			{
+				// Demo: toggle between Paladin (1) and Assassin (4)
+				h2_setup_class = (h2_setup_class == 1) ? 4 : 1;
+			}
+			else
+			{
+				int max_class = M_H2_HasPortals() ? H2_MAX_PLAYER_CLASS : H2_NUM_BASE_CLASSES;
+				if (--h2_setup_class < 1)
+					h2_setup_class = max_class;
+			}
+		}
+		else if (h2_setup_cursor == H2_SETUP_TOP)
+		{
+			if (--h2_setup_top < 0)
+				h2_setup_top = 10;
+		}
+		else if (h2_setup_cursor == H2_SETUP_BOTTOM)
+		{
+			if (--h2_setup_bottom < 0)
+				h2_setup_bottom = 10;
+		}
+		break;
+
+	case K_RIGHTARROW:
+		if (h2_setup_cursor < H2_SETUP_CLASS)
+			return;
+forward:
+		M_H2_NavSound();
+		if (h2_setup_cursor == H2_SETUP_CLASS)
+		{
+			// Cycle class forwards
+			if (hexen2_demo)
+			{
+				// Demo: toggle between Paladin (1) and Assassin (4)
+				h2_setup_class = (h2_setup_class == 1) ? 4 : 1;
+			}
+			else
+			{
+				int max_class = M_H2_HasPortals() ? H2_MAX_PLAYER_CLASS : H2_NUM_BASE_CLASSES;
+				if (++h2_setup_class > max_class)
+					h2_setup_class = 1;
+			}
+		}
+		else if (h2_setup_cursor == H2_SETUP_TOP)
+		{
+			if (++h2_setup_top > 10)
+				h2_setup_top = 0;
+		}
+		else if (h2_setup_cursor == H2_SETUP_BOTTOM)
+		{
+			if (++h2_setup_bottom > 10)
+				h2_setup_bottom = 0;
+		}
+		break;
+
+	case K_ENTER:
+	case K_KP_ENTER:
+	case K_ABUTTON:
+	case K_MOUSE1:
+		if (h2_setup_cursor == H2_SETUP_HOSTNAME || h2_setup_cursor == H2_SETUP_NAME)
+			return;
+
+		if (h2_setup_cursor >= H2_SETUP_CLASS && h2_setup_cursor <= H2_SETUP_BOTTOM)
+			goto forward;
+
+		// Accept changes
+		if (h2_setup_cursor == H2_SETUP_ACCEPT)
+		{
+			if (strcmp(cl_name.string, h2_setup_myname) != 0)
+				Cbuf_AddText(va("name \"%s\"\n", h2_setup_myname));
+			if (strcmp(hostname.string, h2_setup_hostname) != 0)
+				Cvar_Set("hostname", h2_setup_hostname);
+			if (h2_setup_top != h2_setup_oldtop || h2_setup_bottom != h2_setup_oldbottom)
+				Cbuf_AddText(va("color %d %d\n", h2_setup_top, h2_setup_bottom));
+			Cvar_SetValue("_cl_playerclass", h2_setup_class);
+			m_entersound = true;
+			M_Menu_MultiPlayer_f();
+		}
+		break;
+
+	case K_BACKSPACE:
+		if (h2_setup_cursor == H2_SETUP_HOSTNAME)
+		{
+			l = strlen(h2_setup_hostname);
+			if (l > 0)
+				h2_setup_hostname[l - 1] = 0;
+		}
+		else if (h2_setup_cursor == H2_SETUP_NAME)
+		{
+			l = strlen(h2_setup_myname);
+			if (l > 0)
+				h2_setup_myname[l - 1] = 0;
+		}
+		break;
+	}
+}
+
+static void M_H2_Setup_Char(int key)
+{
+	int l;
+
+	if (key < 32 || key > 127)
+		return;
+
+	if (h2_setup_cursor == H2_SETUP_HOSTNAME)
+	{
+		l = strlen(h2_setup_hostname);
+		if (l < 15)
+		{
+			h2_setup_hostname[l + 1] = 0;
+			h2_setup_hostname[l] = key;
+		}
+	}
+	else if (h2_setup_cursor == H2_SETUP_NAME)
+	{
+		l = strlen(h2_setup_myname);
+		if (l < 15)
+		{
+			h2_setup_myname[l + 1] = 0;
+			h2_setup_myname[l] = key;
+		}
+	}
+}
+
+/*
+================================================================================
 DISPATCH FUNCTIONS
 ================================================================================
 */
@@ -984,6 +1449,14 @@ void M_H2_Draw(void)
 
 	case m_help:
 		M_H2_Help_Draw();
+		break;
+
+	case m_multiplayer:
+		M_H2_MultiPlayer_Draw();
+		break;
+
+	case m_setup:
+		M_H2_Setup_Draw();
 		break;
 
 	default:
@@ -1025,6 +1498,14 @@ void M_H2_Keydown(int key)
 		M_H2_Help_Key(key);
 		break;
 
+	case m_multiplayer:
+		M_H2_MultiPlayer_Key(key);
+		break;
+
+	case m_setup:
+		M_H2_Setup_Key(key);
+		break;
+
 	default:
 		// Other menus handled by standard menu code
 		break;
@@ -1048,8 +1529,49 @@ qboolean M_H2_ShouldHandle(enum m_state_e state)
 	case m_difficulty:
 	case m_help:
 	case m_multiplayer:  // For H2 multiplayer title/layout
+	case m_setup:        // For H2 player setup with class selection
 		return true;
 	default:
 		return false;
+	}
+}
+
+/*
+================
+M_H2_Charinput
+
+Handle character input for text fields in H2 menus
+================
+*/
+void M_H2_Charinput(int key)
+{
+	switch (m_state)
+	{
+	case m_setup:
+		M_H2_Setup_Char(key);
+		break;
+	default:
+		break;
+	}
+}
+
+/*
+================
+M_H2_TextEntry
+
+Returns text entry mode for current menu
+================
+*/
+enum textmode_t M_H2_TextEntry(void)
+{
+	switch (m_state)
+	{
+	case m_setup:
+		// Text entry for hostname or player name fields
+		if (h2_setup_cursor == H2_SETUP_HOSTNAME || h2_setup_cursor == H2_SETUP_NAME)
+			return TEXTMODE_ON;
+		return TEXTMODE_OFF;
+	default:
+		return TEXTMODE_OFF;
 	}
 }

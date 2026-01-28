@@ -30,6 +30,9 @@ qboolean hexen2_mode = false;
 // Global flag indicating if Portal of Praevus mission pack is detected
 qboolean hexen2_missionpack = false;
 
+// Global flag indicating if demo version is detected (only Paladin/Assassin)
+qboolean hexen2_demo = false;
+
 // Console variable for forcing Hexen II mode
 static cvar_t cv_game_hexen2 = {"game_hexen2", "0", CVAR_NONE};
 
@@ -167,10 +170,30 @@ void H2_DetectGameType(void)
 		}
 	}
 
+	// Check for demo version
+	// Demo only has Paladin and Assassin, lacks crusader.mdl
+	if (hexen2_mode)
+	{
+		hexen2_demo = true;	// Assume demo until proven otherwise
+		handle = COM_FOpenFile("models/crusader.mdl", &dummy, &path_id);
+		if (handle >= 0)
+		{
+			fclose(dummy);
+			hexen2_demo = false;
+			Con_DPrintf("Hexen II: Full version detected (crusader.mdl found)\n");
+		}
+		else
+		{
+			Con_DPrintf("Hexen II: Demo version detected (crusader.mdl missing)\n");
+		}
+	}
+
 	if (hexen2_mode)
 	{
 		if (hexen2_missionpack)
 			Con_Printf("Hexen II mode: ENABLED (with Portal of Praevus)\n");
+		else if (hexen2_demo)
+			Con_Printf("Hexen II mode: ENABLED (Demo version)\n");
 		else
 			Con_Printf("Hexen II mode: ENABLED\n");
 	}
