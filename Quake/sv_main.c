@@ -804,7 +804,20 @@ qboolean SV_VisibleToClient (edict_t *client, edict_t *test, qmodel_t *worldmode
 	byte	*pvs;
 	vec3_t	org;
 
-	VectorAdd (ENT_ORIGIN(client), ENT_VIEW_OFS(client), org);
+	// H2: Use camera entity's origin if cameramode is set
+	if (hexen2_mode && h2_globals.fields.cameramode >= 0)
+	{
+		int camera_ent = (int)E_FLOAT(client, h2_globals.fields.cameramode);
+		if (camera_ent)
+		{
+			edict_t *camera = PROG_TO_EDICT(camera_ent);
+			VectorCopy (ENT_ORIGIN(camera), org);
+		}
+		else
+			VectorAdd (ENT_ORIGIN(client), ENT_VIEW_OFS(client), org);
+	}
+	else
+		VectorAdd (ENT_ORIGIN(client), ENT_VIEW_OFS(client), org);
 	pvs = SV_FatPVS (org, worldmodel);
 
 	return SV_EdictInPVS (test, pvs);
@@ -836,7 +849,20 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 	edict_t	*ent;
 
 // find the client's PVS
-	VectorAdd (ENT_ORIGIN(clent), ENT_VIEW_OFS(clent), org);
+	// H2: Use camera entity's origin if cameramode is set
+	if (hexen2_mode && h2_globals.fields.cameramode >= 0)
+	{
+		int camera_ent = (int)E_FLOAT(clent, h2_globals.fields.cameramode);
+		if (camera_ent)
+		{
+			edict_t *camera = PROG_TO_EDICT(camera_ent);
+			VectorCopy (ENT_ORIGIN(camera), org);
+		}
+		else
+			VectorAdd (ENT_ORIGIN(clent), ENT_VIEW_OFS(clent), org);
+	}
+	else
+		VectorAdd (ENT_ORIGIN(clent), ENT_VIEW_OFS(clent), org);
 	pvs = SV_FatPVS (org, sv.worldmodel);
 
 // find the client's orientation
