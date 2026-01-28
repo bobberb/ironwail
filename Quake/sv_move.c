@@ -266,6 +266,7 @@ qboolean SV_StepDirection (edict_t *ent, float yaw, float dist)
 {
 	vec3_t		move, oldorigin;
 	float		delta;
+	qboolean	set_trace;
 
 	ENT_IDEAL_YAW(ent) = yaw;
 	PF_changeyaw();
@@ -275,8 +276,11 @@ qboolean SV_StepDirection (edict_t *ent, float yaw, float dist)
 	move[1] = sin(yaw)*dist;
 	move[2] = 0;
 
+	// H2: FL_SET_TRACE makes trace globals always set (used by pentacles)
+	set_trace = ((int)ENT_FLAGS(ent) & FL_SET_TRACE) ? true : false;
+
 	VectorCopy (ENT_ORIGIN(ent), oldorigin);
-	if (SV_movestep (ent, move, false, false))
+	if (SV_movestep (ent, move, false, set_trace))
 	{
 		delta = ENT_ANGLES(ent)[YAW] - ENT_IDEAL_YAW(ent);
 		if (delta > 45 && delta < 315)
