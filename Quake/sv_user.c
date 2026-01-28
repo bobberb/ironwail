@@ -145,6 +145,14 @@ void SV_UserFriction (void)
 	else
 		friction = sv_friction.value;
 
+	// H2: Multiply by entity friction field if present
+	if (hexen2_mode && h2_globals.fields.friction >= 0)
+	{
+		float entfriction = E_FLOAT(sv_player, h2_globals.fields.friction);
+		if (entfriction != 0)
+			friction *= entfriction;
+	}
+
 // apply friction
 	control = speed < sv_stopspeed.value ? sv_stopspeed.value : speed;
 	newspeed = speed - host_frametime*control*friction;
