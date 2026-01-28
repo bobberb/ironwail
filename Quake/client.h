@@ -215,6 +215,13 @@ typedef struct
 	int			intermission;	// don't change view angle, full screen, etc
 	int			completed_time;	// latched at intermission start
 
+	// H2 intermission fields (used by CL_SetupIntermission)
+	int			message_index;		// H2: string index from strings.txt for message
+	int			intermission_flags;	// H2: flags controlling display behavior
+	const char	*intermission_pic;	// H2: picture to display (e.g. "gfx/meso.lmp")
+	int			lasting_time;		// H2: how long intermission lasts (0 = until keypress)
+	int			intermission_next;	// H2: next intermission to chain to (0 = none)
+
 	double		mtime[2];		// the timestamp of last two messages
 	double		time;			// clients view of time, should be between
 								// servertime and oldservertime to generate

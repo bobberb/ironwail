@@ -43,4 +43,7 @@ void CL_ParseSetViewFlags(void);
 void CL_ParseClearViewFlags(void);
 void CL_ParseToggleStatbar(void);
 
+// H2 intermission system
+void CL_SetupIntermission(int num);
+
 #endif /* _CL_PARSE_HEXEN2_H */

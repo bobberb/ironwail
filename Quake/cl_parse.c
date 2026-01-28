@@ -1522,8 +1522,17 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_intermission:
-			cl.intermission = 1;
-			cl.completed_time = cl.time;
+			if (hexen2_mode)
+			{
+				// H2: svc_intermission takes a byte parameter for intermission type
+				CL_SetupIntermission(MSG_ReadByte());
+			}
+			else
+			{
+				// Quake: simple intermission
+				cl.intermission = 1;
+				cl.completed_time = cl.time;
+			}
 			vid.recalc_refdef = true;	// go to full screen
 			V_RestoreAngles ();
 			break;

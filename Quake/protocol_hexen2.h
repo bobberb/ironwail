@@ -372,6 +372,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define H2_SFL_128				128		// Reserved flag
 
 //==================
+// Hexen II intermission flags (used by CL_SetupIntermission)
+// These control the behavior and display of intermission screens
+//==================
+#define H2_INTERMISSION_NOT_CONNECTED	(1<<0)	// Can't use cl.time, use realtime
+#define H2_INTERMISSION_NO_MENUS		(1<<1)	// Don't allow drawing menus
+#define H2_INTERMISSION_NO_MESSAGE		(1<<2)	// Doesn't need a valid message index
+#define H2_INTERMISSION_PRINT_TOP		(1<<3)	// Print centered in top half
+#define H2_INTERMISSION_PRINT_TOPMOST	(1<<4)	// Print at topmost side
+#define H2_INTERMISSION_PRINT_WHITE		(1<<5)	// Print in white, not red
+#define H2_INTERMISSION_PRINT_DELAY		(1<<6)	// Delay message print for ~2.5s
+
+//==================
 // Global flags to indicate Hexen II mode and mission pack
 //==================
 extern qboolean hexen2_mode;

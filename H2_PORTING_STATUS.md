@@ -220,6 +220,29 @@ for H2-specific globals (v_forward, trace_*, deathmatch, stats, parm1-16, etc.).
 
 ---
 
+## 5c. INTERMISSION SYSTEM (Phase 5c) - COMPLETE
+
+| Feature | Status | uhexen2 Source | Ironwail File |
+|---------|--------|----------------|---------------|
+| svc_intermission with type byte | [x] | `hexen2/cl_parse.c:1472` | `cl_parse.c` |
+| CL_SetupIntermission | [x] | `hexen2/cl_inlude.c:26` | `cl_parse_hexen2.c` |
+| Intermission picture display | [x] | `hexen2/cl_inlude.c` | `cl_parse_hexen2.c` |
+| Intermission message from strings.txt | [x] | `hexen2/cl_inlude.c` | `cl_parse_hexen2.c` |
+| Intermission chaining (lasting_time, next) | [x] | `hexen2/cl_inlude.c` | `cl_parse_hexen2.c` |
+| Intermission flags | [x] | `hexen2/client.h:381-388` | `protocol_hexen2.h` |
+
+**Implementation complete:**
+- H2 `svc_intermission` reads byte parameter (0-12) for intermission type
+- `CL_SetupIntermission()` sets up per-type: picture, message index, flags, timing, chaining
+- Intermission types 1-4: Episode transitions (Horsemen defeats)
+- Types 5, 9: Demo/OEM version finales
+- Types 6-8: Eidolon finale (3-part chain)
+- Types 10-11: Mission pack finales
+- Type 12: Mission pack intro (menu-triggered)
+- Client struct has: `message_index`, `intermission_flags`, `intermission_pic`, `lasting_time`, `intermission_next`
+
+---
+
 ## 6. MULTIPLAYER (Phase 6) - NOT STARTED
 
 | Feature | Status | uhexen2 Source | Ironwail File |

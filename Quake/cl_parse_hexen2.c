@@ -570,3 +570,161 @@ void CL_ParseToggleStatbar(void)
 {
 	// This message has no parameters and does nothing in original H2
 }
+
+/*
+================
+CL_SetupIntermission
+
+Hexen II intermission setup - configures the intermission display based on
+the intermission number sent by the server. Each intermission has specific
+settings for background picture, message, timing, and display flags.
+
+Intermission meanings:
+  1-4: Episode transitions (defeated Horsemen: Famine, Death, Pestilence, War)
+  5:   Demo version finale
+  6-8: Eidolon finale (3 parts, chained)
+  9:   OEM/bundle version finale
+  10:  Mission pack finale (defeated Praevus)
+  11:  Mission pack episode change (to Tibet)
+  12:  Mission pack intro (before first map, menu-triggered only)
+================
+*/
+void CL_SetupIntermission(int num)
+{
+	// Note: uhexen2 has an "oem" cvar for the Matrox m3D bundle version
+	// that redirects intermission 1 to 9. We don't support this rare version.
+	cl.intermission = num;
+
+	switch (cl.intermission)
+	{
+	case 1: // Defeated Famine: episode 1 (village) to 2 (mazaera)
+		cl.completed_time = cl.time;
+		cl.message_index = 1 + 394;
+		cl.intermission_flags = 0;
+		cl.intermission_pic = "gfx/meso.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		break;
+
+	case 2: // Defeated Death: episode 2 (mazaera) to 3 (egypt)
+		cl.completed_time = cl.time;
+		cl.message_index = 2 + 394;
+		cl.intermission_flags = 0;
+		cl.intermission_pic = "gfx/egypt.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		break;
+
+	case 3: // Defeated Pestilence: episode 3 (egypt) to 4 (roman)
+		cl.completed_time = cl.time;
+		cl.message_index = 3 + 394;
+		cl.intermission_flags = 0;
+		cl.intermission_pic = "gfx/roman.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		break;
+
+	case 4: // Defeated War: episode 4 (roman) to finale (castle)
+		cl.completed_time = cl.time;
+		cl.message_index = 4 + 394;
+		cl.intermission_flags = 0;
+		cl.intermission_pic = "gfx/castle.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		break;
+
+	case 5: // Demo version finale
+		cl.completed_time = cl.time;
+		// DEMO_MSG_INDEX is 408 for H2, 410 for H2MP strings.txt
+		cl.message_index = 408;
+		cl.intermission_flags = 0;
+		cl.intermission_pic = "gfx/castle.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		break;
+
+	case 6: // Defeated Eidolon: finale part 1/3
+		cl.completed_time = cl.time;
+		cl.message_index = 6 + 386;
+		cl.intermission_flags = H2_INTERMISSION_PRINT_DELAY |
+		                        H2_INTERMISSION_PRINT_WHITE |
+		                        H2_INTERMISSION_PRINT_TOP;
+		cl.intermission_pic = "gfx/end-1.lmp";
+		cl.lasting_time = 15;
+		cl.intermission_next = 7;
+		break;
+
+	case 7: // Defeated Eidolon: finale part 2/3
+		cl.completed_time = cl.time;
+		cl.message_index = 7 + 386;
+		cl.intermission_flags = H2_INTERMISSION_PRINT_DELAY |
+		                        H2_INTERMISSION_PRINT_WHITE |
+		                        H2_INTERMISSION_PRINT_TOP;
+		cl.intermission_pic = "gfx/end-2.lmp";
+		cl.lasting_time = 15;
+		cl.intermission_next = 8;
+		break;
+
+	case 8: // Defeated Eidolon: finale part 3/3
+		cl.completed_time = cl.time;
+		cl.message_index = 8 + 386;
+		cl.intermission_flags = H2_INTERMISSION_PRINT_WHITE |
+		                        H2_INTERMISSION_PRINT_DELAY |
+		                        H2_INTERMISSION_PRINT_TOPMOST;
+		cl.intermission_pic = "gfx/end-3.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		break;
+
+	case 9: // OEM/bundle version finale
+		cl.completed_time = cl.time;
+		cl.message_index = 391;
+		cl.intermission_flags = H2_INTERMISSION_PRINT_WHITE;
+		cl.intermission_pic = "gfx/castle.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		break;
+
+	case 10: // Defeated Praevus: mission pack finale
+		cl.completed_time = cl.time;
+		cl.message_index = 538;
+		cl.intermission_flags = 0;
+		cl.intermission_pic = "gfx/mpend.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		break;
+
+	case 11: // Mission pack episode change to Tibet
+		cl.completed_time = cl.time;
+		cl.message_index = 545;
+		cl.intermission_flags = 0;
+		cl.intermission_pic = "gfx/mpmid.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		break;
+
+	case 12: // Mission pack intro (menu-triggered only)
+		// This intermission is started by the menu system without
+		// a server connection, so we use realtime instead of cl.time.
+		// When the user presses a key, Key_Event starts the keep1 map.
+		cl.completed_time = realtime;
+		cl.message_index = 561;
+		cl.intermission_flags = H2_INTERMISSION_NOT_CONNECTED |
+		                        H2_INTERMISSION_NO_MENUS;
+		cl.intermission_pic = "gfx/end-3.lmp";
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		Host_LoadStrings();
+		break;
+
+	default: // Unexpected intermission number
+		cl.completed_time = cl.time;
+		cl.message_index = 0;
+		cl.intermission_flags = 0;
+		cl.intermission_pic = NULL;
+		cl.lasting_time = 0;
+		cl.intermission_next = 0;
+		Con_Warning("CL_SetupIntermission: bad intermission number %d\n", num);
+		break;
+	}
+}
