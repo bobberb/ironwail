@@ -253,6 +253,7 @@ typedef enum
 	EF_BRIGHTLIGHT 				= 4,
 	EF_DIMLIGHT 				= 8,
 	EF_QEX_QUADLIGHT			= 16,	// 2021 rerelease
+	EF_DARKLIGHT				= 16,	// H2: subtractive light (same value, different game)
 	EF_QEX_PENTALIGHT			= 32,	// 2021 rerelease
 	EF_QEX_CANDLELIGHT			= 64,	// 2021 rerelease
 } efx_t;

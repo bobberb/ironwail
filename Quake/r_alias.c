@@ -302,6 +302,28 @@ void R_SetupAliasLighting (entity_t	*e)
 			VectorMA (lightcolor, l->radius - sqrtf (add), l->color, lightcolor);
 	}
 
+	// H2: handle dark (subtractive) lights separately
+	// These are skipped in R_PushDlights since GPU shader doesn't support them
+	if (hexen2_mode)
+	{
+		dlight_t *dl;
+		for (i = 0, dl = cl_dlights; i < MAX_DLIGHTS; i++, dl++)
+		{
+			if (!dl->dark || dl->die < cl.time || !dl->radius)
+				continue;
+			VectorSubtract (e->origin, dl->origin, dist);
+			add = DotProduct (dist, dist);
+			if (dl->radius * dl->radius > add)
+			{
+				float sub = dl->radius - sqrtf (add);
+				// Subtract light, clamping to 0
+				lightcolor[0] = q_max(0, lightcolor[0] - sub * dl->color[0]);
+				lightcolor[1] = q_max(0, lightcolor[1] - sub * dl->color[1]);
+				lightcolor[2] = q_max(0, lightcolor[2] - sub * dl->color[2]);
+			}
+		}
+	}
+
 	// minimum light value on gun (24)
 	if (e == &cl.viewent)
 	{

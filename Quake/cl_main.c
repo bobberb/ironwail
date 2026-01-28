@@ -651,7 +651,17 @@ void CL_RelinkEntities (void)
 			dl->radius = 200 + (rand()&31);
 			dl->die = cl.time + 0.001;
 		}
-		if (ent->effects & EF_QEX_QUADLIGHT)
+		// H2: EF_DARKLIGHT creates subtractive light
+		// Note: shares value 16 with EF_QEX_QUADLIGHT, but different games
+		if (hexen2_mode && (ent->effects & EF_DARKLIGHT))
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin,  dl->origin);
+			dl->radius = 200 + (rand()&31);
+			dl->die = cl.time + 0.001;
+			dl->dark = true;
+		}
+		else if (ent->effects & EF_QEX_QUADLIGHT)
 		{
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin,  dl->origin);

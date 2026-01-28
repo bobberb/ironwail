@@ -78,6 +78,7 @@ typedef struct
 	float	minlight;			// don't add when contributing less
 	int		key;
 	vec3_t	color;				//johnfitz -- lit support via lordhavoc
+	qboolean dark;				// H2: subtracts light instead of adding
 } dlight_t;
 
 

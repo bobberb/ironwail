@@ -157,6 +157,11 @@ void R_PushDlights (void)
 			if (l->die < cl.time || !l->radius)
 				continue;
 
+			// H2: dark lights are subtractive - skip for GPU (needs shader support)
+			// They're handled separately in R_LightAlias for alias models
+			if (l->dark)
+				continue;
+
 			for (j = 0; j < 4; j++)
 			{
 				mplane_t *p = &frustum[j];
