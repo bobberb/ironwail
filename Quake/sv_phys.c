@@ -1577,10 +1577,14 @@ void SV_Physics_Step (edict_t *ent)
 		SV_FlyMove (ent, host_frametime, NULL);
 		SV_LinkEdict (ent, true);
 
-		if ( (int)ENT_FLAGS(ent) & FL_ONGROUND )	// just hit ground
+		// just hit ground - play landing sound (but not for monsters in H2)
+		if ((int)ENT_FLAGS(ent) & FL_ONGROUND)
 		{
-			if (hitsound)
-				SV_StartSound (ent, 0, "demon/dland2.wav", 255, 1);
+			if (hitsound && !(hexen2_mode && ((int)ENT_FLAGS(ent) & FL_MONSTER)))
+			{
+				const char *landsnd = hexen2_mode ? "fx/thngland.wav" : "demon/dland2.wav";
+				SV_StartSound (ent, 0, landsnd, 255, 1);
+			}
 		}
 	}
 
