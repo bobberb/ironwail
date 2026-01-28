@@ -308,6 +308,7 @@ typedef struct {
 	int			skinwidth;
 	int			skinheight;
 	int			numverts;
+	int			num_st_verts;	// H2: separate ST vertex count (== numverts for Q1)
 	int			numtris;
 	int			numframes;
 	synctype_t	synctype;
@@ -376,6 +377,7 @@ typedef struct
 extern	aliashdr_t			*pheader;
 extern	const stvert_t		*stverts;
 extern	const dtriangle_t	*triangles;
+extern	const unsigned short	*stindexes;	// H2: separate ST indices (3 per triangle)
 extern	trivertx_t			*poseverts[MAXALIASFRAMES];
 
 //===================================================================

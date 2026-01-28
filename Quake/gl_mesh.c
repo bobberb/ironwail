@@ -60,7 +60,11 @@ void GL_MakeAliasModelDisplayLists (qmodel_t *aliasmodel, aliashdr_t *paliashdr)
 
 	// there can never be more than this number of verts and we just put them all on the hunk
 	// (each vertex can be used twice, once with the original UVs and once with the seam adjustment)
-	desc = (aliasmesh_t *) Hunk_Alloc (sizeof (aliasmesh_t) * pheader->numverts * 2);
+	// H2: num_st_verts can differ from numverts, use the larger value
+	{
+		int max_verts = pheader->numverts > pheader->num_st_verts ? pheader->numverts : pheader->num_st_verts;
+		desc = (aliasmesh_t *) Hunk_Alloc (sizeof (aliasmesh_t) * max_verts * 2);
+	}
 
 	// there will always be this number of indexes
 	indexes = (unsigned short *) Hunk_Alloc (sizeof (unsigned short) * pheader->numtris * 3);
@@ -72,30 +76,33 @@ void GL_MakeAliasModelDisplayLists (qmodel_t *aliasmodel, aliashdr_t *paliashdr)
 
 	mark = Hunk_LowMark ();
 
-	// each pair of elements in the remap array corresponds to one source vertex
+	// each pair of elements in the remap array corresponds to one ST vertex
 	// each value is the final index + 1, or 0 if the corresponding vertex hasn't been emitted yet
-	remap = (unsigned short *) Hunk_Alloc (paliashdr->numverts * 2 * sizeof (remap[0]));
+	// H2: uses separate ST indices, so size based on num_st_verts
+	remap = (unsigned short *) Hunk_Alloc (paliashdr->num_st_verts * 2 * sizeof (remap[0]));
 
 	for (i = 0; i < pheader->numtris; i++)
 	{
 		for (j = 0; j < 3; j++)
 		{
-			// index into hdr->vertexes
+			// index into hdr->vertexes (position)
 			unsigned short vertindex = triangles[i].vertindex[j];
+			// index into stverts (texture coords) - H2 has separate stindex
+			unsigned short stindex = stindexes[i*3 + j];
 
-			// index into remap table
-			int v = vertindex * 2;
+			// index into remap table (based on ST index, not position index)
+			int v = stindex * 2;
 
 			// check for back side
-			if (!triangles[i].facesfront && stverts[vertindex].onseam)
+			if (!triangles[i].facesfront && stverts[stindex].onseam)
 				v++;
 
 			// emit new vertex if it doesn't already exist
 			if (!remap[v])
 			{
-				// basic s/t coords
-				int s = stverts[vertindex].s;
-				int t = stverts[vertindex].t;
+				// basic s/t coords (from stindex)
+				int s = stverts[stindex].s;
+				int t = stverts[stindex].t;
 
 				// check for back side and adjust texcoord s
 				if (v & 1)

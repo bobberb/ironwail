@@ -2134,6 +2134,11 @@ static void Host_Changelevel_f (void)
 		Host_Error ("cannot run map %s", level);
 }
 
+/* Forward declarations for H2 hub system functions */
+static void H2_RestoreClients (void);
+static int H2_SaveGamestate (qboolean clients_only);
+static int H2_LoadGamestate (const char *level, const char *startspot);
+
 /*
 ==================
 Host_Changelevel2_f
@@ -2148,6 +2153,7 @@ static void Host_Changelevel2_f (void)
 	char	level[MAX_QPATH];
 	char	_startspot[MAX_QPATH];
 	char	*startspot;
+	double	old_svtime;  // H2: save server time for hub state
 
 	if (Cmd_Argc() < 2)
 	{

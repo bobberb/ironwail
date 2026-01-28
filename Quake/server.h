@@ -238,6 +238,7 @@ typedef enum
 	FL_WATERJUMP				= 2048,	// player jumping out of water
 	FL_JUMPRELEASED				= 4096,	// for jump debouncing
 	FL_MOVECHAIN_ANGLE			= 32768,	// Hexen II: when in movechain, also update angles
+	FL_ARCHIVE_OVERRIDE			= 1048576,	// Hexen II: override archive rules for entity
 } eflags_t;
 
 // entity effects

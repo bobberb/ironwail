@@ -2858,6 +2858,7 @@ aliashdr_t			*pheader;
 
 const stvert_t		*stverts;
 const dtriangle_t	*triangles;
+const unsigned short	*stindexes;	// H2: separate ST indices (3 per triangle)
 
 // a pose is a single set of vertexes.  a frame may be
 // an animating sequence of poses
@@ -3495,6 +3496,7 @@ static void Mod_LoadAliasModel (qmodel_t *mod, void *buffer)
 				   MAX_LBM_HEIGHT);
 
 	pheader->numverts = LittleLong (pinmodel->numverts);
+	pheader->num_st_verts = pheader->numverts;  // Q1: ST verts == position verts
 
 	if (pheader->numverts <= 0)
 		Sys_Error ("model %s has no vertices", mod->name);
@@ -3560,6 +3562,15 @@ static void Mod_LoadAliasModel (qmodel_t *mod, void *buffer)
 			pintriangles[i].vertindex[j] =
 					LittleLong (pintriangles[i].vertindex[j]);
 		}
+	}
+
+	// Quake models: stindex == vertindex (no separate ST indices)
+	{
+		unsigned short *stidx = (unsigned short *) Hunk_AllocName (pheader->numtris * 3 * sizeof(unsigned short), loadname);
+		for (i=0 ; i<pheader->numtris ; i++)
+			for (j=0 ; j<3 ; j++)
+				stidx[i*3 + j] = pintriangles[i].vertindex[j];
+		stindexes = stidx;
 	}
 
 //
@@ -3668,6 +3679,7 @@ static void Mod_LoadAliasModelNew (qmodel_t *mod, void *buffer)
 
 	pheader->numverts = LittleLong (pinmodel->numverts);
 	num_st_verts = LittleLong (pinmodel->num_st_verts);  // H2: separate ST vertex count
+	pheader->num_st_verts = num_st_verts;
 
 	if (pheader->numverts <= 0)
 		Sys_Error ("model %s has no vertices", mod->name);
@@ -3720,9 +3732,10 @@ static void Mod_LoadAliasModelNew (qmodel_t *mod, void *buffer)
 //
 	pintriangles = (dnewtriangle_t *)&pinstverts[num_st_verts];
 
-	// Allocate standard triangles array (use local ptr since global is const)
+	// Allocate standard triangles array and separate stindex array
 	{
 		dtriangle_t *tris = (dtriangle_t *) Hunk_AllocName (pheader->numtris * sizeof(dtriangle_t), loadname);
+		unsigned short *stidx = (unsigned short *) Hunk_AllocName (pheader->numtris * 3 * sizeof(unsigned short), loadname);
 
 		for (i=0 ; i<pheader->numtris ; i++)
 		{
@@ -3730,11 +3743,13 @@ static void Mod_LoadAliasModelNew (qmodel_t *mod, void *buffer)
 
 			for (j=0 ; j<3 ; j++)
 			{
-				// H2 uses short indices; stindex provides the ST vertex lookup
 				tris[i].vertindex[j] = LittleShort (pintriangles[i].vertindex[j]);
+				// H2: stindex provides separate ST vertex lookup for texture coords
+				stidx[i*3 + j] = LittleShort (pintriangles[i].stindex[j]);
 			}
 		}
 		triangles = tris;
+		stindexes = stidx;
 	}
 
 //
