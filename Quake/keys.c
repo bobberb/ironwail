@@ -1058,6 +1058,8 @@ void Key_Init (void)
 //
 	menubound[K_ESCAPE] = true;
 	menubound[K_PRINTSCREEN] = true;
+	menubound['`'] = true;	// allow toggleconsole from menus
+	menubound['~'] = true;
 	for (i = 0; i < 12; i++)
 		menubound[K_F1+i] = true;
 
