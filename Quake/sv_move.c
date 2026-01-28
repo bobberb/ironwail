@@ -128,7 +128,10 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink, qboolean set_t
 	VectorAdd (ENT_ORIGIN(ent), move, neworg);
 
 // flying monsters don't step up
-	if ( (int)ENT_FLAGS(ent) & (FL_SWIM | FL_FLY) )
+// H2: unless FL_HUNTFACE or FL_NOZ is set
+	if ( ((int)ENT_FLAGS(ent) & (FL_SWIM | FL_FLY))
+	  && !((int)ENT_FLAGS(ent) & FL_HUNTFACE)
+	  && !((int)ENT_FLAGS(ent) & FL_NOZ) )
 	{
 	// try one move with vertical motion, then one without
 		for (i=0 ; i<2 ; i++)
@@ -138,20 +141,35 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink, qboolean set_t
 			if (i == 0 && enemy != qcvm->edicts)
 			{
 				dz = ENT_ORIGIN(ent)[2] - ENT_ORIGIN(PROG_TO_EDICT(ENT_ENEMY(ent)))[2];
+				// H2: FL_HUNTFACE makes monster go for enemy's face
+				if ((int)ENT_FLAGS(ent) & FL_HUNTFACE)
+					dz += ENT_VIEW_OFS(PROG_TO_EDICT(ENT_ENEMY(ent)))[2];
 				if (dz > 40)
 					neworg[2] -= 8;
 				if (dz < 30)
 					neworg[2] += 8;
 			}
-			trace = SV_Move (ENT_ORIGIN(ent), ENT_MINS(ent), ENT_MAXS(ent), neworg, false, ent);
-			if (set_trace)
-				PR_SetTraceGlobals (&trace);
+
+			// H2: Check water exit before move for swim monsters
+			if ( ((int)ENT_FLAGS(ent) & FL_SWIM) && SV_PointContents(neworg) == CONTENTS_EMPTY )
+			{
+				// Would end up out of water, don't do z move
+				neworg[2] = ENT_ORIGIN(ent)[2];
+				trace = SV_Move (ENT_ORIGIN(ent), ENT_MINS(ent), ENT_MAXS(ent), neworg, false, ent);
+				if (set_trace)
+					PR_SetTraceGlobals (&trace);
+				if (trace.fraction < 1 || SV_PointContents(trace.endpos) == CONTENTS_EMPTY)
+					return false;	// swim monster left water
+			}
+			else
+			{
+				trace = SV_Move (ENT_ORIGIN(ent), ENT_MINS(ent), ENT_MAXS(ent), neworg, false, ent);
+				if (set_trace)
+					PR_SetTraceGlobals (&trace);
+			}
 
 			if (trace.fraction == 1)
 			{
-				if ( ((int)ENT_FLAGS(ent) & FL_SWIM) && SV_PointContents(trace.endpos) == CONTENTS_EMPTY )
-					return false;	// swim monster left water
-
 				VectorCopy (trace.endpos, ENT_ORIGIN(ent));
 				if (relink)
 					SV_LinkEdict (ent, true);
