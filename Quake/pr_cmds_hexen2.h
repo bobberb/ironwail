@@ -55,4 +55,7 @@ static void PF_h2_doWhiteFlash (void);       // #104
 static void PF_h2_UpdateSoundPos (void);     // #105
 static void PF_h2_StopSound (void);          // #106
 
+// Modding extension (not native H2) - by Inky
+static void PF_h2_pimpmodel (void);          // #111
+
 #endif // PR_CMDS_HEXEN2_H

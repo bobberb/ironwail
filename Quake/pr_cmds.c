@@ -3607,6 +3607,9 @@ builtindef_t pr_builtindefs[] =
 
 	{"checkextension",			PF_BOTH(PF_checkextension),		107},	// float(string extname) - moved from #99 for H2
 
+	// Modding extension (not native H2) by Inky - dynamic model effect customization
+	{"pimpmodel",				PF_SSQC(PF_h2_pimpmodel),		111},	// float(entity, vector) = #111
+
 	{"strlen",					PF_BOTH(PF_strlen),				114,	FRIK_FILE},	// float(string s)
 	{"strcat",					PF_BOTH(PF_strcat),				115,	FRIK_FILE},	// string(string s1, optional string s2, optional string s3, optional string s4, optional string s5, optional string s6, optional string s7, optional string s8)
 	{"substring",				PF_BOTH(PF_substring),			116,	FRIK_FILE},	// string(string s, float start, float length)

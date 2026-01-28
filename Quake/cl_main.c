@@ -61,6 +61,7 @@ client_state_t	cl;
 entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
+modelpimp_t		cl_modelpimp[MAX_MODELPIMP];
 
 entity_t		*cl_entities; //johnfitz -- was a static array, now on hunk
 int				cl_max_edicts; //johnfitz -- only changes when new map loads
@@ -109,6 +110,7 @@ void CL_ClearState (void)
 // clear other arrays
 	memset (cl_dlights, 0, sizeof(cl_dlights));
 	memset (cl_lightstyle, 0, sizeof(cl_lightstyle));
+	CL_ClearModelPimp ();
 	CL_ClearTEnts ();
 	CL_ClearEffects ();
 
@@ -343,6 +345,147 @@ void CL_SetLightstyle (int i, const char *str)
 	else
 		cl_lightstyle[i].average = cl_lightstyle[i].peak = 'm';
 	//johnfitz
+}
+
+/*
+===============================================================================
+
+MODEL PIMP - Modding extension (not native H2) by Inky
+Allows dynamic customization of model effects (spin, float, glow, light, trails)
+
+===============================================================================
+*/
+
+/*
+===============
+CL_ClearModelPimp
+
+Clear all model pimp settings (called on map change)
+===============
+*/
+void CL_ClearModelPimp (void)
+{
+	memset (cl_modelpimp, 0, sizeof(cl_modelpimp));
+}
+
+/*
+===============
+CL_FindModelPimp
+
+Find or allocate a modelpimp entry for the given model name
+Returns NULL if no slots available
+===============
+*/
+modelpimp_t *CL_FindModelPimp (const char *modelname)
+{
+	int i;
+	modelpimp_t *mp;
+	modelpimp_t *free_slot = NULL;
+
+	if (!modelname || !modelname[0])
+		return NULL;
+
+	// Look for existing entry or first free slot
+	for (i = 0, mp = cl_modelpimp; i < MAX_MODELPIMP; i++, mp++)
+	{
+		if (mp->active)
+		{
+			if (!strcmp(mp->modelname, modelname))
+				return mp;
+		}
+		else if (!free_slot)
+		{
+			free_slot = mp;
+		}
+	}
+
+	// Allocate new slot if available
+	if (free_slot)
+	{
+		memset (free_slot, 0, sizeof(*free_slot));
+		q_strlcpy (free_slot->modelname, modelname, MAX_QPATH);
+		free_slot->active = true;
+		return free_slot;
+	}
+
+	Con_DPrintf ("CL_FindModelPimp: no free slots for %s\n", modelname);
+	return NULL;
+}
+
+/*
+===============
+CL_ApplyModelPimpEffects
+
+Apply model pimp glow/light effects for an entity
+Called during entity linking
+===============
+*/
+void CL_ApplyModelPimpEffects (entity_t *ent)
+{
+	int i;
+	modelpimp_t *mp;
+	dlight_t *dl;
+	vec3_t org;
+
+	if (!ent->model)
+		return;
+
+	// Find pimp settings for this model
+	for (i = 0, mp = cl_modelpimp; i < MAX_MODELPIMP; i++, mp++)
+	{
+		if (!mp->active)
+			continue;
+		if (!strcmp(mp->modelname, ent->model->name))
+			break;
+	}
+
+	if (i >= MAX_MODELPIMP)
+		return;		// No pimp settings for this model
+
+	// Calculate effect origin (entity origin + offset)
+	VectorAdd (ent->origin, mp->view_ofs, org);
+
+	// Apply glow orb effect (uses particle system or sprite)
+	if (mp->spawnflags & PIMP_GLOW)
+	{
+		// Create a glowing particle effect at the offset position
+		// The glow is essentially a bright particle cloud
+		float radius = mp->glow_radius;
+		if (radius <= 0)
+			radius = 20.0f;
+
+		// Simple implementation: use a dynamic light with small radius
+		// A more sophisticated implementation would use particles
+		dl = CL_AllocDlight (0);
+		VectorCopy (org, dl->origin);
+		dl->radius = radius;
+		dl->die = cl.time + 0.001f;
+		dl->decay = 0;
+		VectorCopy (mp->glow_color, dl->color);
+		if (dl->color[0] == 0 && dl->color[1] == 0 && dl->color[2] == 0)
+		{
+			dl->color[0] = dl->color[1] = dl->color[2] = 1.0f;
+		}
+	}
+
+	// Apply cast light effect (dynamic light)
+	if (mp->spawnflags & PIMP_LIGHT)
+	{
+		float radius = mp->light_radius;
+		if (radius <= 0)
+			radius = 200.0f;
+
+		dl = CL_AllocDlight (0);
+		VectorCopy (org, dl->origin);
+		dl->radius = radius;
+		dl->die = cl.time + 0.001f;
+		dl->decay = 0;
+		VectorCopy (mp->glow_color, dl->color);
+		if (dl->color[0] == 0 && dl->color[1] == 0 && dl->color[2] == 0)
+		{
+			dl->color[0] = dl->color[1] = dl->color[2] = 1.0f;
+		}
+	}
 }
 
 /*
@@ -681,6 +824,10 @@ void CL_RelinkEntities (void)
 			dl->color[1] = 0.25f;
 			dl->color[2] = 0.25f;
 		}
+
+		// Apply modelpimp custom effects (H2 modding extension)
+		if (hexen2_mode)
+			CL_ApplyModelPimpEffects (ent);
 
 		if (ent->model->flags & EF_GIB)
 			CL_RocketTrail (ent, 2);
@@ -1029,6 +1176,52 @@ void V_Water_f (void)
 
 /*
 =================
+CL_ModelPimp_f
+
+Modding extension (not native H2) by Inky
+Parses modelpimp settings sent from server via stufftext
+
+Format: modelpimp "<model>" <spawnflags> <flags> <r> <g> <b> <abslight> <ox> <oy> <oz> <glow_r> <light_r>
+=================
+*/
+void CL_ModelPimp_f (void)
+{
+	modelpimp_t	*mp;
+	const char	*modelname;
+
+	if (Cmd_Argc() < 13)
+	{
+		Con_DPrintf("CL_ModelPimp_f: not enough arguments (%d)\n", Cmd_Argc());
+		return;
+	}
+
+	modelname = Cmd_Argv(1);
+	mp = CL_FindModelPimp(modelname);
+	if (!mp)
+	{
+		Con_DPrintf("CL_ModelPimp_f: no slot for '%s'\n", modelname);
+		return;
+	}
+
+	mp->spawnflags = atoi(Cmd_Argv(2));
+	mp->modelflags = atoi(Cmd_Argv(3));
+	mp->glow_color[0] = atof(Cmd_Argv(4));
+	mp->glow_color[1] = atof(Cmd_Argv(5));
+	mp->glow_color[2] = atof(Cmd_Argv(6));
+	mp->abslight = atof(Cmd_Argv(7));
+	mp->view_ofs[0] = atof(Cmd_Argv(8));
+	mp->view_ofs[1] = atof(Cmd_Argv(9));
+	mp->view_ofs[2] = atof(Cmd_Argv(10));
+	mp->glow_radius = atof(Cmd_Argv(11));
+	mp->light_radius = atof(Cmd_Argv(12));
+
+	Con_DPrintf("ModelPimp: '%s' spawnflags=%d flags=%d glow=(%.1f,%.1f,%.1f)\n",
+		modelname, mp->spawnflags, mp->modelflags,
+		mp->glow_color[0], mp->glow_color[1], mp->glow_color[2]);
+}
+
+/*
+=================
 CL_Sensitivity_save_f
 
 H2: Save and restore mouse sensitivity (useful for camera modes)
@@ -1120,6 +1313,9 @@ void CL_Init (void)
 	Cmd_AddCommand_ServerCommand ("sts", CL_SetStatString_f);
 
 	Cmd_AddCommand_ServerCommand ("v_water", V_Water_f);
+
+	// Modding extension (not native H2) - model customization
+	Cmd_AddCommand_ServerCommand ("modelpimp", CL_ModelPimp_f);
 
 	// H2: Sensitivity save/restore for camera modes
 	Cmd_AddCommand ("sensitivity_save", CL_Sensitivity_save_f);

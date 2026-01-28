@@ -82,6 +82,30 @@ typedef struct
 } dlight_t;
 
 
+/*
+ * Model pimp settings - modding extension (not native H2) by Inky
+ * Allows dynamic customization of model effects (spin, float, glow, light, trails)
+ * These settings are applied per-model (affecting all entities using that model)
+ */
+#define MAX_MODELPIMP	64
+#define PIMP_SPIN		1	// Model spins (like pickups)
+#define PIMP_FLOAT		2	// Model floats up/down
+#define PIMP_GLOW		4	// Model has a glowing orb around it
+#define PIMP_LIGHT		8	// Model casts dynamic light
+typedef struct
+{
+	char		modelname[MAX_QPATH];	// Path to the model
+	int			spawnflags;				// PIMP_* flags
+	int			modelflags;				// EF_* flags to override model's flags
+	vec3_t		glow_color;				// RGB color for glow/light (0-1)
+	float		abslight;				// Glow alpha (0-1)
+	vec3_t		view_ofs;				// Glow offset from model origin
+	float		glow_radius;			// Glow orb radius
+	float		light_radius;			// Dynamic light radius
+	qboolean	active;					// Is this entry in use?
+} modelpimp_t;
+
+
 #define	MAX_BEAMS	32 //johnfitz -- was 24
 typedef struct
 {
@@ -356,6 +380,7 @@ extern	client_state_t	cl;
 extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 extern	dlight_t		cl_dlights[MAX_DLIGHTS];
+extern	modelpimp_t		cl_modelpimp[MAX_MODELPIMP];
 extern	entity_t		cl_temp_entities[MAX_TEMP_ENTITIES];
 extern	beam_t			cl_beams[MAX_BEAMS];
 extern	entity_t		*cl_visedicts[MAX_VISEDICTS];
@@ -372,6 +397,11 @@ extern	int				cl_max_edicts; //johnfitz -- only changes when new map loads
 dlight_t *CL_AllocDlight (int key);
 void	CL_DecayLights (void);
 void	CL_SetLightstyle (int i, const char *str);
+
+// Model pimp functions (modding extension, not native H2)
+modelpimp_t *CL_FindModelPimp (const char *modelname);
+void CL_ClearModelPimp (void);
+void CL_ApplyModelPimpEffects (entity_t *ent);
 
 void CL_Init (void);
 

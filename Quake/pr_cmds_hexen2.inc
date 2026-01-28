@@ -1136,3 +1136,98 @@ static void PF_h2_StopSound (void)
 	MSG_WriteByte(&sv.datagram, svc_stopsound);
 	MSG_WriteShort(&sv.datagram, (ent << 3) | channel);
 }
+
+/*
+=================
+PF_h2_pimpmodel
+
+Modding extension (not native H2) by Inky
+Allows dynamic customization of model effects (spin, float, glow, light, trails)
+
+float pimpmodel(entity reference, vector glow_color) = #111
+
+The entity's fields are used as follows:
+  .model      - model path to customize
+  .spawnflags - 1=spin, 2=float, 4=glow orb, 8=cast light
+  .flags      - EF_* model flags to apply (trails, rotate, etc)
+  .abslight   - glow alpha (0-1)
+  .view_ofs   - glow offset from origin
+  .health     - glow radius
+  .max_health - cast light radius
+  .style      - light style
+
+Returns 1.0 on success, 0.0 on failure
+=================
+*/
+static void PF_h2_pimpmodel (void)
+{
+	edict_t		*ent;
+	float		*glow_color;
+	const char	*modelname;
+	qmodel_t	*mod;
+	int			spawnflags, modelflags;
+	float		abslight, glow_radius, light_radius;
+	float		*view_ofs;
+	client_t	*client;
+	int			i;
+
+	ent = G_EDICT(OFS_PARM0);
+	glow_color = G_VECTOR(OFS_PARM1);
+
+	// Get model name from entity
+	modelname = PR_GetString(ENT_STRING_T(ent, model));
+	if (!modelname || !modelname[0])
+	{
+		Con_DPrintf("PF_h2_pimpmodel: no model set on entity\n");
+		G_FLOAT(OFS_RETURN) = 0.0f;
+		return;
+	}
+
+	// Find the model
+	mod = Mod_ForName(modelname, false);
+	if (!mod)
+	{
+		Con_DPrintf("PF_h2_pimpmodel: model '%s' not found\n", modelname);
+		G_FLOAT(OFS_RETURN) = 0.0f;
+		return;
+	}
+
+	// Read entity fields
+	spawnflags = (int)ENT_FLOAT(ent, spawnflags);
+	modelflags = (int)ENT_FLOAT(ent, flags);
+	abslight = ENT_FLOAT(ent, abslight);
+	view_ofs = ENT_VEC(ent, view_ofs);
+	glow_radius = ENT_FLOAT(ent, health);
+	light_radius = ENT_FLOAT(ent, max_health);
+
+	// Apply model flags directly to the model
+	// This affects all entities using this model
+	if (modelflags)
+		mod->flags = modelflags;
+
+	// For spin/float without the full EF_ROTATE, set it if requested
+	if ((spawnflags & 1) || (spawnflags & 2))  // PIMP_SPIN or PIMP_FLOAT
+		mod->flags |= EF_ROTATE;
+
+	// Send pimp settings to all connected clients via stufftext
+	// Format: "modelpimp <model> <spawnflags> <flags> <r> <g> <b> <abslight> <ox> <oy> <oz> <glow_r> <light_r>"
+	// Clients parse this and store in their cl_modelpimp table
+	for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
+	{
+		if (!client->active && !client->spawned)
+			continue;
+
+		MSG_WriteByte(&client->message, svc_stufftext);
+		MSG_WriteString(&client->message, va("modelpimp \"%s\" %d %d %g %g %g %g %g %g %g %g %g\n",
+			modelname,
+			spawnflags,
+			modelflags,
+			glow_color[0], glow_color[1], glow_color[2],
+			abslight,
+			view_ofs[0], view_ofs[1], view_ofs[2],
+			glow_radius,
+			light_radius));
+	}
+
+	G_FLOAT(OFS_RETURN) = 1.0f;
+}
