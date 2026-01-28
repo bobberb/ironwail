@@ -1668,7 +1668,8 @@ void SV_Physics (void)
 			SV_Physics_None (ent);
 		else if (ENT_MOVETYPE(ent) == MOVETYPE_NOCLIP)
 			SV_Physics_Noclip (ent);
-		else if (ENT_MOVETYPE(ent) == MOVETYPE_STEP)
+		else if (ENT_MOVETYPE(ent) == MOVETYPE_STEP
+		|| ENT_MOVETYPE(ent) == MOVETYPE_PUSHPULL)  // H2: pushpull uses step physics
 			SV_Physics_Step (ent);
 		else if (ENT_MOVETYPE(ent) == MOVETYPE_FOLLOW)
 			SV_Physics_Follow (ent);
@@ -1679,8 +1680,6 @@ void SV_Physics (void)
 		|| ENT_MOVETYPE(ent) == MOVETYPE_FLYMISSILE
 		|| ENT_MOVETYPE(ent) == MOVETYPE_SWIM)	// H2: swim (like fly but stays in water)
 			SV_Physics_Toss (ent);
-		else if (ENT_MOVETYPE(ent) == MOVETYPE_PUSHPULL)  // H2: push/pull
-			SV_Physics_Pusher (ent);  // Similar to push
 		else
 			Sys_Error ("SV_Physics: bad movetype %i", (int)ENT_MOVETYPE(ent));
 
