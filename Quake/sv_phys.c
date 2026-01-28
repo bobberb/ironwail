@@ -1062,6 +1062,53 @@ void SV_WallFriction (edict_t *ent, trace_t *trace)
 }
 
 /*
+============
+SV_FlyExtras
+
+Hexen II: Handle hover bobbing for flying players.
+Port from uhexen2/engine/hexen2/sv_phys.c
+============
+*/
+static const float hoverinc = 0.4f;
+static void SV_FlyExtras (edict_t *ent)
+{
+	float hoverz;
+
+	if (!hexen2_mode)
+		return;
+
+	if (h2_globals.fields.hoverz < 0)
+		return;
+
+	// Jumping makes you lose this flag so reset it
+	ENT_FLAGS(ent) = (int)ENT_FLAGS(ent) | FL_ONGROUND;
+
+	hoverz = E_FLOAT(ent, h2_globals.fields.hoverz);
+
+	if ((ENT_VELOCITY(ent)[2] <= 6) && (ENT_VELOCITY(ent)[2] >= -6))
+	{
+		ENT_VELOCITY(ent)[2] += hoverz;
+
+		if (ENT_VELOCITY(ent)[2] >= 6)
+		{
+			hoverz = -hoverinc;
+			ENT_VELOCITY(ent)[2] += hoverz;
+		}
+		else if (ENT_VELOCITY(ent)[2] <= -6)
+		{
+			hoverz = hoverinc;
+			ENT_VELOCITY(ent)[2] += hoverz;
+		}
+
+		E_FLOAT(ent, h2_globals.fields.hoverz) = hoverz;
+	}
+	else	// friction for upward or downward progress once key is released
+	{
+		ENT_VELOCITY(ent)[2] -= ENT_VELOCITY(ent)[2] * 0.1f;
+	}
+}
+
+/*
 =====================
 SV_TryUnstick
 
@@ -1277,9 +1324,12 @@ void SV_Physics_Client (edict_t	*ent, int num)
 		break;
 
 	case MOVETYPE_FLY:
+	case MOVETYPE_SWIM:	// H2: SWIM is like FLY but stays in water
 		if (!SV_RunThink (ent))
 			return;
+		SV_CheckWater (ent);	// H2: Check water for swimming
 		SV_FlyMove (ent, host_frametime, NULL);
+		SV_FlyExtras (ent);	// H2: Hover bobbing & friction
 		break;
 
 	case MOVETYPE_NOCLIP:
