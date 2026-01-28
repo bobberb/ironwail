@@ -3560,7 +3560,8 @@ builtindef_t pr_builtindefs[] =
 	{"rain_go",					PF_SSQC(PF_h2_rain_go),			81},	// H2: void(vector...) = #81 (uhexen2 has this at #80)
 	{"particleexplosion",		PF_SSQC(PF_h2_particleexplosion), 82}, // H2: void(vector...) = #82 (uhexen2 has this at #81)
 	{"movestep",				PF_SSQC(PF_h2_movestep),		83},	// H2: float(...) = #83 (uhexen2 has this at #82)
-	{"advanceweaponframe",		PF_SSQC(PF_h2_advanceweaponframe), 84}, // H2: void(float, float) = #84 (uhexen2 has this at #83)
+	{"advanceweaponframe",		PF_SSQC(PF_h2_advanceweaponframe), 84}, // H2: void(float, float) = #84 (adjusted to #83 at runtime)
+	{"h2_sqrt",					PF_BOTH(PF_Sqrt),				84},	// H2: float(float) = #84 (NOT adjusted, fills slot after advanceweaponframe moves to #83)
 	{"particle3",				PF_SSQC(PF_h2_particle3),		85},	// H2: void(vector...) = #85
 	{"particle4",				PF_SSQC(PF_h2_particle4),		86},	// H2: void(vector...) = #86
 	{"setpuzzlemodel",			PF_SSQC(PF_h2_setpuzzlemodel),	87},	// H2: void(entity, string) = #87
@@ -3591,12 +3592,14 @@ builtindef_t pr_builtindefs[] =
 
 	{"pow",						PF_BOTH(PF_pow),				97,		DP_QC_SINCOSSQRTPOW},	// float(float value, float exp)
 	{"precache_model3",			PF_SSQC(PF_precache_model),		97},	// H2: string(string) = #97 (overrides pow in H2 mode)
+	{"precache_file3",			PF_SSQC(PF_precache_file),		98},	// H2: string(string) = #98
 
 	{"matchAngleToSlope",		PF_SSQC(PF_h2_matchAngleToSlope), 99},	// H2: void(entity, vector) = #99
 	{"updateInfoPlaque",		PF_SSQC(PF_h2_updateInfoPlaque), 100},	// H2: void(float, float) = #100
 
 	{"precache_sound4",			PF_SSQC(PF_precache_sound),		101},	// H2: string(string) = #101 (portals 1.12)
 	{"precache_model4",			PF_SSQC(PF_precache_model),		102},	// H2: string(string) = #102 (portals 1.12)
+	{"precache_file4",			PF_SSQC(PF_precache_file),		103},	// H2: string(string) = #103 (portals 1.12)
 
 	{"doWhiteFlash",			PF_SSQC(PF_h2_doWhiteFlash),	104},	// H2: void() = #104
 	{"UpdateSoundPos",			PF_SSQC(PF_h2_UpdateSoundPos),	105},	// H2: void(entity, float) = #105
