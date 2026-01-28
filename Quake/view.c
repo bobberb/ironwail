@@ -826,10 +826,23 @@ void V_BoundOffsets (void)
 		r_refdef.vieworg[1] = ent->origin[1] - 14;
 	else if (r_refdef.vieworg[1] > ent->origin[1] + 14)
 		r_refdef.vieworg[1] = ent->origin[1] + 14;
-	if (r_refdef.vieworg[2] < ent->origin[2] - 22)
-		r_refdef.vieworg[2] = ent->origin[2] - 22;
-	else if (r_refdef.vieworg[2] > ent->origin[2] + 30)
-		r_refdef.vieworg[2] = ent->origin[2] + 30;
+
+	// H2 uses taller player hull and higher viewheight (50 vs 22)
+	// uhexen2 uses Z bounds of 0 to 86 instead of Quake's -22 to 30
+	if (hexen2_mode)
+	{
+		if (r_refdef.vieworg[2] < ent->origin[2] - 0)
+			r_refdef.vieworg[2] = ent->origin[2] - 0;
+		else if (r_refdef.vieworg[2] > ent->origin[2] + 86)
+			r_refdef.vieworg[2] = ent->origin[2] + 86;
+	}
+	else
+	{
+		if (r_refdef.vieworg[2] < ent->origin[2] - 22)
+			r_refdef.vieworg[2] = ent->origin[2] - 22;
+		else if (r_refdef.vieworg[2] > ent->origin[2] + 30)
+			r_refdef.vieworg[2] = ent->origin[2] + 30;
+	}
 }
 
 /*
