@@ -7308,7 +7308,10 @@ void M_Draw (void)
 		break;
 
 	case m_multiplayer:
-		M_MultiPlayer_Draw ();
+		if (hexen2_mode)
+			M_H2_Draw();
+		else
+			M_MultiPlayer_Draw ();
 		break;
 
 	case m_setup:
@@ -7450,7 +7453,10 @@ void M_Keydown (int key)
 		return;
 
 	case m_multiplayer:
-		M_MultiPlayer_Key (key);
+		if (hexen2_mode)
+			M_H2_Keydown(key);
+		else
+			M_MultiPlayer_Key (key);
 		return;
 
 	case m_setup:
