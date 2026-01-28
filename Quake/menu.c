@@ -5040,7 +5040,57 @@ static const menukeybind_t menubinds[] =
 	{"+showscores",		"Show score",			KDM_ANY},
 };
 
+// Hexen II specific key bindings
+static const menukeybind_t menubinds_h2[] =
+{
+	{"+forward",		"Move forward",			KDM_KEYBOARD_AND_MOUSE},
+	{"+back",			"Move backward",		KDM_KEYBOARD_AND_MOUSE},
+	{"+moveleft",		"Move left",			KDM_KEYBOARD_AND_MOUSE},
+	{"+moveright",		"Move right",			KDM_KEYBOARD_AND_MOUSE},
+	{"+jump",			"Jump",					KDM_ANY},
+	{"+moveup",			"Swim up",				KDM_ANY},
+	{"+movedown",		"Swim down",			KDM_ANY},
+	{"+crouch",			"Crouch",				KDM_ANY},
+	{"+speed",			"Run",					KDM_KEYBOARD_AND_MOUSE},
+	{"+strafe",			"Sidestep",				KDM_KEYBOARD_AND_MOUSE},
+	{"",				"",						KDM_ANY},
+	{"+left",			"Turn left",			KDM_KEYBOARD_AND_MOUSE},
+	{"+right",			"Turn right",			KDM_KEYBOARD_AND_MOUSE},
+	{"+lookup",			"Look up",				KDM_KEYBOARD_AND_MOUSE},
+	{"+lookdown",		"Look down",			KDM_KEYBOARD_AND_MOUSE},
+	{"centerview",		"Center view",			KDM_ANY},
+	{"zoom_in",			"Toggle zoom",			KDM_ANY},
+	{"+zoom",			"Quick zoom",			KDM_ANY},
+	{"+gyroaction",		"Gyro switch",			KDM_GAMEPAD},
+	{"",				"",						KDM_ANY},
+	{"+attack",			"Attack",				KDM_ANY},
+	{"impulse 10",		"Next weapon",			KDM_ANY},
+	{"impulse 12",		"Previous weapon",		KDM_ANY},
+	{"impulse 1",		"Weapon 1",				KDM_ANY},
+	{"impulse 2",		"Weapon 2",				KDM_ANY},
+	{"impulse 3",		"Weapon 3",				KDM_ANY},
+	{"impulse 4",		"Weapon 4",				KDM_ANY},
+	{"",				"",						KDM_ANY},
+	{"invleft",			"Previous artifact",	KDM_ANY},
+	{"invright",		"Next artifact",		KDM_ANY},
+	{"invuse",			"Use artifact",			KDM_ANY},
+	{"",				"",						KDM_ANY},
+	{"+showinfo",		"Show inventory",		KDM_ANY},
+	{"+infoplaque",		"Show objectives",		KDM_ANY},
+	{"+showdm",			"Show DM scores",		KDM_ANY},
+	{"",				"",						KDM_ANY},
+	{QUICKSAVE,			"Quick save",			KDM_ANY},
+	{QUICKLOAD,			"Quick load",			KDM_ANY},
+	{"menu_load",		"Load menu",			KDM_ANY},
+	{"menu_save",		"Save menu",			KDM_ANY},
+	{"menu_maps",		"Maps menu",			KDM_ANY},
+	{"menu_options",	"Options menu",			KDM_ANY},
+	{"screenshot",		"Screenshot",			KDM_ANY},
+	{"+showscores",		"Show score",			KDM_ANY},
+};
+
 #define	NUMCOMMANDS		Q_COUNTOF(menubinds)
+#define	NUMCOMMANDS_H2	Q_COUNTOF(menubinds_h2)
 #define KEYLIST_TOP		56						// title plaque, tabs, scroll ellipsis bar
 #define KEYLIST_BOTTOM	24						// scroll ellipsis bar, search box, key hint
 
@@ -5062,7 +5112,7 @@ static void M_Keys_UpdateLayout (void)
 
 	// Note: we use NUMCOMMANDS instead of keysmenu.list.numitems to have a stable layout
 	// when switching between keyboard+mouse/gamepad tabs (different number of items)
-	height = NUMCOMMANDS * 8 + KEYLIST_TOP + KEYLIST_BOTTOM;
+	height = (hexen2_mode ? NUMCOMMANDS_H2 : NUMCOMMANDS) * 8 + KEYLIST_TOP + KEYLIST_BOTTOM;
 	height = q_min (height, m_height);
 	keysmenu.y = m_top + (((m_height - height) / 2) & ~7);
 	keysmenu.list.viewsize = (height - KEYLIST_TOP - KEYLIST_BOTTOM) / 8;
@@ -5083,24 +5133,38 @@ static qboolean M_Keys_Match (int index)
 
 static void M_Keys_Populate (void)
 {
-	int i;
+	int i, numcmds;
+	const menukeybind_t *binds;
 
 	VEC_CLEAR (keysmenu.items);
 
-	for (i = 0; i < NUMCOMMANDS; i++)
+	// Use H2 bindings when in Hexen II mode
+	if (hexen2_mode)
+	{
+		binds = menubinds_h2;
+		numcmds = NUMCOMMANDS_H2;
+	}
+	else
+	{
+		binds = menubinds;
+		numcmds = NUMCOMMANDS;
+	}
+
+	for (i = 0; i < numcmds; i++)
 	{
 		// filter item by device type
-		if (!(keysmenu.devicemask & menubinds[i].devicemask))
+		if (!(keysmenu.devicemask & binds[i].devicemask))
 			continue;
 
-		if (!hipnotic && (strcmp (menubinds[i].command, "impulse 225") == 0 || strcmp (menubinds[i].command, "impulse 226") == 0))
+		// Quake: filter hipnotic-specific weapons
+		if (!hexen2_mode && !hipnotic && (strcmp (binds[i].command, "impulse 225") == 0 || strcmp (binds[i].command, "impulse 226") == 0))
 			continue;
 
 		// if we have two separators in a row, overwrite the old one
-		if (VEC_SIZE (keysmenu.items) > 0 && !menubinds[i].command[0] && !VEC_LAST(keysmenu.items).command[0])
-			VEC_LAST(keysmenu.items) = menubinds[i];
+		if (VEC_SIZE (keysmenu.items) > 0 && !binds[i].command[0] && !VEC_LAST(keysmenu.items).command[0])
+			VEC_LAST(keysmenu.items) = binds[i];
 		else // otherwise add a new item
-			VEC_PUSH (keysmenu.items, menubinds[i]);
+			VEC_PUSH (keysmenu.items, binds[i]);
 	}
 
 	keysmenu.list.numitems = (int) VEC_SIZE (keysmenu.items);
