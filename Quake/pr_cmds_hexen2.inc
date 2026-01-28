@@ -36,14 +36,60 @@ static unsigned int h2_info_mask2 = 0;  // Objectives 32-63
 PF_h2_lightstylestatic
 
 Static lightstyle (doesn't animate)
-void lightstylestatic(float style, string value) = #5
+void lightstylestatic(float style, float value) = #5
+
+Unlike regular lightstyle which takes a string pattern for animation,
+lightstylestatic takes an integer brightness value (0-25 = 'a'-'z').
 =================
 */
+static const char *h2_lightstyle_defs[] = {
+	"a", "b", "c", "d", "e", "f", "g",
+	"h", "i", "j", "k", "l", "m", "n",
+	"o", "p", "q", "r", "s", "t", "u",
+	"v", "w", "x", "y", "z"
+};
+
 static void PF_h2_lightstylestatic (void)
 {
-	// For now, just use regular lightstyle
-	// TODO: Implement static lightstyle optimization
-	PF_lightstyle();
+	int		style, value;
+	const char	*val;
+	client_t	*client;
+	int		j;
+
+	style = G_FLOAT(OFS_PARM0);
+	value = G_FLOAT(OFS_PARM1);
+
+	// Clamp value to valid range (0-25 = 'a'-'z')
+	if (value < 0)
+		value = 0;
+	else if (value > 25)
+		value = 25;
+
+	val = h2_lightstyle_defs[value];
+
+	// Bounds check style
+	if (style < 0 || style >= MAX_LIGHTSTYLES)
+	{
+		Con_Warning ("PF_h2_lightstylestatic: style %d out of range\n", style);
+		return;
+	}
+
+	// Set the lightstyle
+	sv.lightstyles[style] = val;
+
+	// Send to clients
+	if (sv.state != ss_active)
+		return;
+
+	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+	{
+		if (client->active || client->spawned)
+		{
+			MSG_WriteChar (&client->message, svc_lightstyle);
+			MSG_WriteChar (&client->message, style);
+			MSG_WriteString (&client->message, val);
+		}
+	}
 }
 
 /*
