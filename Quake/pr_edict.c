@@ -532,6 +532,7 @@ void H2_SetupGlobals (void)
 	f->light_level = ED_FindFieldOffset("light_level");
 	f->oldskin = ED_FindFieldOffset("oldskin");
 	f->monsterclass = ED_FindFieldOffset("monsterclass");
+	f->flags2 = ED_FindFieldOffset("flags2");
 
 	// H2-specific global variable offsets
 	if (hexen2_mode)

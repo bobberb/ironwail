@@ -485,6 +485,11 @@ void CL_SendMove (const usercmd_t *cmd)
 			bits |= 2;
 		in_jump.state &= ~2;
 
+		// H2: Add crouch bit
+		if (hexen2_mode && (in_crouch.state & 3))
+			bits |= 4;
+		in_crouch.state &= ~2;
+
 		MSG_WriteByte (&buf, bits);
 
 		MSG_WriteByte (&buf, in_impulse);

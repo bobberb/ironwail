@@ -467,6 +467,17 @@ void SV_ReadClientMove (usercmd_t *move)
 	ENT_FLOAT(host_client->edict, button0) = bits & 1;
 	ENT_FLOAT(host_client->edict, button2) = (bits & 2)>>1;
 
+	// H2: Handle crouch bit - update flags2 with FL2_CROUCHED
+	if (hexen2_mode && h2_globals.fields.flags2 >= 0)
+	{
+		int flags2 = (int)E_FLOAT(host_client->edict, h2_globals.fields.flags2);
+		if (bits & 4)
+			flags2 |= FL2_CROUCHED;
+		else
+			flags2 &= ~FL2_CROUCHED;
+		E_FLOAT(host_client->edict, h2_globals.fields.flags2) = (float)flags2;
+	}
+
 	i = MSG_ReadByte ();
 	if (i)
 		ENT_FLOAT(host_client->edict, impulse) = i;
