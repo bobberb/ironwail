@@ -230,6 +230,7 @@ typedef struct
 	float		wheel_pitch;	// for looking up/down using the mouse wheel
 
 	float		viewheight;
+	float		viewheight_target;	// H2: target viewheight for smooth interpolation
 	float		crouch;			// local amount for smoothing stepups
 
 	qboolean	paused;			// send over by server

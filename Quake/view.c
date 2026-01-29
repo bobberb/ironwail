@@ -929,6 +929,27 @@ void V_CalcRefdef (void)
 	float		bob;
 	static float oldz = 0;
 
+	// H2: Smooth viewheight interpolation for crouch transitions
+	if (hexen2_mode)
+	{
+		float diff = cl.viewheight_target - cl.viewheight;
+		if (fabs(diff) < 0.5f)
+			cl.viewheight = cl.viewheight_target;  // Snap when close
+		else
+		{
+			// Interpolate toward target (adjust speed as needed)
+			float speed = 200.0f * host_frametime;  // units per second
+			if (diff > 0)
+				cl.viewheight = q_min(cl.viewheight + speed, cl.viewheight_target);
+			else
+				cl.viewheight = q_max(cl.viewheight - speed, cl.viewheight_target);
+		}
+	}
+	else
+	{
+		cl.viewheight = cl.viewheight_target;  // No interpolation for Quake
+	}
+
 	// H2: Don't drift when in cameramode (locked to entity)
 	if (!hexen2_mode || !cl.cameramode)
 	{
