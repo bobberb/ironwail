@@ -588,6 +588,7 @@ static void M_H2_Main_Key(int key)
 	case K_ESCAPE:
 	case K_BBUTTON:
 	case K_MOUSE2:
+		IN_Activate();
 		key_dest = key_game;
 		m_state = m_none;
 		break;
@@ -765,6 +766,7 @@ static void M_H2_SinglePlayer_Key(int key)
 			// Play the Portals intro demo
 			if (M_H2_HasPortals())
 			{
+				IN_Activate();
 				key_dest = key_game;
 				m_state = m_none;
 				Cbuf_AddText("playdemo t9\n");
@@ -981,6 +983,7 @@ static void M_H2_Difficulty_Key(int key)
 		// Note: playerclass is set via console command for H2
 		Cbuf_AddText(va("playerclass %d\n", h2_player_class));
 
+		IN_Activate();
 		key_dest = key_game;
 		m_state = m_none;
 
