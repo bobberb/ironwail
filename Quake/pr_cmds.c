@@ -1953,6 +1953,12 @@ static void PF_checkextension(void)
 		G_FLOAT(OFS_RETURN) = true;
 		SetBit (qcvm->advertised_ext, i);
 	}
+	else if (i == H2_PIMPMODEL && hexen2_mode)
+	{
+		// H2_PIMPMODEL extension is available in Hexen2 mode
+		G_FLOAT(OFS_RETURN) = true;
+		SetBit (qcvm->advertised_ext, i);
+	}
 	else
 		G_FLOAT(OFS_RETURN) = false;
 }
